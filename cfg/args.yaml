@@ -3,48 +3,48 @@ source: nuscenes
 target: paris
 
 # Cluster
-#sequence:
-out_lim: 75
-limit_GT: 85 #for PandaFF, set 300
-limit_GT_time: 10
-min_dist_mvt: 0.25
-voxel_size: 0.8
-subsample: 0.05
-static: False
-dist_prop: 0.3
-#cluster:
-voxel_size: 2
-n_centroids: 20
-path: /root/main/3DLabelProp #/mnt/nuscenes/processed/ #"/mnt/data/"
-#path: "/ramdisk/"
-name: "" # 
-override: 0.3
+sequence:
+  out_lim: 75
+  limit_GT: 85 #for PandaFF, set 300
+  limit_GT_time: 10
+  min_dist_mvt: 0.25
+  voxel_size: 0.8
+  subsample: 0.05
+  static: False
+  dist_prop: 0.3
+cluster:
+  voxel_size: 2
+  n_centroids: 20
+  path: /root/main/3DLabelProp #/mnt/nuscenes/processed/ #"/mnt/data/"
+  #path: "/ramdisk/"
+  name: "" # 
+  override: 0.3
 
 # Model args
-#architecture:
-model: KPCONV #KPCONV or SPVCNN
-type: KPFCNN #Config to fetch
-n_features: 1
-#trainer:
-epoch: 500000
-batch_size: 8
-lr: 0.02
-min_lr: 0.001
-epoch_lr: 350000
-optimizer: SGD
-momentum: 0.98
-weight_decay: 0.0001
-balanced: True
-criterion: Lovasz_weighted
-evaluate_timing: 250
-evaluate_size: 500
-scheduler: CosineAnnealing
-step_size: 750
-resume: 0
-#logger:
-run_name: debug
-save_path: './saved_models/'
-model_name: best_mIoU_kp_sk.pth
+architecture:
+  model: KPCONV #KPCONV or SPVCNN
+  type: KPFCNN #Config to fetch
+  n_features: 1
+trainer:
+  epoch: 500000
+  batch_size: 8
+  lr: 0.02
+  min_lr: 0.001
+  epoch_lr: 350000
+  optimizer: SGD
+  momentum: 0.98
+  weight_decay: 0.0001
+  balanced: True
+  criterion: Lovasz_weighted
+  evaluate_timing: 250
+  evaluate_size: 500
+  scheduler: CosineAnnealing
+  step_size: 750
+  resume: 0
+logger:
+  run_name: debug
+  save_path: './saved_models/'
+  model_name: best_mIoU_kp_sk.pth
 
 # data
 data_cfg_path: './cfg/data_cfg'

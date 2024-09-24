@@ -11,7 +11,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-cfg', '--config', help='the path to the setup config file', default='cfg/args.yaml')
 args = parser.parse_args()
 
-cfg = OmegaConf.create(args)
+cfg = OmegaConf.load(args.config)
 
 if torch.cuda.is_available():
     device = torch.device("cuda:0")
