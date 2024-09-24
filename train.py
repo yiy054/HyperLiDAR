@@ -7,6 +7,7 @@ import argparse
 import os
 from loader import Loader_Data
 from auxiliary.process_data.npm3d.npm3d_dataset import DatasetTrainVal as Dataset
+from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-cfg', '--config', help='the path to the setup config file', default='cfg/args.yaml')
@@ -40,7 +41,7 @@ filelist_train = [os.path.join(cfg.target_path, 'train_pointclouds', fname) for 
 filelist_train.sort()
 filelist_val=[]
 
-print("Creating dataloader...", end="", flush=True)
+print("Creating dataloader...", flush=True)
 ds = Dataset(filelist_train, os.path.join(cfg.target_path, 'train_pointclouds'),
                             training=True,
                             npoints=cfg.npoints,
@@ -48,3 +49,13 @@ ds = Dataset(filelist_train, os.path.join(cfg.target_path, 'train_pointclouds'),
                             jitter=cfg.jitter)
 train_loader = torch.utils.data.DataLoader(ds, batch_size=cfg.batchsize, shuffle=True,
                                     num_workers=cfg.threads)
+
+for epoch in range(0, cfg.trainer.epoch):
+    t = tqdm(train_loader, ncols=100, desc="Epoch {}".format(epoch))
+    for data in t:
+        pts = data['pts'].to(device)
+        print(pts.shape)
+        features = data['features'].to(device)
+        print(features.shape)
+        seg = data['target'].to(device)
+        print(seg.shape)
