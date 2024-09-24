@@ -67,4 +67,4 @@ n_classes: 19
 epochs: 1
 
 #Misc
-threads: 4
+threads: 1
