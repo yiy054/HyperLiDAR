@@ -1,6 +1,10 @@
 # Model args
 source: nuscenes
 target: paris
+target_path: '/root/main/dataset/processed_npm3d'
+npoints: 8192
+batchsize: 16
+jitter: 0.4
 
 # Cluster
 sequence:
@@ -26,7 +30,7 @@ architecture:
   type: KPFCNN #Config to fetch
   n_features: 1
 trainer:
-  epoch: 500000
+  epoch: 10
   batch_size: 8
   lr: 0.02
   min_lr: 0.001
@@ -61,3 +65,6 @@ n_features: 256
 n_dimensions: 2000
 n_classes: 19
 epochs: 1
+
+#Misc
+threads: 4

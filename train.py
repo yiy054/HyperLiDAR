@@ -6,6 +6,7 @@ import importlib
 import argparse
 import os
 from loader import Loader_Data
+from auxiliary.process_data.npm3d.npm3d_dataset import DatasetTrainVal as Dataset
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-cfg', '--config', help='the path to the setup config file', default='cfg/args.yaml')
@@ -35,5 +36,15 @@ model.to(device)
 model.load_state_dict(torch.load(os.path.join(cfg.logger.save_path, cfg.logger.model_name)))
 
 # Data Load
-data_loader = Loader_Data(cfg, device)
-data_train_xt, labels_train_x, data_test_xt, labels_test_x = data_loader.load('/root/main/dataset/training_10_classes/Lille1_1.ply')
+filelist_train = [os.path.join(cfg.target_path, 'train_pointclouds', fname) for fname in os.listdir(os.path.join(cfg.target_path, 'train_pointclouds')) if os.path.splitext(fname)[1]==".npy"]
+filelist_train.sort()
+filelist_val=[]
+
+print("Creating dataloader...", end="", flush=True)
+ds = Dataset(filelist_train, os.path.join(cfg.target_path, 'train_pointclouds'),
+                            training=True,
+                            npoints=cfg.npoints,
+                            iteration_number=cfg.batchsize*cfg.trainer.epoch,
+                            jitter=cfg.jitter)
+train_loader = torch.utils.data.DataLoader(ds, batch_size=cfg.batchsize, shuffle=True,
+                                    num_workers=cfg.threads)
