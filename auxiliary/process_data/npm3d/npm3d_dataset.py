@@ -1,14 +1,12 @@
 
 import torch
 import numpy as np
-import lightconvpoint.nn
 import os
 import random
 from torchvision import transforms
 from PIL import Image
 from tqdm import *
 from plyfile import PlyData, PlyElement
-from lightconvpoint.nn import with_indices_computation_rotation
 
 def rotate_point_cloud_z(batch_data):
     """ Randomly rotate the point clouds to augument the dataset
