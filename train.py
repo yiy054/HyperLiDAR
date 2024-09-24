@@ -51,11 +51,11 @@ train_loader = torch.utils.data.DataLoader(ds, batch_size=cfg.batchsize, shuffle
                                     num_workers=cfg.threads)
 
 for epoch in range(0, cfg.trainer.epoch):
-    t = tqdm(train_loader, ncols=100, desc="Epoch {}".format(epoch))
+    t = tqdm(train_loader, ncols=100, desc="Epoch {}".format(epoch), disable=True)
     for data in t:
         pts = data['pts'].to(device)
         print(pts.shape)
         features = data['features'].to(device)
-        print(features.shape)
+        print(features)
         seg = data['target'].to(device)
         print(seg.shape)
