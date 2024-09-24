@@ -73,7 +73,7 @@ class DatasetTrainVal():
                 data = np.load(os.path.join(self.folder, filename))
                 self.data.append(data)
 
-    @with_indices_computation_rotation
+    #@with_indices_computation_rotation
     def __getitem__(self, index):
 
         # load the data
@@ -209,7 +209,8 @@ class DatasetTest():
                 self.choices.append(choice)
                 self.pts_ref.append(pt_ref)
 
-    @with_indices_computation_rotation
+    
+    #@with_indices_computation_rotation
     def __getitem__(self, index):
         
         choice = self.choices[index]
