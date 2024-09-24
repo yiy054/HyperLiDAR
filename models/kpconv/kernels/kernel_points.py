@@ -30,7 +30,7 @@ from matplotlib import cm
 from os import makedirs
 from os.path import join, exists
 
-from auxiliary.ply_utils import read_ply, write_ply
+from utils.ply import read_ply, write_ply
 
 
 # ------------------------------------------------------------------------------------------
