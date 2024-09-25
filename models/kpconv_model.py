@@ -331,7 +331,7 @@ class SemanticSegmentationModel:
                                                         labels=merged_labels.astype(np.int32),
                                                         sampleDl=self.model_config.first_subsampling_dl)
 
-            print(in_lbls.shape)
+            print(in_lbls.reshape(-1).shape)
             p_list += [in_pts]
             f_list += [in_fts]
             l_list += [in_lbls.reshape(-1)]
@@ -346,10 +346,12 @@ class SemanticSegmentationModel:
 
             r_inds_list += [proj_inds]
             size.append(len(in_pts))
+        print(len(l_list))
         stacked_points = np.concatenate(p_list, axis=0)
         timestamps = np.concatenate(t_list, axis =0)
         features = np.concatenate(f_list, axis=0)
         labels = np.concatenate(l_list, axis=0)
+        print(labels.shape)
         features = features.astype(np.float32)
         stacked_features = np.ones_like(stacked_points[:, :1], dtype=np.float32)
         if self.model_config.in_features_dim==2:
