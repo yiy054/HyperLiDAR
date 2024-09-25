@@ -81,6 +81,11 @@ for epoch in range(0, cfg.trainer.epoch):
         r_clouds, r_inds_list = semantic_model.prepare_data(pointcloud,False,True)
         x = hd_model.feature_extractor(r_clouds)
         hd_model.fit(x, r_clouds.labels)
+        
+        # Free the memory
+        del r_clouds
+        del x
+        torch.cuda.empty_cache()
 
     t_val = tqdm(val_loader, ncols=100, desc="Val Epoch {}".format(epoch), disable=False)
     for data_val in t_val:
