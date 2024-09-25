@@ -79,22 +79,22 @@ for epoch in range(0, cfg.trainer.epoch):
         ), axis=2)
         #print("Pointcloud:", pointcloud.shape)
         r_clouds, r_inds_list = semantic_model.prepare_data(pointcloud,False,True)
-        #print(len(r_clouds.points))
-        #print("0:", r_clouds.points[0].shape)
-        #print("4:", r_clouds.points[4].shape)
-        #print(r_clouds.labels)
-        #print("len labels:", len(r_clouds.labels))
-        #print("print labels:", r_clouds.labels[0].shape)
-        x = hd_model.full_fit(r_clouds)
-        #print(x.shape)
-        y = input("Enter")
+        x = hd_model.feature_extractor(r_clouds)
+        hd_model.fit(x, r_clouds.labels)
 
     t_val = tqdm(val_loader, ncols=100, desc="Val Epoch {}".format(epoch), disable=False)
     for data_val in t_val:
-        pts = data_val['pts'].to(device)
-        print(pts.shape)
-        features = data_val['features'].to(device)
-        seg = data_val['target'].to(device)
-        print(seg.shape)
+        pts = data_val['pts']#.to(device)
+        features = data_val['features']#.to(device)
+        seg = data_val['target']#.to(device)
+        pointcloud = np.concatenate((
+            pts.reshape((cfg.batchsize, pts.shape[2], 3)), 
+            np.zeros((cfg.batchsize, pts.shape[2], 1)), 
+            (seg - 1).reshape((cfg.batchsize, seg.shape[1], 1)), 
+            np.zeros((cfg.batchsize, pts.shape[2], 1))
+        ), axis=2)
+        r_clouds, r_inds_list = semantic_model.prepare_data(pointcloud,False,True)
+        y = hd_model.forward(r_clouds)
+
 
     

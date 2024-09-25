@@ -76,7 +76,7 @@ class OnlineHD(Classifier):
 
         return self
     
-    def full_fit(self, r_clouds):
+    def feature_extractor(self, r_clouds):
         r_clouds.to(self.device)
         x = r_clouds.features.clone().detach()
         # Loop over consecutive blocks
@@ -97,5 +97,10 @@ class OnlineHD(Classifier):
                 x = block_op(x, r_clouds)
             else:
                 continue
-        
         return x
+    
+    def forward(self, r_clouds):
+        x = self.feature_extractor(r_clouds)
+        encoded = self.encoder(x[r_clouds.labels != -1])
+        y = torch.argmax(torchhd.functional.cosine_similarity(encoded, self.model.weight), dim=1)
+        return y
