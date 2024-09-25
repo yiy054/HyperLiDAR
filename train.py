@@ -60,23 +60,16 @@ val_loader = torch.utils.data.DataLoader(ds_val, batch_size=cfg.batchsize, shuff
                                     num_workers=cfg.threads)
 
 for epoch in range(0, cfg.trainer.epoch):
-    pointclouds = []
+
     t = tqdm(train_loader, ncols=100, desc="Train Epoch {}".format(epoch), disable=False)
     for data in t:
         pts = data['pts']#.to(device)
         features = data['features']#.to(device)
         seg = data['target']#.to(device)
         pointcloud = np.hstack((pts.reshape((cfg.batchsize, 3, pts.shape[2])), np.zeros((cfg.batchsize, 1, pts.shape[2])), (seg-1).reshape((cfg.batchsize, 1, seg.shape[1])),np.zeros((cfg.batchsize, 1, pts.shape[2]))))
-        #pointcloud = np.concatenate((
-        #    pts.reshape((cfg.batchsize, pts.shape[2], 3)), 
-        #    np.zeros((cfg.batchsize, pts.shape[2], 1)), 
-        #    (seg - 1).reshape((cfg.batchsize, seg.shape[1], 1)), 
-        #    np.zeros((cfg.batchsize, pts.shape[2], 1))
-        #    ), axis=2)
-        print(len(pointcloud))
-        print(pointcloud[1].shape)
-        pointcloud = pointcloud.to(device)
-    
+        r_clouds, r_inds_list = semantic_model.prepare_data(pointcloud,False,True)
+        x = input("Enter")
+
     t_val = tqdm(val_loader, ncols=100, desc="Val Epoch {}".format(epoch), disable=False)
     for data_val in t_val:
         pts = data_val['pts'].to(device)
