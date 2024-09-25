@@ -64,13 +64,10 @@ for epoch in range(0, cfg.trainer.epoch):
     t = tqdm(train_loader, ncols=100, desc="Train Epoch {}".format(epoch), disable=False)
     for data in t:
         pts = data['pts']#.to(device)
-        #print(pts.reshape((cfg.batchsize, pts.shape[2], 3)).shape)
-        #print(np.zeros((cfg.batchsize, pts.shape[2], 1)).shape)
-        #print(np.zeros((cfg.batchsize, pts.shape[2], 1)).shape)
         features = data['features']#.to(device)
         seg = data['target']#.to(device)
-        #print((seg-1).reshape((cfg.batchsize, seg.shape[1], 1)).shape)
         pointcloud = np.hstack((pts.reshape((cfg.batchsize, 3, pts.shape[2])), np.zeros((cfg.batchsize, 1, pts.shape[2])), (seg-1).reshape((cfg.batchsize, 1, seg.shape[1])),np.zeros((cfg.batchsize, 1, pts.shape[2]))))
+        print(pointclouds.shape)
         pointcloud = pointcloud.to(device)
     
     t_val = tqdm(val_loader, ncols=100, desc="Val Epoch {}".format(epoch), disable=False)
