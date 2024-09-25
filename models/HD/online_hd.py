@@ -41,6 +41,8 @@ class OnlineHD(Classifier):
         n_features: int,
         n_dimensions: int,
         n_classes: int,
+        cfg,
+        feat_model,
         *,
         epochs: int = 120,
         lr: float = 0.035,
@@ -53,6 +55,8 @@ class OnlineHD(Classifier):
 
         self.epochs = epochs
         self.lr = lr
+        self.cfg = cfg
+        self.feat_model = feat_model
 
         self.encoder = Sinusoid(n_features, n_dimensions, device=device, dtype=dtype)
         self.model = Centroid(n_dimensions, n_classes, device=device, dtype=dtype)
@@ -71,3 +75,28 @@ class OnlineHD(Classifier):
         del encoded
 
         return self
+    
+    def full_fit(self, r_clouds):
+        r_clouds.to(self.device)
+        x = r_clouds.features.clone().detach()
+
+        # Loop over consecutive blocks
+        skip_x = []
+        for block_i, block_op in enumerate(self.feat_model.encoder_blocks):
+            if block_i == self.cfg.hd_block_stop:
+                break
+            if block_i in self.feat_model.encoder_skips:
+                skip_x.append(x)
+            x = block_op(x, r_clouds)
+
+        continue_dec = (((-2)*(self.cfg.hd_block_stop - 2))/3) + 8
+
+        for block_i, block_op in enumerate(self.feat_model.decoder_blocks):
+            if block_i >= continue_dec and block_i % 2 == 0:
+            #if block_i in self.decoder_concats and block_i % 2 == 0:
+            #    x = torch.cat([x, skip_x.pop()], dim=1)
+                x = block_op(x, r_clouds)
+            else:
+                continue
+        
+        return x

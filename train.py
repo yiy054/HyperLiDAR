@@ -9,6 +9,7 @@ from loader import Loader_Data
 from auxiliary.process_data.npm3d.npm3d_dataset import DatasetTrainVal as Dataset
 from tqdm import tqdm
 import numpy as np
+from models.HD.online_hd import OnlineHD
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-cfg', '--config', help='the path to the setup config file', default='cfg/args.yaml')
@@ -59,6 +60,8 @@ ds_val = Dataset(filelist_val, os.path.join(cfg.target_path, 'train_pointclouds'
 val_loader = torch.utils.data.DataLoader(ds_val, batch_size=cfg.batchsize, shuffle=True,
                                     num_workers=cfg.threads)
 
+hd_model = OnlineHD(256, 5000, 9, cfg, model, device=device)
+
 for epoch in range(0, cfg.trainer.epoch):
 
     t = tqdm(train_loader, ncols=100, desc="Train Epoch {}".format(epoch), disable=False)
@@ -68,9 +71,9 @@ for epoch in range(0, cfg.trainer.epoch):
         seg = data['target']#.to(device)
         pointcloud = np.hstack((pts.reshape((cfg.batchsize, 3, pts.shape[2])), np.zeros((cfg.batchsize, 1, pts.shape[2])), (seg-1).reshape((cfg.batchsize, 1, seg.shape[1])),np.zeros((cfg.batchsize, 1, pts.shape[2]))))
         r_clouds, r_inds_list = semantic_model.prepare_data(pointcloud,False,True)
-        print(len(r_clouds.points))
-        print(r_clouds.points[0].shape)
-        x = input("Enter")
+        x = hd_model.full_fit(r_clouds)
+        print(x.shape)
+        y = input("Enter")
 
     t_val = tqdm(val_loader, ncols=100, desc="Val Epoch {}".format(epoch), disable=False)
     for data_val in t_val:
