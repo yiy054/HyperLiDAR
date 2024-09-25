@@ -77,7 +77,7 @@ for epoch in range(0, cfg.trainer.epoch):
             (seg - 1).reshape((cfg.batchsize, seg.shape[1], 1)), 
             np.zeros((cfg.batchsize, pts.shape[2], 1))
         ), axis=2)
-        print("Pointcloud:", pointcloud.shape)
+        #print("Pointcloud:", pointcloud.shape)
         r_clouds, r_inds_list = semantic_model.prepare_data(pointcloud,False,True)
         #print(len(r_clouds.points))
         #print("0:", r_clouds.points[0].shape)
