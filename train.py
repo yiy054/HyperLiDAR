@@ -67,10 +67,12 @@ for epoch in range(0, cfg.trainer.epoch):
         features = data['features']#.to(device)
         seg = data['target']#.to(device)
         #pointcloud = np.hstack((pts.reshape((cfg.batchsize, 3, pts.shape[2])), np.zeros((cfg.batchsize, 1, pts.shape[2])), (seg-1).reshape((cfg.batchsize, 1, seg.shape[1])),np.zeros((cfg.batchsize, 1, pts.shape[2]))))
-        pointcloud = np.hstack((pts.reshape((cfg.batchsize, pts.shape[2], 3)), 
-                        np.zeros((cfg.batchsize, pts.shape[2], 1)), 
-                        (seg - 1).reshape((cfg.batchsize, pts.shape[2], 1)), 
-                        np.zeros((cfg.batchsize, pts.shape[2], 1))))
+        pointcloud = np.concatenate((
+            pts.reshape((cfg.batchsize, pts.shape[2], 3)), 
+            np.zeros((cfg.batchsize, pts.shape[2], 1)), 
+            (seg - 1).reshape((cfg.batchsize, seg.shape[1], 1)), 
+            np.zeros((cfg.batchsize, pts.shape[2], 1))
+            ), axis=2)
         print(len(pointclouds))
         print(pointcloud[1].shape)
         pointcloud = pointcloud.to(device)
