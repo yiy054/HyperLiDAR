@@ -39,7 +39,7 @@ model.load_state_dict(torch.load(os.path.join(cfg.logger.save_path, cfg.logger.m
 # Data Load
 filelist_train = [os.path.join(cfg.target_path, 'train_pointclouds', fname) for fname in os.listdir(os.path.join(cfg.target_path, 'train_pointclouds')) if os.path.splitext(fname)[1]==".npy"]
 filelist_train.sort()
-filelist_val=[]
+filelist_val=filelist_train[-2:]
 
 print("Creating dataloader...", flush=True)
 ds = Dataset(filelist_train, os.path.join(cfg.target_path, 'train_pointclouds'),
@@ -50,8 +50,16 @@ ds = Dataset(filelist_train, os.path.join(cfg.target_path, 'train_pointclouds'),
 train_loader = torch.utils.data.DataLoader(ds, batch_size=cfg.batchsize, shuffle=True,
                                     num_workers=cfg.threads)
 
+ds_val = Dataset(filelist_val, os.path.join(cfg.target_path, 'train_pointclouds'),
+                            training=True,
+                            npoints=cfg.npoints,
+                            iteration_number=cfg.batchsize*cfg.trainer.epoch,
+                            jitter=cfg.jitter)
+val_loader = torch.utils.data.DataLoader(ds_val, batch_size=cfg.batchsize, shuffle=True,
+                                    num_workers=cfg.threads)
+
 for epoch in range(0, cfg.trainer.epoch):
-    t = tqdm(train_loader, ncols=100, desc="Epoch {}".format(epoch), disable=True)
+    t = tqdm(train_loader, ncols=100, desc="Train Epoch {}".format(epoch), disable=True)
     for data in t:
         pts = data['pts'].to(device)
         print(pts.shape)
@@ -59,3 +67,14 @@ for epoch in range(0, cfg.trainer.epoch):
         print(features)
         seg = data['target'].to(device)
         print(seg.shape)
+    
+    t_val = tqdm(val_loader, ncols=100, desc="Val Epoch {}".format(epoch), disable=True)
+    for data_val in t_val:
+        pts = data_val['pts'].to(device)
+        print(pts.shape)
+        features = data_val['features'].to(device)
+        print(features)
+        seg = data_val['target'].to(device)
+        print(seg.shape)
+
+    
