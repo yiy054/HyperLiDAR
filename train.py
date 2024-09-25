@@ -74,6 +74,7 @@ for epoch in range(0, cfg.trainer.epoch):
         print(len(r_clouds.points))
         print("0:", r_clouds.points[0].shape)
         print("4:", r_clouds.points[4].shape)
+        print(r_clouds.labels)
         print("len labels:", len(r_clouds.labels))
         print("print labels:", r_clouds.labels[0].shape)
         x = hd_model.full_fit(r_clouds)
