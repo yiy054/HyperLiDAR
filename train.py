@@ -52,10 +52,6 @@ ds = DatasetTrainVal(filelist_train, os.path.join(cfg.target_path, 'train_pointc
 train_loader = torch.utils.data.DataLoader(ds, batch_size=cfg.batchsize, shuffle=True,
                                     num_workers=cfg.threads)
 
-ds_val = DatasetTest(filelist_val, os.path.join(cfg.target_path, 'train_pointclouds'))
-val_loader = torch.utils.data.DataLoader(ds_val, batch_size=cfg.batchsize, shuffle=True,
-                                    num_workers=cfg.threads)
-
 hd_model = OnlineHD(256, 5000, 9, cfg, model, device=device)
 
 for epoch in range(0, cfg.trainer.epoch):
@@ -84,24 +80,30 @@ for epoch in range(0, cfg.trainer.epoch):
         torch.cuda.empty_cache()
 
         print(hd_model.model.weight)"""
+    
+    for filename in filelist_val:
 
-    t_val = tqdm(val_loader, ncols=100, desc="Val Epoch {}".format(epoch), disable=False)
-    for data_val in t_val:
-        pts = data_val['pts']#.to(device)
-        features = data_val['features']#.to(device)
-        seg = data_val['target']#.to(device)
-        pts_ids = data_val['pts_ids']
-        print("pts_ids: ", pts_ids.shape)
+        ds_val = DatasetTest(filename, os.path.join(cfg.target_path, 'train_pointclouds'))
+        val_loader = torch.utils.data.DataLoader(ds_val, batch_size=cfg.batchsize, shuffle=True,
+                                            num_workers=cfg.threads)
 
-        pointcloud = np.concatenate((
-            pts.reshape((cfg.batchsize, pts.shape[2], 3)), 
-            np.zeros((cfg.batchsize, pts.shape[2], 1)), 
-            (seg - 1).reshape((cfg.batchsize, seg.shape[1], 1)), 
-            np.zeros((cfg.batchsize, pts.shape[2], 1))
-        ), axis=2)
-        r_clouds, r_inds_list = semantic_model.prepare_data(pointcloud,False,True)
-        y = hd_model.forward(r_clouds)
-        print("y: ", y.shape)
+        t_val = tqdm(val_loader, ncols=100, desc="Val Epoch {}".format(epoch), disable=False)
+        for data_val in t_val:
+            pts = data_val['pts']#.to(device)
+            features = data_val['features']#.to(device)
+            seg = data_val['target']#.to(device)
+            pts_ids = data_val['pts_ids']
+            print("pts_ids: ", pts_ids.shape)
+
+            pointcloud = np.concatenate((
+                pts.reshape((cfg.batchsize, pts.shape[2], 3)), 
+                np.zeros((cfg.batchsize, pts.shape[2], 1)), 
+                (seg - 1).reshape((cfg.batchsize, seg.shape[1], 1)), 
+                np.zeros((cfg.batchsize, pts.shape[2], 1))
+            ), axis=2)
+            r_clouds, r_inds_list = semantic_model.prepare_data(pointcloud,False,True)
+            y = hd_model.forward(r_clouds)
+            print("y: ", y.shape)
 
 
 
