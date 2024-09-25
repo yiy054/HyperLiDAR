@@ -68,6 +68,7 @@ for epoch in range(0, cfg.trainer.epoch):
         seg = data['target']#.to(device)
         pointcloud = np.hstack((pts.reshape((cfg.batchsize, 3, pts.shape[2])), np.zeros((cfg.batchsize, 1, pts.shape[2])), (seg-1).reshape((cfg.batchsize, 1, seg.shape[1])),np.zeros((cfg.batchsize, 1, pts.shape[2]))))
         r_clouds, r_inds_list = semantic_model.prepare_data(pointcloud,False,True)
+        print(r_clouds.shape)
         x = input("Enter")
 
     t_val = tqdm(val_loader, ncols=100, desc="Val Epoch {}".format(epoch), disable=False)
