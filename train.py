@@ -70,7 +70,7 @@ for epoch in range(0, cfg.trainer.epoch):
         features = data['features']#.to(device)
         seg = data['target']#.to(device)
         #print((seg-1).reshape((cfg.batchsize, seg.shape[1], 1)).shape)
-        pointcloud = np.hstack((pts.reshape((cfg.batchsize, pts.shape[2], 3)), np.zeros((cfg.batchsize, pts.shape[2], 1)), (seg-1).reshape((cfg.batchsize, seg.shape[1], 1)),np.zeros((cfg.batchsize, pts.shape[2], 1))))
+        pointcloud = np.hstack((pts.reshape((cfg.batchsize, 3, pts.shape[2])), np.zeros((cfg.batchsize, 1, pts.shape[2])), (seg-1).reshape((cfg.batchsize, 1, seg.shape[1])),np.zeros((cfg.batchsize, 1, pts.shape[2]))))
         pointcloud = pointcloud.to(device)
     
     t_val = tqdm(val_loader, ncols=100, desc="Val Epoch {}".format(epoch), disable=False)
