@@ -69,7 +69,14 @@ for epoch in range(0, cfg.trainer.epoch):
         pts = data['pts']#.to(device)
         features = data['features']#.to(device)
         seg = data['target']#.to(device)
-        pointcloud = np.hstack((pts.reshape((cfg.batchsize, 3, pts.shape[2])), np.zeros((cfg.batchsize, 1, pts.shape[2])), (seg-1).reshape((cfg.batchsize, 1, seg.shape[1])),np.zeros((cfg.batchsize, 1, pts.shape[2]))))
+        print(seg)
+        #pointcloud = np.hstack((pts.reshape((cfg.batchsize, 3, pts.shape[2])), np.zeros((cfg.batchsize, 1, pts.shape[2])), (seg-1).reshape((cfg.batchsize, 1, seg.shape[1])),np.zeros((cfg.batchsize, 1, pts.shape[2]))))
+        pointcloud = np.concatenate((
+            pts.reshape((cfg.batchsize, pts.shape[2], 3)), 
+            np.zeros((cfg.batchsize, pts.shape[2], 1)), 
+            (seg - 1).reshape((cfg.batchsize, seg.shape[1], 1)), 
+            np.zeros((cfg.batchsize, pts.shape[2], 1))
+        ), axis=2)
         r_clouds, r_inds_list = semantic_model.prepare_data(pointcloud,False,True)
         print(len(r_clouds.points))
         print("0:", r_clouds.points[0].shape)
