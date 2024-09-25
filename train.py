@@ -6,7 +6,7 @@ import importlib
 import argparse
 import os
 from loader import Loader_Data
-from auxiliary.process_data.npm3d.npm3d_dataset import DatasetTrainVal as Dataset
+from auxiliary.process_data.npm3d.npm3d_dataset import DatasetTrainVal, DatasetTest
 from tqdm import tqdm
 import numpy as np
 from models.HD.online_hd import OnlineHD
@@ -44,7 +44,7 @@ filelist_train.sort()
 filelist_val=filelist_train[-2:]
 
 print("Creating dataloader...", flush=True)
-ds = Dataset(filelist_train, os.path.join(cfg.target_path, 'train_pointclouds'),
+ds = DatasetTrainVal(filelist_train, os.path.join(cfg.target_path, 'train_pointclouds'),
                             training=True,
                             npoints=cfg.npoints,
                             iteration_number=cfg.batchsize*cfg.trainer.epoch,
@@ -52,7 +52,7 @@ ds = Dataset(filelist_train, os.path.join(cfg.target_path, 'train_pointclouds'),
 train_loader = torch.utils.data.DataLoader(ds, batch_size=cfg.batchsize, shuffle=True,
                                     num_workers=cfg.threads)
 
-ds_val = Dataset(filelist_val, os.path.join(cfg.target_path, 'train_pointclouds'),
+ds_val = DatasetTest(filelist_val, os.path.join(cfg.target_path, 'train_pointclouds'),
                             training=True,
                             npoints=cfg.npoints,
                             iteration_number=cfg.batchsize*cfg.trainer.epoch,
@@ -64,7 +64,7 @@ hd_model = OnlineHD(256, 5000, 9, cfg, model, device=device)
 
 for epoch in range(0, cfg.trainer.epoch):
 
-    t = tqdm(train_loader, ncols=100, desc="Train Epoch {}".format(epoch), disable=False)
+    """t = tqdm(train_loader, ncols=100, desc="Train Epoch {}".format(epoch), disable=False)
     for data in t:
         pts = data['pts']#.to(device)
         features = data['features']#.to(device)
@@ -87,11 +87,16 @@ for epoch in range(0, cfg.trainer.epoch):
         del x
         torch.cuda.empty_cache()
 
+        print(hd_model.model.weight)"""
+
     t_val = tqdm(val_loader, ncols=100, desc="Val Epoch {}".format(epoch), disable=False)
     for data_val in t_val:
         pts = data_val['pts']#.to(device)
         features = data_val['features']#.to(device)
         seg = data_val['target']#.to(device)
+        pts_ids = data['pts_ids']
+        print("pts_ids: ", pts_ids.shape)
+
         pointcloud = np.concatenate((
             pts.reshape((cfg.batchsize, pts.shape[2], 3)), 
             np.zeros((cfg.batchsize, pts.shape[2], 1)), 
@@ -100,6 +105,9 @@ for epoch in range(0, cfg.trainer.epoch):
         ), axis=2)
         r_clouds, r_inds_list = semantic_model.prepare_data(pointcloud,False,True)
         y = hd_model.forward(r_clouds)
+        print("y: ", y.shape)
+
+
 
 
     
