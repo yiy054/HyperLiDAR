@@ -73,6 +73,7 @@ class OnlineHD(Classifier):
         del samples
         del labels
         del encoded
+        torch.cuda.empty_cache()
 
         return self
     
@@ -103,4 +104,9 @@ class OnlineHD(Classifier):
         x = self.feature_extractor(r_clouds)
         encoded = self.encoder(x[r_clouds.labels != -1])
         y = torch.argmax(torchhd.functional.cosine_similarity(encoded, self.model.weight), dim=1)
+
+        del x
+        del encoded
+        torch.cuda.empty_cache()
+        
         return y
