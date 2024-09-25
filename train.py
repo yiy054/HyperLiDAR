@@ -55,8 +55,7 @@ train_loader = torch.utils.data.DataLoader(ds, batch_size=cfg.batchsize, shuffle
 ds_val = DatasetTest(filelist_val, os.path.join(cfg.target_path, 'train_pointclouds'),
                             training=True,
                             npoints=cfg.npoints,
-                            iteration_number=cfg.batchsize*cfg.trainer.epoch,
-                            jitter=cfg.jitter)
+                            iteration_number=cfg.batchsize*cfg.trainer.epoch)
 val_loader = torch.utils.data.DataLoader(ds_val, batch_size=cfg.batchsize, shuffle=True,
                                     num_workers=cfg.threads)
 
@@ -94,7 +93,7 @@ for epoch in range(0, cfg.trainer.epoch):
         pts = data_val['pts']#.to(device)
         features = data_val['features']#.to(device)
         seg = data_val['target']#.to(device)
-        pts_ids = data['pts_ids']
+        pts_ids = data_val['pts_ids']
         print("pts_ids: ", pts_ids.shape)
 
         pointcloud = np.concatenate((
