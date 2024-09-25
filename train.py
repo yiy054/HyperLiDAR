@@ -52,10 +52,7 @@ ds = DatasetTrainVal(filelist_train, os.path.join(cfg.target_path, 'train_pointc
 train_loader = torch.utils.data.DataLoader(ds, batch_size=cfg.batchsize, shuffle=True,
                                     num_workers=cfg.threads)
 
-ds_val = DatasetTest(filelist_val, os.path.join(cfg.target_path, 'train_pointclouds'),
-                            training=True,
-                            npoints=cfg.npoints,
-                            iteration_number=cfg.batchsize*cfg.trainer.epoch)
+ds_val = DatasetTest(filelist_val, os.path.join(cfg.target_path, 'train_pointclouds'))
 val_loader = torch.utils.data.DataLoader(ds_val, batch_size=cfg.batchsize, shuffle=True,
                                     num_workers=cfg.threads)
 
