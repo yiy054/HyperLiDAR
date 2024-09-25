@@ -64,7 +64,7 @@ for epoch in range(0, cfg.trainer.epoch):
         pts = data['pts'].to(device)
         print(pts.shape)
         features = data['features'].to(device)
-        print(features)
+        #print(features)
         seg = data['target'].to(device)
         print(seg.shape)
     
@@ -73,7 +73,7 @@ for epoch in range(0, cfg.trainer.epoch):
         pts = data_val['pts'].to(device)
         print(pts.shape)
         features = data_val['features'].to(device)
-        print(features)
+        #print(features)
         seg = data_val['target'].to(device)
         print(seg.shape)
 
