@@ -25,7 +25,7 @@ class SemanticCustomBatch:
             L = int(input_list[0])
             ind = 1
             self.points = [torch.from_numpy(nparray) for nparray in input_list[ind:ind+L]]
-            print(self.points.shape)
+            print("Points:", self.points.shape)
             ind += L
             self.neighbors = [torch.from_numpy(nparray) for nparray in input_list[ind:ind+L]]
             ind += L
