@@ -373,5 +373,6 @@ class SemanticSegmentationModel:
                                               stacked_features,
                                               labels.astype(np.int64),
                                               np.array(size, dtype=np.int32))
+        print(input_list.shape)
 
         return self.batch([self.model_config.num_layers] + input_list + [timestamps]), r_inds_list
