@@ -8,6 +8,7 @@ import os
 from loader import Loader_Data
 from auxiliary.process_data.npm3d.npm3d_dataset import DatasetTrainVal as Dataset
 from tqdm import tqdm
+import numpy as np
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-cfg', '--config', help='the path to the setup config file', default='cfg/args.yaml')
@@ -59,21 +60,19 @@ val_loader = torch.utils.data.DataLoader(ds_val, batch_size=cfg.batchsize, shuff
                                     num_workers=cfg.threads)
 
 for epoch in range(0, cfg.trainer.epoch):
+    pointclouds = []
     t = tqdm(train_loader, ncols=100, desc="Train Epoch {}".format(epoch), disable=False)
     for data in t:
         pts = data['pts'].to(device)
-        print(pts.shape)
         features = data['features'].to(device)
-        #print(features)
         seg = data['target'].to(device)
-        print(seg.shape)
+        pointcloud = np.hstack((pts, np.zeros(pts.shape[2]).reshape(-1,1), seg-1,np.zeros(pts.shape[2]).reshape(-1,1)))
     
     t_val = tqdm(val_loader, ncols=100, desc="Val Epoch {}".format(epoch), disable=False)
     for data_val in t_val:
         pts = data_val['pts'].to(device)
         print(pts.shape)
         features = data_val['features'].to(device)
-        #print(features)
         seg = data_val['target'].to(device)
         print(seg.shape)
 
