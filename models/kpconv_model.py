@@ -25,7 +25,9 @@ class SemanticCustomBatch:
             L = int(input_list[0])
             ind = 1
             self.points = [torch.from_numpy(nparray) for nparray in input_list[ind:ind+L]]
-            print("Points:", self.points.shape)
+            print("Points:", len(self.points))
+            print("Points:", self.points[0].shape)
+            print("Points:", self.points[1].shape)
             ind += L
             self.neighbors = [torch.from_numpy(nparray) for nparray in input_list[ind:ind+L]]
             ind += L
@@ -367,6 +369,7 @@ class SemanticSegmentationModel:
             features[:,4] = - 1
             features[where,4] = 1
             stacked_features = features[:, np.array([3,4])]
+        print("stacked_points", stacked_points.shape)
         input_list = self.helper_function.segmentation_inputs(stacked_points,
                                               stacked_features,
                                               labels.astype(np.int64),
