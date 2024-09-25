@@ -330,7 +330,8 @@ class SemanticSegmentationModel:
                                                         features=merged_coords,
                                                         labels=merged_labels.astype(np.int32),
                                                         sampleDl=self.model_config.first_subsampling_dl)
-         
+
+            print(in_lbls.shape)
             p_list += [in_pts]
             f_list += [in_fts]
             l_list += [in_lbls.reshape(-1)]
