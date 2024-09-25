@@ -64,7 +64,7 @@ for epoch in range(0, cfg.trainer.epoch):
     t = tqdm(train_loader, ncols=100, desc="Train Epoch {}".format(epoch), disable=False)
     for data in t:
         pts = data['pts']#.to(device)
-        print(pts.reshape(-1,1).shape)
+        print(pts.reshape((cfg.batchsize, pts.shape[2], 3)).shape)
         print(np.zeros((cfg.batchsize, pts.shape[2], 1)).shape)
         print(np.zeros((cfg.batchsize, pts.shape[2], 1)).shape)
         features = data['features']#.to(device)
