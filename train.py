@@ -66,10 +66,10 @@ for epoch in range(0, cfg.trainer.epoch):
         pts = data['pts']#.to(device)
         print(pts.shape)
         print(np.zeros(pts.shape[2]).reshape(-1,1).shape)
-        print((seg-1).shape)
         print(np.zeros(pts.shape[2]).reshape(-1,1).shape)
         features = data['features']#.to(device)
         seg = data['target']#.to(device)
+        print((seg-1).shape)
         pointcloud = np.hstack((pts, np.zeros(pts.shape[2]).reshape(-1,1), seg-1,np.zeros(pts.shape[2]).reshape(-1,1)))
         pointcloud = pointcloud.to(device)
     
