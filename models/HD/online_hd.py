@@ -78,14 +78,7 @@ class OnlineHD(Classifier):
     
     def full_fit(self, r_clouds):
         r_clouds.to(self.device)
-        print(len(r_clouds.points))
-        print(r_clouds.points[0])
-        print(r_clouds.points[0].shape)
-        print(r_clouds.points[1])
-        print(r_clouds.points[1].shape)
         x = r_clouds.features.clone().detach()
-        print(r_clouds.features.shape)
-        print(r_clouds.labels.shape)
         # Loop over consecutive blocks
         skip_x = []
         for block_i, block_op in enumerate(self.feat_model.encoder_blocks):
