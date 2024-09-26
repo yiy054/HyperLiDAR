@@ -187,8 +187,8 @@ class OnlineHD(Classifier):
                 x = self.feature_extractor(r_clouds, stop)
                 x_append[stop] = x
         else:
-            x = self.feature_extractor(r_clouds, self.cfg.hd_block_stop)
-        encoded = self.encode(x)
+            x_append = self.feature_extractor(r_clouds, self.cfg.hd_block_stop)
+        encoded = self.encode(x_append)
         y = torch.argmax(torchhd.functional.cosine_similarity(encoded, self.model.weight), dim=1)
 
         del x
