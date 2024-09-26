@@ -154,7 +154,7 @@ for epoch in range(0, cfg.trainer.epoch):
 
     mIoU, per_class_iou = compute_mIoU_torch(preds_total, labels, cfg.n_classes) # Change when more datasets
     print(f"Val mIoU in epoch {epoch}: ", mIoU, per_class_iou)
-    print(torch.bincount((labels+1).unravel().to(torch.int)))
+    print(torch.bincount((labels+1).view(-1).to(torch.int)))
     
 
 
