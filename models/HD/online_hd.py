@@ -34,7 +34,7 @@ class OnlineHD(Classifier):
 
     """
 
-    encoder: Projection
+    encoder: Density
     model: Centroid
 
     def __init__(
