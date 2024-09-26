@@ -118,8 +118,6 @@ for epoch in range(0, cfg.trainer.epoch):
         del x
         torch.cuda.empty_cache()
 
-        print(hd_model.model.weight)
-
     # Validation
 
     t_val = tqdm(val_loader, ncols=100, desc="Val Epoch {}".format(epoch), disable=False)
