@@ -158,7 +158,7 @@ class OnlineHD(Classifier):
                     skip_x.append(x)
                 x = block_op(x, r_clouds)
 
-            for i in range(self.cfg.bundle):
+            for i in range(len(self.cfg.bundle)):
                 continue_dec = (((-2)*(self.cfg.bundle[i] - 2))/3) + 8
                 for block_i, block_op in enumerate(self.feat_model.decoder_blocks):
                     if block_i >= continue_dec and block_i % 2 == 0:
