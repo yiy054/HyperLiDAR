@@ -104,6 +104,7 @@ for epoch in range(0, cfg.trainer.epoch):
         pts = data_val['pts']#.to(device)
         features = data_val['features']#.to(device)
         seg = data_val['target']#.to(device)
+        print(seg.reshape((pts.shape[2]*cfg.batchsize)).shape)
         total_num_points = pts.shape[2]*cfg.batchsize
         print(total_num_points)
         labels[L:L+total_num_points] = seg.reshape((pts.shape[2]*cfg.batchsize))
