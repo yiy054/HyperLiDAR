@@ -125,30 +125,30 @@ class OnlineHD(Classifier):
 
         return self
     
-    def feature_extractor(self, r_clouds):
-        if len(self.cfg.bundle) == 0:
-            r_clouds.to(self.device)
-            x = r_clouds.features.clone().detach()
-            # Loop over consecutive blocks
-            skip_x = []
-            for block_i, block_op in enumerate(self.feat_model.encoder_blocks):
-                if block_i == self.cfg.hd_block_stop:
-                    break
-                if block_i in self.feat_model.encoder_skips:
-                    skip_x.append(x)
+    def feature_extractor(self, r_clouds, hd_block_stop):
+        #if len(self.cfg.bundle) == 0:
+        r_clouds.to(self.device)
+        x = r_clouds.features.clone().detach()
+        # Loop over consecutive blocks
+        skip_x = []
+        for block_i, block_op in enumerate(self.feat_model.encoder_blocks):
+            if block_i == hd_block_stop:
+                break
+            if block_i in self.feat_model.encoder_skips:
+                skip_x.append(x)
+            x = block_op(x, r_clouds)
+
+        continue_dec = (((-2)*(hd_block_stop - 2))/3) + 8
+
+        for block_i, block_op in enumerate(self.feat_model.decoder_blocks):
+            if block_i >= continue_dec and block_i % 2 == 0:
+            #if block_i in self.decoder_concats and block_i % 2 == 0:
+            #    x = torch.cat([x, skip_x.pop()], dim=1)
                 x = block_op(x, r_clouds)
-
-            continue_dec = (((-2)*(self.cfg.hd_block_stop - 2))/3) + 8
-
-            for block_i, block_op in enumerate(self.feat_model.decoder_blocks):
-                if block_i >= continue_dec and block_i % 2 == 0:
-                #if block_i in self.decoder_concats and block_i % 2 == 0:
-                #    x = torch.cat([x, skip_x.pop()], dim=1)
-                    x = block_op(x, r_clouds)
-                else:
-                    continue
-            return x
-        else:
+            else:
+                continue
+        return x
+        """else:
             r_clouds.to(self.device)
             x = r_clouds.features.clone().detach()
             x_bundle = {}
@@ -174,7 +174,7 @@ class OnlineHD(Classifier):
                         continue
                 x_bundle[self.cfg.bundle[i]] = x
             
-            return x_bundle, labels
+            return x_bundle, labels"""
     
     def forward(self, r_clouds):
         x = self.feature_extractor(r_clouds)
