@@ -78,7 +78,7 @@ class OnlineHD(Classifier):
 
         # Check something
         logit = functional.cosine_similarity(encoded, self.model.weight)
-        print(logit[labels==8])
+        print(logit[labels[enter] == 8])
         x = input("Enter")
 
         self.model.add_adapt(encoded, labels[enter], lr=self.lr)
