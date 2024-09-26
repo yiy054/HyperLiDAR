@@ -82,7 +82,6 @@ class DatasetTrainVal():
             pts = self.data[index]
         else:
             pts = np.load(os.path.join(self.folder, self.filelist[index]))
-        print("Points:", pts.shape)
         
         # get the features
         fts = np.tile(pts[:,3], [3,1]).transpose()

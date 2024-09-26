@@ -105,6 +105,7 @@ for epoch in range(0, cfg.trainer.epoch):
         features = data_val['features']#.to(device)
         seg = data_val['target']#.to(device)
         total_num_points = pts.shape[2]*cfg.batchsize
+        print(total_num_points)
         labels[L:L+total_num_points] = seg.reshape((pts.shape[2]*cfg.batchsize))
 
         pointcloud = np.concatenate((
@@ -126,6 +127,7 @@ for epoch in range(0, cfg.trainer.epoch):
         #preds = preds.reshape((cfg.batchsize, pts.shape[2]))
         print("Preds from batch:", preds.shape)
         preds_total[L:L+total_num_points] = preds
+        L = L+total_num_points
 
         enter = input("Enter")
 
