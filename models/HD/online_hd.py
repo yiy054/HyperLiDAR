@@ -149,6 +149,8 @@ class OnlineHD(Classifier):
             return x
         else:
             r_clouds.to(self.device)
+            print(r_clouds.labels)
+            m = input("Enter")
             x = r_clouds.features.clone().detach()
             x_all = []
             # Loop over consecutive blocks
@@ -169,6 +171,8 @@ class OnlineHD(Classifier):
                         x_all[i] = block_op(x_all[i], r_clouds)
                     else:
                         continue
+            print(r_clouds.labels)
+            m = input("Enter")
             return x_all
     
     def forward(self, r_clouds):

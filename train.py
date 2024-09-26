@@ -116,7 +116,6 @@ for epoch in range(0, cfg.trainer.epoch):
         pts = data['pts']#.to(device)
         features = data['features']#.to(device)
         seg = data['target']#.to(device)
-        print(seg)
         #print(seg)
         #pointcloud = np.hstack((pts.reshape((cfg.batchsize, 3, pts.shape[2])), np.zeros((cfg.batchsize, 1, pts.shape[2])), (seg-1).reshape((cfg.batchsize, 1, seg.shape[1])),np.zeros((cfg.batchsize, 1, pts.shape[2]))))
         pointcloud = np.concatenate((
@@ -127,8 +126,6 @@ for epoch in range(0, cfg.trainer.epoch):
         ), axis=2)
         #print("Pointcloud:", pointcloud.shape)
         r_clouds, r_inds_list = semantic_model.prepare_data(pointcloud,False,True)
-        print(r_clouds.labels)
-        m = input("Enter")
         x = hd_model.feature_extractor(r_clouds)
         hd_model.fit(samples=x, labels=r_clouds.labels)
         
