@@ -152,12 +152,13 @@ class OnlineHD(Classifier):
             # Loop over consecutive blocks
             skip_x = []
             for block_i, block_op in enumerate(self.feat_model.encoder_blocks):
-                if block_i in self.cfg.bundle:
-                    x_all.append(x)
                 if block_i in self.feat_model.encoder_skips:
                     skip_x.append(x)
                 x = block_op(x, r_clouds)
+                if block_i in self.cfg.bundle:
+                    x_all.append(x)
 
+            print(len(x_all))
             for i in range(len(self.cfg.bundle)):
                 continue_dec = (((-2)*(self.cfg.bundle[i] - 2))/3) + 8
                 for block_i, block_op in enumerate(self.feat_model.decoder_blocks):
