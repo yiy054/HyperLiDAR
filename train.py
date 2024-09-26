@@ -92,7 +92,7 @@ ds_val = DatasetTrainVal(filelist_val, os.path.join(cfg.target_path, 'train_poin
 val_loader = torch.utils.data.DataLoader(ds_val, batch_size=cfg.batchsize, shuffle=False,
                                     num_workers=cfg.threads)
 
-hd_model = OnlineHD(256, 5000, 9, cfg, model, device=device)
+hd_model = OnlineHD(cfg.n_features, cfg.n_dimensions, cfg.n_classes, cfg, model, device=device)
 
 for epoch in range(0, cfg.trainer.epoch):
 
@@ -151,7 +151,7 @@ for epoch in range(0, cfg.trainer.epoch):
         preds_total[i] = preds
         #L = L+total_num_points
 
-    mIoU, per_class_iou = compute_mIoU_torch(preds_total, labels, 10) # Change when more datasets
+    mIoU, per_class_iou = compute_mIoU_torch(preds_total, labels, cfg.n_classes) # Change when more datasets
     print(f"Val mIoU in epoch {epoch}: ", mIoU, per_class_iou)
     
 
