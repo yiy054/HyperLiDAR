@@ -155,6 +155,7 @@ class OnlineHD(Classifier):
                 if block_i in self.feat_model.encoder_skips:
                     skip_x.append(x)
                 x = block_op(x, r_clouds)
+                print(block_i)
                 if block_i in self.cfg.bundle:
                     x_all.append(x)
 
