@@ -15,6 +15,7 @@ def compute_mIoU_torch(preds, labels, num_classes):
     IoUs = []
     
     for cls in range(num_classes):
+        "Starts counting from class 0 but labels can be -1"
         # True Positives (TP): Correct predictions for the class
         TP = torch.sum((preds == cls) & (labels == cls)).float()
         
