@@ -65,7 +65,7 @@ n_features: 2048
 n_dimensions: 5000
 n_classes: 9
 epochs: 1
-bundle: [2,8]
+bundle: [2,8] # 5,11
 
 #Misc
 threads: 1

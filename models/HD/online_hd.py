@@ -116,7 +116,7 @@ class OnlineHD(Classifier):
             #enter = torch.from_numpy(np.array([True]*samples[self.cfg.bundle[0]].shape[0]))
             enter = torch.full((samples[self.cfg.bundle[0]].shape[0], ), True, device=self.device)
         
-        if len(self.cfg.bundle) > 2:
+        if len(self.cfg.bundle) > 1:
             temp = torch.zeros((self.n_dimensions), device=self.device)
             for i in self.cfg.bundle:
                 temp = torchhd.bundle(temp, self.encoders[i](samples[i][enter]))
