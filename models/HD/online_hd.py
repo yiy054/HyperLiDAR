@@ -84,16 +84,6 @@ class OnlineHD(Classifier):
 
         #print(samples_per_label)
         #x = input("Enter")
-        if len(self.cfg.bundle) > 2:
-            temp = torch.zeros((self.n_dimensions), device=self.device)
-            for i in self.cfg.bundle:
-                temp = torchhd.bundle(temp, torchhd.hard_quantize(self.encoders[i](samples[i][enter])))
-            encoded = temp
-            del temp
-
-        else:    
-            encoded = torchhd.hard_quantize(self.encoder(samples[enter]))
-
 
         # Check something
         #print(self.model.weight)
@@ -103,7 +93,7 @@ class OnlineHD(Classifier):
         #logit = functional.cosine_similarity(encoded[labels[enter] == 8], encoded[labels[enter] == 0])
         #print(logit)
         #x = input("Enter")
-
+        encoded = self.encode(samples, enter)
         self.model.add_adapt(encoded, labels[enter], lr=self.lr)
         #adjusted_weight = self.model.weight * (1 / samples_per_label).view(-1, 1)
         #self.model.weight = nn.Parameter(adjusted_weight)
@@ -117,6 +107,24 @@ class OnlineHD(Classifier):
         torch.cuda.empty_cache()
 
         return self
+    
+    def encode(self, samples, enter=None):
+        if enter == None:
+            try:
+                enter = [i for i in range(samples.shape[1])]
+            except:
+                enter = [i for i in range(samples.shape[0])]
+        
+        if len(self.cfg.bundle) > 2:
+            temp = torch.zeros((self.n_dimensions), device=self.device)
+            for i in self.cfg.bundle:
+                temp = torchhd.bundle(temp, torchhd.hard_quantize(self.encoders[i](samples[i][enter])))
+            encoded = temp
+            del temp
+        else:    
+            encoded = torchhd.hard_quantize(self.encoder(samples[enter]))
+        
+        return encoded
     
     def feature_extractor(self, r_clouds, hd_block_stop):
         #if len(self.cfg.bundle) == 0:
@@ -170,8 +178,14 @@ class OnlineHD(Classifier):
             return x_bundle, labels"""
     
     def forward(self, r_clouds):
-        x = self.feature_extractor(r_clouds)
-        encoded = self.encoder(x)
+        if len(self.cfg.bundle) > 1:
+            x_append = {}
+            for stop in self.cfg.bundle:
+                x = self.feature_extractor(r_clouds, stop)
+                x_append[stop] = x
+        else:
+            x = self.feature_extractor(r_clouds, self.cfg.hd_block_stop)
+        encoded = self.encode(x)
         y = torch.argmax(torchhd.functional.cosine_similarity(encoded, self.model.weight), dim=1)
 
         del x
