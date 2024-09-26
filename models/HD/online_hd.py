@@ -114,6 +114,8 @@ class OnlineHD(Classifier):
                 enter = [i for i in range(samples.shape[1])]
             except:
                 enter = [i for i in range(samples.shape[0])]
+        print(enter.shape)
+        print(samples[2].shape)
         
         if len(self.cfg.bundle) > 2:
             temp = torch.zeros((self.n_dimensions), device=self.device)
