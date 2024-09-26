@@ -180,7 +180,7 @@ class DatasetTest():
         self.xyzrgb = np.stack([x,y,z,reflectance], axis=1).astype(np.float32)
         print("xyz:", self.xyzrgb.shape)
 
-        mini = self.xyzrgb[:,:2].min(0)
+        mini = np.around(self.xyzrgb[:,:2].min(0), decimals=4)
         discretized = np.around(((self.xyzrgb[:,:2]-mini+offset).astype(float)/step), decimals=4)#.astype(int)
         print("discretized")
         print(discretized)
