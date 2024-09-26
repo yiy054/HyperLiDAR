@@ -62,10 +62,10 @@ test_hd: False
 hd_block_stop: 14
 hd_encoding: 'linear'
 n_features: 2048
-n_dimensions: 5000
+n_dimensions: 6000
 n_classes: 9
 epochs: 1
-bundle: [2,8] # 5,11
+bundle: [5,8,11] #2
 
 #Misc
 threads: 1
