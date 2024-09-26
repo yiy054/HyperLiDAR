@@ -102,9 +102,8 @@ for epoch in range(0, cfg.trainer.epoch):
         r_clouds, r_inds_list = semantic_model.prepare_data(pointcloud,False,True)
         print("r_clouds: ", r_clouds.points[0].shape)
         print("r_clouds: ", r_clouds.labels.shape)
-        print("r_inds_list: ", len(r_inds_list))
-        print("r_inds_list: ", r_inds_list[0].shape)
-        print("r_inds_list: ", r_inds_list)
+        print("r_inds_list: ", max(r_inds_list[0]))
+        print("r_inds_list: ", max(r_inds_list[1]))
         y = hd_model.forward(r_clouds)
         print("y: ", y.shape)
 
