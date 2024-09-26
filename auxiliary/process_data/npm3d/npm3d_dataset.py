@@ -182,7 +182,7 @@ class DatasetTest():
 
         mini = self.xyzrgb[:,:2].min(0)
         discretized = ((self.xyzrgb[:,:2]-mini+offset).astype(float)/step)#.astype(int)
-        self.pts = np.unique(discretized) # , axis=0
+        self.pts = np.unique(discretized, axis=0) # , axis=0
         self.pts = self.pts.astype(np.float)*step + mini - offset + step/2
 
         print("POINTS: ", self.pts.shape)
