@@ -76,25 +76,18 @@ class OnlineHD(Classifier):
         else:
             samples = samples.to(self.device)
         labels = labels.to(self.device)
-        print(labels.shape)
-        print(labels)
         enter = labels != -1
-        #print(enter)
-        #print(labels[enter])
-        x = input("Enter")
 
         count = torch.bincount(labels[enter])
         samples_per_label = torch.ones((self.n_classes)).to(self.device)
         samples_per_label[:len(count)] += count
 
-        x = input("Enter")
-
         #print(samples_per_label)
         #x = input("Enter")
-        if len(self.cfg.bundle) > 0:
+        if len(self.cfg.bundle) > 2:
             temp = torch.zeros((self.n_dimensions))
             for i in range(len(self.cfg.bundle)):
-                temp = torchhd.bundle(temp, torchhd.hard_quantize(self.encoders[i](samples[i][enter])))
+                temp = torchhd.bundle(temp, torchhd.hard_quantize(self.encoders[self.cfg.bundle[i]](samples[i][enter])))
             encoded = temp
             del temp
 
