@@ -186,7 +186,8 @@ class DatasetTest():
         print(discretized)
         self.pts = np.unique(discretized, axis=0)
         print(self.pts)
-        self.pts = self.pts*step + mini - offset + step/2 #.astype(np.float)
+        #self.pts = self.pts.astype(np.float)*step + mini - offset + step/2
+        self.pts = self.pts.astype(np.float)#*step + mini - offset + step/2
 
         print("POINTS: ", self.pts.shape)
         print("POINTS: ", self.pts)
