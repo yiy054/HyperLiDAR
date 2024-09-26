@@ -69,7 +69,7 @@ class OnlineHD(Classifier):
 
         count = torch.bincount(labels[enter])
         samples_per_label = torch.ones((self.n_classes)).to(self.device)
-        samples_per_label[:len(count)] = count
+        samples_per_label[:len(count)] += count
 
         
         encoded = self.encoder(samples[enter])
