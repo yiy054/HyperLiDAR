@@ -149,8 +149,6 @@ class OnlineHD(Classifier):
             return x
         else:
             r_clouds.to(self.device)
-            print(r_clouds.labels)
-            m = input("Enter")
             x = r_clouds.features.clone().detach()
             x_all = []
             # Loop over consecutive blocks
@@ -161,6 +159,9 @@ class OnlineHD(Classifier):
                 x = block_op(x, r_clouds)
                 if block_i in self.cfg.bundle:
                     x_all.append(x)
+
+            print(r_clouds.labels)
+            m = input("Enter")
 
             for i in range(len(self.cfg.bundle)):
                 continue_dec = (((-2)*(self.cfg.bundle[i] - 2))/3) + 8
