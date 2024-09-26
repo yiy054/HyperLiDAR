@@ -10,6 +10,8 @@ from auxiliary.process_data.npm3d.npm3d_dataset import DatasetTrainVal, DatasetT
 from tqdm import tqdm
 import numpy as np
 from models.HD.online_hd import OnlineHD
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
 
 def compute_mIoU_torch(preds, labels, num_classes):
     IoUs = []
@@ -35,6 +37,8 @@ def compute_mIoU_torch(preds, labels, num_classes):
     
     per_class_IoUs = torch.tensor(IoUs)
     mIoU = torch.mean(per_class_IoUs)  # Mean IoU
+
+
     
     return mIoU, per_class_IoUs
 
@@ -151,7 +155,7 @@ for epoch in range(0, cfg.trainer.epoch):
         preds_total[i] = preds
         #L = L+total_num_points
 
-    mIoU, per_class_iou = compute_mIoU_torch(preds_total, labels, cfg.n_classes) # Change when more datasets
+    mIoU, per_class_iou = compute_mIoU_torch(preds_total.view(-1), labels.view(-1), cfg.n_classes) # Change when more datasets
     print(f"Val mIoU in epoch {epoch}: ", mIoU, per_class_iou)
     print(torch.bincount((labels+1).view(-1).to(torch.int)))
     
