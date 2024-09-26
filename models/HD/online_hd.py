@@ -102,7 +102,7 @@ class OnlineHD(Classifier):
     
     def forward(self, r_clouds):
         x = self.feature_extractor(r_clouds)
-        encoded = self.encoder(x[r_clouds.labels != -1])
+        encoded = self.encoder(x)
         print("encoded: ", encoded.shape)
         y = torch.argmax(torchhd.functional.cosine_similarity(encoded, self.model.weight), dim=1)
 
