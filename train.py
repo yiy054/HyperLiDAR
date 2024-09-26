@@ -100,7 +100,7 @@ for epoch in range(0, cfg.trainer.epoch):
             np.zeros((cfg.batchsize, pts.shape[2], 1))
         ), axis=2)
         r_clouds, r_inds_list = semantic_model.prepare_data(pointcloud,False,True)
-        print("r_clouds: ", r_clouds.points.shape)
+        print("r_clouds: ", r_clouds.points[0].shape)
         y = hd_model.forward(r_clouds)
         print("y: ", y.shape)
 
