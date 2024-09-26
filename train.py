@@ -97,8 +97,8 @@ for epoch in range(0, cfg.trainer.epoch):
     # Validation
 
     t_val = tqdm(val_loader, ncols=100, desc="Val Epoch {}".format(epoch), disable=False)
-    preds_total = np.zeros((ds_val.__len__()*cfg.batchsize*ds_val.npoints))
-    labels = np.zeros((ds_val.__len__()*cfg.batchsize*ds_val.npoints))
+    preds_total = np.zeros((ds_val.__len__()*cfg.batchsize*ds_val.npoints), device=device)
+    labels = np.zeros((ds_val.__len__()*cfg.batchsize*ds_val.npoints), device=device)
     L = 0
     for data_val in t_val:
         pts = data_val['pts']#.to(device)
