@@ -97,15 +97,14 @@ for epoch in range(0, cfg.trainer.epoch):
     # Validation
 
     t_val = tqdm(val_loader, ncols=100, desc="Val Epoch {}".format(epoch), disable=False)
-    preds_total = np.zeros((ds_val.__len__()*cfg.batchsize*ds_val.npoints), device=device)
-    labels = np.zeros((ds_val.__len__()*cfg.batchsize*ds_val.npoints), device=device)
-    L = 0
-    for data_val in t_val:
+    preds_total = torch.zeros((ds_val.__len__(), cfg.batchsize*ds_val.npoints)).to(device)
+    labels = torch.zeros((ds_val.__len__(), cfg.batchsize*ds_val.npoints)).to(device)
+    for i, data_val in enumerate(t_val):
         pts = data_val['pts']#.to(device)
         features = data_val['features']#.to(device)
         seg = data_val['target']#.to(device)
         total_num_points = pts.shape[2]*cfg.batchsize
-        labels[L:L+total_num_points] = seg.reshape((pts.shape[2]*cfg.batchsize))
+        labels[i] = seg.reshape((pts.shape[2]*cfg.batchsize))
 
         pointcloud = np.concatenate((
             pts.reshape((1, total_num_points, 3)), 
@@ -125,8 +124,8 @@ for epoch in range(0, cfg.trainer.epoch):
         preds = y[r_inds_list[0]]
         #preds = preds.reshape((cfg.batchsize, pts.shape[2]))
         print("Preds from batch:", preds.shape)
-        preds_total[L:L+total_num_points] = preds
-        L = L+total_num_points
+        preds_total[i] = preds
+        #L = L+total_num_points
 
         enter = input("Enter")
 
