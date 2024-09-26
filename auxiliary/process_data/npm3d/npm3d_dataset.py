@@ -185,6 +185,7 @@ class DatasetTest():
         self.pts = self.pts.astype(np.float)*step + mini - offset + step/2
 
         print("POINTS: ", self.pts.shape)
+        x = input("Enter")
 
         # compute the masks
         self.choices = []
