@@ -87,6 +87,8 @@ for epoch in range(0, cfg.trainer.epoch):
                                         num_workers=cfg.threads)
 
     t_val = tqdm(val_loader, ncols=100, desc="Val Epoch {}".format(epoch), disable=False)
+    print("Total Length:", ds_val.__len__)
+    pred_complete = np.zeros(())
     for data_val in t_val:
         pts = data_val['pts']#.to(device)
         features = data_val['features']#.to(device)
