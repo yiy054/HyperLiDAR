@@ -182,6 +182,8 @@ class DatasetTest():
 
         mini = self.xyzrgb[:,:2].min(0)
         discretized = np.around(((self.xyzrgb[:,:2]-mini+offset).astype(float)/step), decimals=4)#.astype(int)
+        print("discretized")
+        print(discretized)
         self.pts = np.unique(discretized, axis=0)
         self.pts = self.pts.astype(np.float)*step + mini - offset + step/2
 
