@@ -57,13 +57,23 @@ class OnlineHD(Classifier):
         self.lr = lr
         self.cfg = cfg
         self.feat_model = feat_model
-
-        self.encoder = Sinusoid(n_features, n_dimensions, device=device, dtype=dtype)
+        self.features = []
+        if len(self.cfg.bundle) > 0:
+            self.encoders = []
+            for mark in self.cfg.bundle:
+                features = 2**(((mark + 1)//3)+6)
+                self.encoders.append(Sinusoid(features, n_dimensions, device=device, dtype=dtype))
+                self.features.append(features)
+        else:
+            self.encoder = Sinusoid(n_features, n_dimensions, device=device, dtype=dtype)
         self.model = Centroid(n_dimensions, n_classes, device=device, dtype=dtype)
 
     def fit(self, samples, labels):
-                  
-        samples = samples.to(self.device)
+        
+        if len(self.cfg.bundle) > 0:
+            samples = [samples[i].to(self.device) for i in range(len(self.cfg.bundle))]
+        else:
+            samples = samples.to(self.device)
         labels = labels.to(self.device)
         enter = labels != -1
 
@@ -73,8 +83,15 @@ class OnlineHD(Classifier):
 
         #print(samples_per_label)
         #x = input("Enter")
-        
-        encoded = torchhd.hard_quantize(self.encoder(samples[enter]))
+        if len(self.cfg.bundle) > 0:
+            temp = torch.zeros((self.n_dimensions))
+            for i in range(len(self.cfg.bundle)):
+                temp = torchhd.bundle(temp, torchhd.hard_quantize(self.encoder[i](samples[i][enter])))
+            encoded = temp
+            del temp
+
+        else:    
+            encoded = torchhd.hard_quantize(self.encoder(samples[enter]))
 
 
         # Check something
@@ -101,27 +118,51 @@ class OnlineHD(Classifier):
         return self
     
     def feature_extractor(self, r_clouds):
-        r_clouds.to(self.device)
-        x = r_clouds.features.clone().detach()
-        # Loop over consecutive blocks
-        skip_x = []
-        for block_i, block_op in enumerate(self.feat_model.encoder_blocks):
-            if block_i == self.cfg.hd_block_stop:
-                break
-            if block_i in self.feat_model.encoder_skips:
-                skip_x.append(x)
-            x = block_op(x, r_clouds)
-
-        continue_dec = (((-2)*(self.cfg.hd_block_stop - 2))/3) + 8
-
-        for block_i, block_op in enumerate(self.feat_model.decoder_blocks):
-            if block_i >= continue_dec and block_i % 2 == 0:
-            #if block_i in self.decoder_concats and block_i % 2 == 0:
-            #    x = torch.cat([x, skip_x.pop()], dim=1)
+        if len(self.cfg.bundle) > 0:
+            r_clouds.to(self.device)
+            x = r_clouds.features.clone().detach()
+            # Loop over consecutive blocks
+            skip_x = []
+            for block_i, block_op in enumerate(self.feat_model.encoder_blocks):
+                if block_i == self.cfg.hd_block_stop:
+                    break
+                if block_i in self.feat_model.encoder_skips:
+                    skip_x.append(x)
                 x = block_op(x, r_clouds)
-            else:
-                continue
-        return x
+
+            continue_dec = (((-2)*(self.cfg.hd_block_stop - 2))/3) + 8
+
+            for block_i, block_op in enumerate(self.feat_model.decoder_blocks):
+                if block_i >= continue_dec and block_i % 2 == 0:
+                #if block_i in self.decoder_concats and block_i % 2 == 0:
+                #    x = torch.cat([x, skip_x.pop()], dim=1)
+                    x = block_op(x, r_clouds)
+                else:
+                    continue
+            return x
+        else:
+            r_clouds.to(self.device)
+            x = r_clouds.features.clone().detach()
+            x_all = []
+            # Loop over consecutive blocks
+            skip_x = []
+            for block_i, block_op in enumerate(self.feat_model.encoder_blocks):
+                if block_i in self.cfg.bundle:
+                    x_all.append(x)
+                if block_i in self.feat_model.encoder_skips:
+                    skip_x.append(x)
+                x = block_op(x, r_clouds)
+
+            for i in range(self.cfg.bundle):
+                continue_dec = (((-2)*(self.cfg.bundle[i] - 2))/3) + 8
+                for block_i, block_op in enumerate(self.feat_model.decoder_blocks):
+                    if block_i >= continue_dec and block_i % 2 == 0:
+                    #if block_i in self.decoder_concats and block_i % 2 == 0:
+                    #    x = torch.cat([x, skip_x.pop()], dim=1)
+                        x_all[i] = block_op(x_all[i], r_clouds)
+                    else:
+                        continue
+            return x_all
     
     def forward(self, r_clouds):
         x = self.feature_extractor(r_clouds)
