@@ -86,8 +86,8 @@ class OnlineHD(Classifier):
         #x = input("Enter")
         if len(self.cfg.bundle) > 2:
             temp = torch.zeros((self.n_dimensions))
-            for i in range(len(self.cfg.bundle)):
-                temp = torchhd.bundle(temp, torchhd.hard_quantize(self.encoders[self.cfg.bundle[i]](samples[i][enter])))
+            for i in self.cfg.bundle:
+                temp = torchhd.bundle(temp, torchhd.hard_quantize(self.encoders[i](samples[i][enter])))
             encoded = temp
             del temp
 

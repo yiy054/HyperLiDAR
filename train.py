@@ -130,7 +130,6 @@ for epoch in range(0, cfg.trainer.epoch):
         if len(cfg.bundle) > 1:
             x_append = {}
             for stop in cfg.bundle:
-                print(f"Starting {stop}")
                 x = hd_model.feature_extractor(r_clouds, stop)
                 x_append[stop] = x
             hd_model.fit(samples=x_append, labels=labels)
