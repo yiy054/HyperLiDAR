@@ -178,6 +178,7 @@ class DatasetTest():
         z = plydata["vertex"].data["z"].astype(np.float32)
         reflectance = plydata["vertex"].data["reflectance"].astype(np.float32)
         self.xyzrgb = np.stack([x,y,z,reflectance], axis=1).astype(np.float32)
+        print("xyz:", self.xyzrgb.shape)
 
         mini = self.xyzrgb[:,:2].min(0)
         discretized = ((self.xyzrgb[:,:2]-mini+offset).astype(float)/step).astype(int)
@@ -185,6 +186,7 @@ class DatasetTest():
         self.pts = self.pts.astype(np.float)*step + mini - offset + step/2
 
         print("POINTS: ", self.pts.shape)
+        print("POINTS: ", self.pts)
         x = input("Enter")
 
         # compute the masks
