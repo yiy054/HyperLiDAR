@@ -4,7 +4,7 @@ target: paris
 target_path: '/root/main/dataset/processed_npm3d'
 npoints: 8192
 batchsize: 2
-jitter: 0.4
+jitter: 0.2
 
 # Cluster
 sequence:
@@ -59,10 +59,10 @@ train_hd: True
 test_hd: False
 
 #HD 
-hd_block_stop: 8
+hd_block_stop: 11
 hd_encoding: 'linear'
-n_features: 512
-n_dimensions: 3000
+n_features: 1024
+n_dimensions: 5000
 n_classes: 9
 epochs: 1
 
