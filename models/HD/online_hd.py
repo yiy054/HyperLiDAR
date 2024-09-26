@@ -80,6 +80,7 @@ class OnlineHD(Classifier):
         del samples
         del labels
         del encoded
+        del adjusted_weight
         torch.cuda.empty_cache()
 
         return self
