@@ -71,7 +71,8 @@ class OnlineHD(Classifier):
     def fit(self, samples, labels):
     
         if len(self.cfg.bundle) > 0:
-            samples = [samples[i].to(self.device) for i in range(len(self.cfg.bundle))]
+            for i in self.cfg.bundle:
+                samples[i] = samples[i].to(self.device)
         else:
             samples = samples.to(self.device)
         labels = labels.to(self.device)
