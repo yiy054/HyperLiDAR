@@ -65,11 +65,13 @@ class OnlineHD(Classifier):
                   
         samples = samples.to(self.device)
         labels = labels.to(self.device)
-        count = torch.bincount(labels)
+        enter = labels != -1
+
+        count = torch.bincount(labels[enter])
         self.samples_per_label = torch.ones((self.n_classes)).to(self.device)
         self.samples_per_label[:len(count)] = count
 
-        enter = labels != -1
+        
         encoded = self.encoder(samples[enter])
         self.model.add_online(encoded, labels[enter], lr=self.lr)
         self.model.weight = self.model.weight * 1/self.samples_per_label
