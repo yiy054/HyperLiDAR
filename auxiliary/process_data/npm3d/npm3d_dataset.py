@@ -184,6 +184,8 @@ class DatasetTest():
         self.pts = np.unique(discretized, axis=0)
         self.pts = self.pts.astype(np.float)*step + mini - offset + step/2
 
+        print("POINTS: ", self.pts)
+
         # compute the masks
         self.choices = []
         self.pts_ref = []
