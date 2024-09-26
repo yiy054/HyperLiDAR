@@ -111,10 +111,7 @@ class OnlineHD(Classifier):
     
     def encode(self, samples, enter=None):
         if enter == None:
-            try:
-                enter = torch.from_numpy(np.array([i for i in range(samples.shape[1])]))
-            except:
-                enter = torch.from_numpy(np.array([i for i in range(samples.shape[0])]))
+            enter = torch.from_numpy(np.array([i for i in range(samples[self.cfg.bundle[0]].shape[0])]))
         print(enter.shape)
         print(samples[2].shape)
         
