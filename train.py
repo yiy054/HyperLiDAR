@@ -94,11 +94,11 @@ for epoch in range(0, cfg.trainer.epoch):
         print("pts_ids: ", pts_ids.shape)
 
         pointcloud = np.concatenate((
-            pts.reshape((pts.shape[2]*cfg.batchsize, 3)), 
-            np.zeros((pts.shape[2]*cfg.batchsize, 1)), 
-            np.zeros((pts.shape[2]*cfg.batchsize, 1)) -1, 
-            np.zeros((pts.shape[2]*cfg.batchsize, 1))
-        ), axis=1)
+            pts.reshape((1, pts.shape[2]*cfg.batchsize, 3)), 
+            np.zeros((1, pts.shape[2]*cfg.batchsize, 1)), 
+            np.zeros((1, pts.shape[2]*cfg.batchsize, 1)) -1, 
+            np.zeros((1, pts.shape[2]*cfg.batchsize, 1))
+        ), axis=2)
         r_clouds, r_inds_list = semantic_model.prepare_data(pointcloud,False,True)
         print("r_clouds: ", r_clouds.points[0].shape)
         print("r_clouds: ", r_clouds.labels.shape)
