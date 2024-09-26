@@ -47,7 +47,7 @@ def compute_mIoU_torch(preds, labels, num_classes, epoch):
     plt.xlabel('Predicted Label')
     plt.ylabel('True Label')
     plt.title('Confusion Matrix')
-    plt.savefig(f'./results/epoch_{epoch}')  # Save the figure to a file
+    plt.savefig(f'./results/epoch_{epoch}.png')  # Save the figure to a file
     plt.close()  # Close the plot to free up memory
 
     
