@@ -82,7 +82,7 @@ for epoch in range(0, cfg.trainer.epoch):
 
         print(hd_model.model.weight)"""
 
-    ds_val = DatasetTest("ajaccio_2.ply", os.path.join('/root/main/dataset/', 'test_10_classes'))
+    ds_val = DatasetTest("ajaccio_57.ply", os.path.join('/root/main/dataset/', 'test_10_classes'))
     val_loader = torch.utils.data.DataLoader(ds_val, batch_size=cfg.batchsize, shuffle=False,
                                         num_workers=cfg.threads)
 
