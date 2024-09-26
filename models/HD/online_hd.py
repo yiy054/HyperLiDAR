@@ -71,6 +71,8 @@ class OnlineHD(Classifier):
         samples_per_label = torch.ones((self.n_classes)).to(self.device)
         samples_per_label[:len(count)] += count
 
+        print(samples_per_label)
+        x = input("Enter")
         
         encoded = self.encoder(samples[enter])
         self.model.add_online(encoded, labels[enter], lr=self.lr)
