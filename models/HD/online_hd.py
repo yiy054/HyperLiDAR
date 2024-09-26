@@ -46,7 +46,7 @@ class OnlineHD(Classifier):
         feat_model,
         *,
         epochs: int = 120,
-        lr: float = 0.020,
+        lr: float = 0.005,
         device: torch.device = None,
         dtype: torch.dtype = None
     ) -> None:
@@ -95,7 +95,7 @@ class OnlineHD(Classifier):
         #print(logit)
         #x = input("Enter")
         encoded = self.encode(samples, enter)
-        self.model.add_adapt(encoded, labels[enter], lr=self.lr)
+        self.model.add_online(encoded, labels[enter], lr=self.lr)
         #adjusted_weight = self.model.weight * (1 / samples_per_label).view(-1, 1)
         #self.model.weight = nn.Parameter(adjusted_weight)
 
