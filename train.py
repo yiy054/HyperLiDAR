@@ -97,19 +97,14 @@ for epoch in range(0, cfg.trainer.epoch):
     # Validation
 
     t_val = tqdm(val_loader, ncols=100, desc="Val Epoch {}".format(epoch), disable=False)
-    preds_total = np.zeros((ds_val.__len__()))
-    labels = np.zeros((ds_val.__len__()))
-    print(labels.shape)
+    preds_total = np.zeros((ds_val.__len__()*cfg.batchsize*ds_val.npoints))
+    labels = np.zeros((ds_val.__len__()*cfg.batchsize*ds_val.npoints))
     L = 0
     for data_val in t_val:
         pts = data_val['pts']#.to(device)
         features = data_val['features']#.to(device)
         seg = data_val['target']#.to(device)
-        print(seg.shape)
-        print(seg)
-        print(seg.reshape((pts.shape[2]*cfg.batchsize)).shape)
         total_num_points = pts.shape[2]*cfg.batchsize
-        print(total_num_points)
         labels[L:L+total_num_points] = seg.reshape((pts.shape[2]*cfg.batchsize))
 
         pointcloud = np.concatenate((
