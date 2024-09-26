@@ -74,14 +74,14 @@ class OnlineHD(Classifier):
         
         encoded = self.encoder(samples[enter])
         self.model.add_online(encoded, labels[enter], lr=self.lr)
-        adjusted_weight = self.model.weight * (1 / samples_per_label).view(-1, 1)
-        self.model.weight = nn.Parameter(adjusted_weight)
+        #adjusted_weight = self.model.weight * (1 / samples_per_label).view(-1, 1)
+        #self.model.weight = nn.Parameter(adjusted_weight)
 
         del samples
         del samples_per_label
         del labels
         del encoded
-        del adjusted_weight
+        #del adjusted_weight
         del count
         torch.cuda.empty_cache()
 
