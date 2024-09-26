@@ -149,7 +149,6 @@ for epoch in range(0, cfg.trainer.epoch):
         preds = np.zeros((total_num_points))
         preds = y[r_inds_list[0]]
         #preds = preds.reshape((cfg.batchsize, pts.shape[2]))
-        print("Preds from batch:", preds.shape)
         preds_total[i] = preds
         #L = L+total_num_points
 
