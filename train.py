@@ -128,9 +128,9 @@ for epoch in range(0, cfg.trainer.epoch):
         r_clouds, r_inds_list = semantic_model.prepare_data(pointcloud,False,True)
         labels = r_clouds.labels.clone().detach()
         if len(cfg.bundle) > 1:
-            print(f"Starting {stop}")
             x_append = {}
             for stop in cfg.bundle:
+                print(f"Starting {stop}")
                 x = hd_model.feature_extractor(r_clouds, stop)
                 x_append[stop] = x
             hd_model.fit(samples=x_append, labels=labels)
