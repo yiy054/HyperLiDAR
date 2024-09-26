@@ -41,6 +41,8 @@ model.load_state_dict(torch.load(os.path.join(cfg.logger.save_path, cfg.logger.m
 # Data Load
 filelist_train = [os.path.join(cfg.target_path, 'train_pointclouds', fname) for fname in os.listdir(os.path.join(cfg.target_path, 'train_pointclouds')) if os.path.splitext(fname)[1]==".npy"]
 filelist_train.sort()
+filelist_val = filelist_train[-2:]
+filelist_train = filelist_train[:-2]
 
 print("Creating dataloader...", flush=True)
 ds = DatasetTrainVal(filelist_train, os.path.join(cfg.target_path, 'train_pointclouds'),
@@ -51,7 +53,17 @@ ds = DatasetTrainVal(filelist_train, os.path.join(cfg.target_path, 'train_pointc
 train_loader = torch.utils.data.DataLoader(ds, batch_size=cfg.batchsize, shuffle=True,
                                     num_workers=cfg.threads)
 
+#ds_val = DatasetTrainVal("Paris.ply", os.path.join('/root/main/dataset/', 'test_10_classes'))
+#val_loader = torch.utils.data.DataLoader(ds_val, batch_size=cfg.batchsize, shuffle=False,
+#                                    num_workers=cfg.threads)
 
+ds_val = DatasetTrainVal(filelist_val, os.path.join(cfg.target_path, 'train_pointclouds'),
+                            training=False,
+                            npoints=cfg.npoints,
+                            iteration_number=cfg.batchsize*cfg.trainer.epoch,
+                            jitter=0)
+val_loader = torch.utils.data.DataLoader(ds_val, batch_size=cfg.batchsize, shuffle=False,
+                                    num_workers=cfg.threads)
 
 hd_model = OnlineHD(256, 5000, 9, cfg, model, device=device)
 
@@ -82,12 +94,9 @@ for epoch in range(0, cfg.trainer.epoch):
 
         print(hd_model.model.weight)"""
 
-    ds_val = DatasetTest("ajaccio_57.ply", os.path.join('/root/main/dataset/', 'test_10_classes'))
-    val_loader = torch.utils.data.DataLoader(ds_val, batch_size=cfg.batchsize, shuffle=False,
-                                        num_workers=cfg.threads)
+    # Validation
 
     t_val = tqdm(val_loader, ncols=100, desc="Val Epoch {}".format(epoch), disable=False)
-    print("Total Length:", ds_val.__len__())
     pred_complete = np.zeros(())
     for data_val in t_val:
         pts = data_val['pts']#.to(device)

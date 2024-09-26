@@ -82,6 +82,7 @@ class DatasetTrainVal():
             pts = self.data[index]
         else:
             pts = np.load(os.path.join(self.folder, self.filelist[index]))
+        print("Points:", pts.shape)
         
         # get the features
         fts = np.tile(pts[:,3], [3,1]).transpose()
@@ -179,14 +180,11 @@ class DatasetTest():
         reflectance = plydata["vertex"].data["reflectance"].astype(np.float32)
         label = plydata["vertex"].data["class"].astype(np.float32)
         self.xyzrgb = np.stack([x,y,z,reflectance], axis=1).astype(np.float32)
-        print("xyz:", self.xyzrgb.shape)
 
         mini = np.around(self.xyzrgb[:,:2].min(0), decimals=4)
         discretized = np.around(((self.xyzrgb[:,:2]-mini+offset).astype(float)/step), decimals=2)#.astype(int)
         self.pts = np.unique(discretized, axis=0)
         self.pts = self.pts.astype(np.float)*step + mini - offset + step/2
-
-        x = input("Enter")
 
         # compute the masks
         self.choices = []
