@@ -74,7 +74,7 @@ class OnlineHD(Classifier):
         
         encoded = self.encoder(samples[enter])
         self.model.add_online(encoded, labels[enter], lr=self.lr)
-        self.model.weight = self.model.weight * 1/self.samples_per_label
+        self.model.weight = self.model.weight.view(-1, 1) * 1/self.samples_per_label
 
         del samples
         del labels
