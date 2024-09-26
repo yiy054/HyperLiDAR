@@ -127,7 +127,7 @@ for epoch in range(0, cfg.trainer.epoch):
         #print("Pointcloud:", pointcloud.shape)
         r_clouds, r_inds_list = semantic_model.prepare_data(pointcloud,False,True)
         x = hd_model.feature_extractor(r_clouds)
-        hd_model.fit(x, r_clouds.labels)
+        hd_model.fit(samples=x, labels=r_clouds.labels)
         
         # Free the memory
         del r_clouds
