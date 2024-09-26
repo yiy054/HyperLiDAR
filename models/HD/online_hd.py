@@ -75,6 +75,7 @@ class OnlineHD(Classifier):
         else:
             samples = samples.to(self.device)
         labels = labels.to(self.device)
+        print(labels.shape)
         enter = labels != -1
 
         count = torch.bincount(labels[enter])
