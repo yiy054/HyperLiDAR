@@ -12,8 +12,9 @@ import numpy as np
 from models.HD.online_hd import OnlineHD
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
+import matplotlib.pyplot as plt
 
-def compute_mIoU_torch(preds, labels, num_classes):
+def compute_mIoU_torch(preds, labels, num_classes, epoch):
     IoUs = []
     
     for cls in range(num_classes):
@@ -38,6 +39,16 @@ def compute_mIoU_torch(preds, labels, num_classes):
     per_class_IoUs = torch.tensor(IoUs)
     mIoU = torch.mean(per_class_IoUs)  # Mean IoU
 
+    # Compute the confusion matrix
+    cm = confusion_matrix(labels, preds)
+
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=range(num_classes), yticklabels=range(num_classes))
+    plt.xlabel('Predicted Label')
+    plt.ylabel('True Label')
+    plt.title('Confusion Matrix')
+    plt.savefig(f'./results/epoch_{epoch}')  # Save the figure to a file
+    plt.close()  # Close the plot to free up memory
 
     
     return mIoU, per_class_IoUs
@@ -156,7 +167,7 @@ for epoch in range(0, cfg.trainer.epoch):
         #L = L+total_num_points
 
     mIoU, per_class_iou = compute_mIoU_torch(preds_total.view(-1), labels.view(-1), cfg.n_classes) # Change when more datasets
-    print(f"Val mIoU in epoch {epoch}: ", mIoU, per_class_iou)
+    print(f"Val mIoU in epoch {epoch}: ", mIoU, per_class_iou, epoch)
     print(torch.bincount((labels+1).view(-1).to(torch.int)))
     
 
