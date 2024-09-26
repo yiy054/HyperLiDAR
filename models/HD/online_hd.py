@@ -11,6 +11,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor, LongTensor
+import numpy as np
 
 import torchhd.functional as functional
 from torchhd.embeddings import Random, Level, Projection, Sinusoid, Density
@@ -111,9 +112,9 @@ class OnlineHD(Classifier):
     def encode(self, samples, enter=None):
         if enter == None:
             try:
-                enter = torch.from_numpy([i for i in range(samples.shape[1])])
+                enter = torch.from_numpy(np.array([i for i in range(samples.shape[1])]))
             except:
-                enter = torch.from_numpy([i for i in range(samples.shape[0])])
+                enter = torch.from_numpy(np.array([i for i in range(samples.shape[0])]))
         print(enter.shape)
         print(samples[2].shape)
         
