@@ -69,12 +69,7 @@ class OnlineHD(Classifier):
         self.model = Centroid(n_dimensions, n_classes, device=device, dtype=dtype)
 
     def fit(self, samples, labels):
-        
-        print(samples[0].shape)
-        print(samples[1].shape)
-        print(samples[2].shape)
-        print(samples[3].shape)
-        print(samples[4].shape)
+    
         if len(self.cfg.bundle) > 0:
             samples = [samples[i].to(self.device) for i in range(len(self.cfg.bundle))]
         else:
