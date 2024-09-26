@@ -177,6 +177,7 @@ class DatasetTest():
         y = plydata["vertex"].data["y"].astype(np.float32)
         z = plydata["vertex"].data["z"].astype(np.float32)
         reflectance = plydata["vertex"].data["reflectance"].astype(np.float32)
+        label = plydata["vertex"].data["class"].astype(np.float32)
         self.xyzrgb = np.stack([x,y,z,reflectance], axis=1).astype(np.float32)
         print("xyz:", self.xyzrgb.shape)
 
