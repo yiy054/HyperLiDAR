@@ -90,7 +90,7 @@ print("Creating dataloader...", flush=True)
 ds = DatasetTrainVal(filelist_train, os.path.join(cfg.target_path, 'train_pointclouds'),
                             training=True,
                             npoints=cfg.npoints,
-                            iteration_number=(cfg.batchsize*cfg.trainer.epoch)*3,
+                            iteration_number=(cfg.batchsize*cfg.trainer.epoch)*10,
                             jitter=cfg.jitter)
 train_loader = torch.utils.data.DataLoader(ds, batch_size=cfg.batchsize, shuffle=True,
                                     num_workers=cfg.threads)
@@ -102,7 +102,7 @@ train_loader = torch.utils.data.DataLoader(ds, batch_size=cfg.batchsize, shuffle
 ds_val = DatasetTrainVal(filelist_val, os.path.join(cfg.target_path, 'train_pointclouds'),
                             training=False,
                             npoints=cfg.npoints,
-                            iteration_number=cfg.batchsize*cfg.trainer.epoch,
+                            iteration_number=cfg.batchsize*cfg.trainer.epoch*5,
                             jitter=0)
 val_loader = torch.utils.data.DataLoader(ds_val, batch_size=cfg.batchsize, shuffle=False,
                                     num_workers=cfg.threads)
