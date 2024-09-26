@@ -151,6 +151,7 @@ class OnlineHD(Classifier):
             r_clouds.to(self.device)
             x = r_clouds.features.clone().detach()
             x_bundle = []
+            labels = r_clouds.labels.clone().detach()
             # Loop over consecutive blocks
             skip_x = []
             for block_i, block_op in enumerate(self.feat_model.encoder_blocks):
@@ -159,9 +160,6 @@ class OnlineHD(Classifier):
                 x = block_op(x, r_clouds)
                 if block_i in self.cfg.bundle:
                     x_bundle.append(x.clone().detach())
-
-            print(r_clouds.labels)
-            m = input("Enter")
 
             for i in range(len(self.cfg.bundle)):
                 continue_dec = (((-2)*(self.cfg.bundle[i] - 2))/3) + 8
@@ -172,9 +170,8 @@ class OnlineHD(Classifier):
                         x_bundle[i] = block_op(x_bundle[i], r_clouds)
                     else:
                         continue
-            print(r_clouds.labels)
-            m = input("Enter")
-            return x_bundle
+            
+            return x_bundle, labels
     
     def forward(self, r_clouds):
         x = self.feature_extractor(r_clouds)
