@@ -31,8 +31,7 @@ def compute_mIoU_torch(preds, labels, num_classes):
             IoU = torch.tensor(1.0)  # If no pixels are present for this class, treat IoU as 1
         else:
             IoU = TP / denominator
-        
-        IoUs.append(IoU)
+            IoUs.append(IoU)
     
     per_class_IoUs = torch.tensor(IoUs)
     mIoU = torch.mean(per_class_IoUs)  # Mean IoU
