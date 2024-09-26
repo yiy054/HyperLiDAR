@@ -63,10 +63,10 @@ class OnlineHD(Classifier):
             self.encoders = {}
             for mark in self.cfg.bundle:
                 features = 2**(((mark + 1)//3)+6)
-                self.encoders[mark] = Projection(features, n_dimensions, device=device, dtype=dtype)
+                self.encoders[mark] = Density(features, n_dimensions, device=device, dtype=dtype)
                 self.features[mark] = features
         else:
-            self.encoder = Projection(n_features, n_dimensions, device=device, dtype=dtype)
+            self.encoder = Density(n_features, n_dimensions, device=device, dtype=dtype)
         self.model = Centroid(n_dimensions, n_classes, device=device, dtype=dtype)
 
     def fit(self, samples, labels):
