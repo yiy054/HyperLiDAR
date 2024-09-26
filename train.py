@@ -166,8 +166,8 @@ for epoch in range(0, cfg.trainer.epoch):
         preds_total[i] = preds
         #L = L+total_num_points
 
-    mIoU, per_class_iou = compute_mIoU_torch(preds_total.view(-1), labels.view(-1), cfg.n_classes) # Change when more datasets
-    print(f"Val mIoU in epoch {epoch}: ", mIoU, per_class_iou, epoch)
+    mIoU, per_class_iou = compute_mIoU_torch(preds_total.view(-1), labels.view(-1), cfg.n_classes, epoch) # Change when more datasets
+    print(f"Val mIoU in epoch {epoch}: ", mIoU, per_class_iou)
     print(torch.bincount((labels+1).view(-1).to(torch.int)))
     
 
