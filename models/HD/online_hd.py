@@ -123,7 +123,7 @@ class OnlineHD(Classifier):
         return self
     
     def feature_extractor(self, r_clouds):
-        if len(self.cfg.bundle) > 0:
+        if len(self.cfg.bundle) == 0:
             r_clouds.to(self.device)
             x = r_clouds.features.clone().detach()
             # Loop over consecutive blocks
