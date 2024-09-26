@@ -150,8 +150,8 @@ for epoch in range(0, cfg.trainer.epoch):
         preds_total[i] = preds
         #L = L+total_num_points
 
-    compute_mIoU_torch(preds_total, labels, 9) # Change when more datasets
-
+    mIoU = compute_mIoU_torch(preds_total, labels, 9) # Change when more datasets
+    print(f"Val mIoU in epoch {epoch}: ", mIoU)
     
 
 
