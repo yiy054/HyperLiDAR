@@ -59,9 +59,9 @@ train_hd: True
 test_hd: False
 
 #HD 
-hd_block_stop: 5
+hd_block_stop: 14
 hd_encoding: 'linear'
-n_features: 256
+n_features: 2048
 n_dimensions: 5000
 n_classes: 9
 epochs: 1
