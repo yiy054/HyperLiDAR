@@ -45,7 +45,7 @@ class OnlineHD(Classifier):
         feat_model,
         *,
         epochs: int = 120,
-        lr: float = 0.009,
+        lr: float = 0.005,
         device: torch.device = None,
         dtype: torch.dtype = None
     ) -> None:
