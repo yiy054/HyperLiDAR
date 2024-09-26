@@ -11,6 +11,32 @@ from tqdm import tqdm
 import numpy as np
 from models.HD.online_hd import OnlineHD
 
+def compute_mIoU_torch(preds, labels, num_classes):
+    IoUs = []
+    
+    for cls in range(num_classes):
+        # True Positives (TP): Correct predictions for the class
+        TP = torch.sum((preds == cls) & (labels == cls)).float()
+        
+        # False Positives (FP): Incorrectly predicted as the class
+        FP = torch.sum((preds == cls) & (labels != cls)).float()
+        
+        # False Negatives (FN): Actual class, but not predicted correctly
+        FN = torch.sum((preds != cls) & (labels == cls)).float()
+        
+        denominator = TP + FP + FN
+        
+        if denominator == 0:
+            IoU = torch.tensor(1.0)  # If no pixels are present for this class, treat IoU as 1
+        else:
+            IoU = TP / denominator
+        
+        IoUs.append(IoU)
+    
+    # Mean IoU
+    mIoU = torch.mean(torch.tensor(IoUs))
+    return mIoU
+
 parser = argparse.ArgumentParser()
 parser.add_argument('-cfg', '--config', help='the path to the setup config file', default='cfg/args.yaml')
 args = parser.parse_args()
@@ -69,7 +95,7 @@ hd_model = OnlineHD(256, 5000, 9, cfg, model, device=device)
 
 for epoch in range(0, cfg.trainer.epoch):
 
-    """t = tqdm(train_loader, ncols=100, desc="Train Epoch {}".format(epoch), disable=False)
+    t = tqdm(train_loader, ncols=100, desc="Train Epoch {}".format(epoch), disable=False)
     for data in t:
         pts = data['pts']#.to(device)
         features = data['features']#.to(device)
@@ -92,7 +118,7 @@ for epoch in range(0, cfg.trainer.epoch):
         del x
         torch.cuda.empty_cache()
 
-        print(hd_model.model.weight)"""
+        print(hd_model.model.weight)
 
     # Validation
 
@@ -104,7 +130,7 @@ for epoch in range(0, cfg.trainer.epoch):
         features = data_val['features']#.to(device)
         seg = data_val['target']#.to(device)
         total_num_points = pts.shape[2]*cfg.batchsize
-        labels[i] = seg.reshape((pts.shape[2]*cfg.batchsize))
+        labels[i] = seg.reshape((pts.shape[2]*cfg.batchsize))-1 # Reshaping flat to an array of single dimension
 
         pointcloud = np.concatenate((
             pts.reshape((1, total_num_points, 3)), 
@@ -127,7 +153,9 @@ for epoch in range(0, cfg.trainer.epoch):
         preds_total[i] = preds
         #L = L+total_num_points
 
-        enter = input("Enter")
+    compute_mIoU_torch(preds_total, labels, 9) # Change when more datasets
+
+    
 
 
 
