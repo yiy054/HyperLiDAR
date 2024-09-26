@@ -57,13 +57,13 @@ class OnlineHD(Classifier):
         self.lr = lr
         self.cfg = cfg
         self.feat_model = feat_model
-        self.features = []
+        self.features = {}
         if len(self.cfg.bundle) > 0:
-            self.encoders = []
+            self.encoders = {}
             for mark in self.cfg.bundle:
                 features = 2**(((mark + 1)//3)+6)
-                self.encoders.append(Sinusoid(features, n_dimensions, device=device, dtype=dtype))
-                self.features.append(features)
+                self.encoders[mark] = Sinusoid(features, n_dimensions, device=device, dtype=dtype)
+                self.features[mark] = features
         else:
             self.encoder = Sinusoid(n_features, n_dimensions, device=device, dtype=dtype)
         self.model = Centroid(n_dimensions, n_classes, device=device, dtype=dtype)
@@ -150,7 +150,7 @@ class OnlineHD(Classifier):
         else:
             r_clouds.to(self.device)
             x = r_clouds.features.clone().detach()
-            x_bundle = []
+            x_bundle = {}
             labels = r_clouds.labels.clone().detach()
             # Loop over consecutive blocks
             skip_x = []
@@ -159,17 +159,19 @@ class OnlineHD(Classifier):
                     skip_x.append(x)
                 x = block_op(x, r_clouds)
                 if block_i in self.cfg.bundle:
-                    x_bundle.append(x.clone().detach())
+                    x_bundle[block_i] = x.clone().detach()
 
             for i in range(len(self.cfg.bundle)):
                 continue_dec = (((-2)*(self.cfg.bundle[i] - 2))/3) + 8
+                x = x_bundle[self.cfg.bundle[i]]
                 for block_i, block_op in enumerate(self.feat_model.decoder_blocks):
                     if block_i >= continue_dec and block_i % 2 == 0:
                     #if block_i in self.decoder_concats and block_i % 2 == 0:
                     #    x = torch.cat([x, skip_x.pop()], dim=1)
-                        x_bundle[i] = block_op(x_bundle[i], r_clouds)
+                        x = block_op(x, r_clouds)
                     else:
                         continue
+                x_bundle[self.cfg.bundle[i]] = x
             
             return x_bundle, labels
     
