@@ -83,7 +83,6 @@ class OnlineHD(Classifier):
         del encoded
         del adjusted_weight
         del count
-        del self.model.weight.view(-1, 1)
         torch.cuda.empty_cache()
 
         return self
