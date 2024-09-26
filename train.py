@@ -126,6 +126,7 @@ for epoch in range(0, cfg.trainer.epoch):
         ), axis=2)
         #print("Pointcloud:", pointcloud.shape)
         r_clouds, r_inds_list = semantic_model.prepare_data(pointcloud,False,True)
+        labels = r_clouds.labels.clone().detach()
         if len(cfg.bundle) > 1:
             x_append = {}
             for stop in cfg.bundle:
