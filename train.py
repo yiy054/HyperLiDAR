@@ -40,7 +40,7 @@ def compute_mIoU_torch(preds, labels, num_classes, epoch):
     mIoU = torch.mean(per_class_IoUs)  # Mean IoU
 
     # Compute the confusion matrix
-    cm = confusion_matrix(labels, preds)
+    cm = confusion_matrix(labels.cpu(), preds.cpu())
 
     plt.figure(figsize=(8, 6))
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=range(num_classes), yticklabels=range(num_classes))
