@@ -159,6 +159,7 @@ class OnlineHD(Classifier):
                     x_all.append(x)
 
             print(len(x_all))
+            y = input("Enter")
             for i in range(len(self.cfg.bundle)):
                 continue_dec = (((-2)*(self.cfg.bundle[i] - 2))/3) + 8
                 for block_i, block_op in enumerate(self.feat_model.decoder_blocks):
