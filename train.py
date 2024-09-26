@@ -33,9 +33,10 @@ def compute_mIoU_torch(preds, labels, num_classes):
         
         IoUs.append(IoU)
     
-    # Mean IoU
-    mIoU = torch.mean(torch.tensor(IoUs))
-    return mIoU
+    per_class_IoUs = torch.tensor(IoUs)
+    mIoU = torch.mean(per_class_IoUs)  # Mean IoU
+    
+    return mIoU, per_class_IoUs
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-cfg', '--config', help='the path to the setup config file', default='cfg/args.yaml')
@@ -150,8 +151,8 @@ for epoch in range(0, cfg.trainer.epoch):
         preds_total[i] = preds
         #L = L+total_num_points
 
-    mIoU = compute_mIoU_torch(preds_total, labels, 9) # Change when more datasets
-    print(f"Val mIoU in epoch {epoch}: ", mIoU)
+    mIoU, per_class_iou = compute_mIoU_torch(preds_total, labels, 10) # Change when more datasets
+    print(f"Val mIoU in epoch {epoch}: ", mIoU, per_class_iou)
     
 
 
