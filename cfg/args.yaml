@@ -61,7 +61,7 @@ test_hd: False
 #HD 
 hd_block_stop: 8
 hd_encoding: 'linear'
-n_features: 256
+n_features: 512
 n_dimensions: 3000
 n_classes: 9
 epochs: 1
