@@ -97,13 +97,16 @@ for epoch in range(0, cfg.trainer.epoch):
     # Validation
 
     t_val = tqdm(val_loader, ncols=100, desc="Val Epoch {}".format(epoch), disable=False)
-    pred_complete = np.zeros(())
+    preds_total = np.zeros((ds_val.__len__()))
+    labels = np.zeros((ds_val.__len__()))
+    L = 0
     for data_val in t_val:
         pts = data_val['pts']#.to(device)
         features = data_val['features']#.to(device)
-        pts_ids = data_val['pts_ids']
-        print("points_ids: ", pts_ids.shape)
+        seg = data['target']#.to(device)
         total_num_points = pts.shape[2]*cfg.batchsize
+        labels[L:L+total_num_points] = seg.reshape((pts.shape[2]*cfg.batchsize))
+
         pointcloud = np.concatenate((
             pts.reshape((1, total_num_points, 3)), 
             np.zeros((1, total_num_points, 1)), 
@@ -120,8 +123,9 @@ for epoch in range(0, cfg.trainer.epoch):
         #print("y: ", y.shape)
         preds = np.zeros((total_num_points))
         preds = y[r_inds_list[0]]
-        preds = preds.reshape((cfg.batchsize, pts.shape[2]))
-        print("Preds from batch:", preds)
+        #preds = preds.reshape((cfg.batchsize, pts.shape[2]))
+        print("Preds from batch:", preds.shape)
+        preds_total[L:L+total_num_points] = preds
 
         enter = input("Enter")
 
