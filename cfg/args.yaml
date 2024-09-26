@@ -2,7 +2,7 @@
 source: nuscenes
 target: paris
 target_path: '/root/main/dataset/processed_npm3d'
-npoints: 8192
+npoints: 12000 #8192
 batchsize: 2
 jitter: 0.2
 
