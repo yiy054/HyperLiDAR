@@ -74,7 +74,8 @@ class OnlineHD(Classifier):
         #print(samples_per_label)
         #x = input("Enter")
         
-        encoded = self.encoder(samples[enter])
+        encoded = torchhd.hard_quantize(self.encoder(samples[enter]))
+
 
         # Check something
         print(self.model.weight)
