@@ -91,9 +91,8 @@ for epoch in range(0, cfg.trainer.epoch):
         pts = data_val['pts']#.to(device)
         features = data_val['features']#.to(device)
         pts_ids = data_val['pts_ids']
-        print("pts_ids: ", pts_ids.shape)
+        print("points_ids: ", pts_ids.shape)
         total_num_points = pts.shape[2]*cfg.batchsize
-
         pointcloud = np.concatenate((
             pts.reshape((1, total_num_points, 3)), 
             np.zeros((1, total_num_points, 1)), 
@@ -101,15 +100,16 @@ for epoch in range(0, cfg.trainer.epoch):
             np.zeros((1, total_num_points, 1))
         ), axis=2)
         r_clouds, r_inds_list = semantic_model.prepare_data(pointcloud,False,True)
-        print("r_clouds: ", r_clouds.points[0].shape)
-        print("r_clouds: ", r_clouds.labels.shape)
-        print("r_inds_list len: ", len(r_inds_list))
-        print("r_inds_list shape: ", r_inds_list[0].shape)
-        print("r_inds_list: ", max(r_inds_list[0]))
+        #print("r_clouds: ", r_clouds.points[0].shape)
+        #print("r_clouds: ", r_clouds.labels.shape)
+        #print("r_inds_list len: ", len(r_inds_list))
+        #print("r_inds_list shape: ", r_inds_list[0].shape)
+        #print("r_inds_list: ", max(r_inds_list[0]))
         y = hd_model.forward(r_clouds)
-        print("y: ", y.shape)
+        #print("y: ", y.shape)
         preds = np.zeros((total_num_points))
         preds = y[r_inds_list[0]]
+        preds = preds.reshape((cfg.batchsize, pts.shape[2]))
         print("Preds from batch:", preds)
 
         enter = input("Enter")
