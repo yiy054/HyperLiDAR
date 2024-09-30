@@ -63,7 +63,7 @@ hd_block_stop: 14
 hd_encoding: 'linear'
 n_features: 2048
 n_dimensions: 5000
-n_classes: 14 # Change with change in the dataset
+n_classes: 16 # Change with change in the dataset
 epochs: 1
 bundle: [2,5,8,11] #2
 
