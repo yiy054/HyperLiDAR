@@ -6,7 +6,7 @@ import importlib
 import argparse
 import os
 from loader import Loader_Data
-from auxiliary.process_data.nuscenes.nuscenes_dataset import DatasetTrainVal, DatasetTest
+from auxiliary.process_data.nuscenes.nuscenes_dataset import DatasetTrainVal, DatasetTest # Change with dataset change
 from tqdm import tqdm
 import numpy as np
 from models.HD.online_hd import OnlineHD
@@ -66,7 +66,7 @@ else:
 
 module = importlib.import_module('models.kpconv.kpconv')
 model_information = getattr(module, "KPFCNN")()
-model_information.num_classes = 19
+model_information.num_classes = 19 # Change with dataset change
 model_information.ignore_label = -1
 model_information.in_features_dim = 1
 from models.kpconv_model import SemanticSegmentationModel
@@ -74,7 +74,7 @@ module = importlib.import_module('models.kpconv.architecture')
 model_type = getattr(module, "KPFCNN")
 semantic_model = SemanticSegmentationModel(model_information,cfg,model_type)
 
-lbl_values = [i for i in range(19)]
+lbl_values = [i for i in range(19)] # Change with dataset change
 ign_lbls = [-1]
 model = KPFCNN(model_information, lbl_values, ign_lbls)
 model.to(device)

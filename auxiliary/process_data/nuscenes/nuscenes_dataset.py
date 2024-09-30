@@ -9,6 +9,7 @@ from tqdm import *
 from nuscenes.nuscenes import NuScenes
 from nuscenes.utils.data_classes import LidarPointCloud
 from nuscenes.utils.data_io import load_bin_file
+from omegaconf import OmegaConf
 
 def rotate_point_cloud_z(batch_data):
     """ Randomly rotate the point clouds to augument the dataset
@@ -110,6 +111,9 @@ class DatasetTrainVal():
         pts = pts[choice]
         lbs = lbs[choice]
         fts = fts[choice]
+
+        source_data_cfg = OmegaConf.load("./auxiliary/process_data/nuscenes/nuscenes_mini.yaml")
+        print(source_data_cfg.learning_map)
 
         # data augmentation
         if self.training:
