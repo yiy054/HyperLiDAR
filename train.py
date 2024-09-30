@@ -66,7 +66,7 @@ else:
 
 module = importlib.import_module('models.kpconv.kpconv')
 model_information = getattr(module, "KPFCNN")()
-model_information.num_classes = 16
+model_information.num_classes = 19
 model_information.ignore_label = -1
 model_information.in_features_dim = 1
 from models.kpconv_model import SemanticSegmentationModel
@@ -74,7 +74,7 @@ module = importlib.import_module('models.kpconv.architecture')
 model_type = getattr(module, "KPFCNN")
 semantic_model = SemanticSegmentationModel(model_information,cfg,model_type)
 
-lbl_values = [i for i in range(16)]
+lbl_values = [i for i in range(19)]
 ign_lbls = [-1]
 model = KPFCNN(model_information, lbl_values, ign_lbls)
 model.to(device)
