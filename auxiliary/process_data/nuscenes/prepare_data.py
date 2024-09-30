@@ -34,7 +34,7 @@ for sc in nusc.scene:
     sample_data = sample['data']['LIDAR_TOP']
     record = nusc.get('sample_data', sample_data)
     pcl_path = os.path.join(nusc.dataroot, record['filename'])
-    print(os.path.splitext(pcl_path))
+    print(pcl_path.split("/"))
     pc = LidarPointCloud.from_file(pcl_path)
     points = pc.points
     print(points.shape)
