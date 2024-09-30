@@ -36,16 +36,13 @@ for sc in nusc.scene:
     pcl_path = os.path.join(nusc.dataroot, record['filename'])
     pc = LidarPointCloud.from_file(pcl_path)
     points = pc.points
-    label_file = os.path.join(nusc.dataroot, nusc.get('lidarseg',sample_data)['filename'])
-    points_label = load_bin_file(label_file, type='lidarseg')
-    print(points.shape)
-    print(points_label.shape)
-    x = points[:]
-    y = 0
-    z = 0
-    reflectance = 0
+    x = points[0]
+    y = points[1]
+    z = points[2]
+    reflectance = points[3]
     if not args.test:
-        label = 0
+        label_file = os.path.join(nusc.dataroot, nusc.get('lidarseg',sample_data)['filename'])
+        label = load_bin_file(label_file, type='lidarseg')
     
     if args.test:
         pts = np.concatenate([
