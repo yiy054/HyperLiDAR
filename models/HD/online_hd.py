@@ -102,11 +102,11 @@ class OnlineHD(Classifier):
         #self.model.weight = nn.Parameter(adjusted_weight)
 
         del samples
-        del samples_per_label
+        #del samples_per_label
         del labels
         del encoded
         #del adjusted_weight
-        del count
+        #del count
         torch.cuda.empty_cache()
 
         return self
