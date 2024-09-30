@@ -40,7 +40,7 @@ for sc in nusc.scene:
     points_label = load_bin_file(label_file, type='lidarseg')
     print(points.shape)
     print(points_label.shape)
-    x = points[:+]
+    x = points[:]
     y = 0
     z = 0
     reflectance = 0
