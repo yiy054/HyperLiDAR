@@ -36,7 +36,7 @@ for sc in nusc.scene:
     pcl_path = os.path.join(nusc.dataroot, record['filename'])
     pc = LidarPointCloud.from_file(pcl_path)
     points = pc.points
-    label_file = nusc.get('lidarseg',sample_data)['filename']
+    label_file = os.path.join(nusc.dataroot, nusc.get('lidarseg',sample_data)['filename'])
     points_label = load_bin_file(label_file, type='lidarseg')
 
     print(points_label.shape)
