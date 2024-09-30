@@ -67,7 +67,7 @@ for sc in nusc.scene:
         pca = PCA(n_components=1)
         pca.fit(pts[::10,:2])
         pts_new = pca.transform(pts[:,:2])
-        hist, edges = np.histogram(pts_new, pts_new.shape[0]// 2500000)
+        hist, edges = np.histogram(pts_new, pts_new.shape[0]// 10000)
 
         count = 0
 
@@ -77,7 +77,7 @@ for sc in nusc.scene:
             count+=1
 
 
-        hist, edges = np.histogram(pts_new, pts_new.shape[0]// 2500000 -2, range=[(edges[1]+edges[0])//2,(edges[-1]+edges[-2])//2])
+        hist, edges = np.histogram(pts_new, pts_new.shape[0]// 10000 -2, range=[(edges[1]+edges[0])//2,(edges[-1]+edges[-2])//2])
 
         for i in range(1,edges.shape[0]):
             mask = np.logical_and(pts_new<=edges[i], pts_new>edges[i-1])[:,0]
