@@ -1,6 +1,6 @@
 # Model args
-source: nuscenes
-target: paris
+source: semantickitti
+target: nuscenes
 target_path: '/root/main/dataset/processed_nuscenes'
 npoints: 256
 batchsize: 2
