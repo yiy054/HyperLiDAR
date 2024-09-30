@@ -113,9 +113,7 @@ class DatasetTrainVal():
         fts = fts[choice]
 
         source_data_cfg = OmegaConf.load("./auxiliary/process_data/nuscenes/nuscenes_mini.yaml")
-        print(source_data_cfg.learning_map)
         lbs = [source_data_cfg.learning_map[int(i)] for i in lbs]
-        print(max(lbs))
 
         # data augmentation
         if self.training:
