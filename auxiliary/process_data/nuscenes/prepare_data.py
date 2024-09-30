@@ -38,9 +38,9 @@ for sc in nusc.scene:
     points = pc.points
     label_file = os.path.join(nusc.dataroot, nusc.get('lidarseg',sample_data)['filename'])
     points_label = load_bin_file(label_file, type='lidarseg')
-
+    print(points.shape)
     print(points_label.shape)
-    x = 0 
+    x = points[:+]
     y = 0
     z = 0
     reflectance = 0
