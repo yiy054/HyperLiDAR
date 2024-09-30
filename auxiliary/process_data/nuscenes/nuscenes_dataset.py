@@ -114,6 +114,7 @@ class DatasetTrainVal():
 
         source_data_cfg = OmegaConf.load("./auxiliary/process_data/nuscenes/nuscenes_mini.yaml")
         print(source_data_cfg.learning_map)
+        lbs = [source_data_cfg.learning_map[i] for i in lbs]
 
         # data augmentation
         if self.training:
