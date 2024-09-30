@@ -34,6 +34,7 @@ for sc in nusc.scene:
     sample_data = sample['data']['LIDAR_TOP']
     record = nusc.get('sample_data', sample_data)
     pcl_path = os.path.join(nusc.dataroot, record['filename'])
+    print(os.path.splitext(pcl_path))
     pc = LidarPointCloud.from_file(pcl_path)
     points = pc.points
     print(points.shape)
@@ -68,14 +69,12 @@ for sc in nusc.scene:
         pca.fit(pts[::10,:2])
         pts_new = pca.transform(pts[:,:2])
         hist, edges = np.histogram(pts_new, pts_new.shape[0]// 10000)
-        print(edges.shape[0])
 
         count = 0
 
         for i in range(1,edges.shape[0]):
             mask = np.logical_and(pts_new<=edges[i], pts_new>edges[i-1])[:,0]
             np.save(os.path.join(save_dir, pcl_path+f"_{count}"), pts[mask])
-            print(os.path.join(save_dir, pcl_path+f"_{count}"))
             count+=1
 
 
@@ -83,5 +82,5 @@ for sc in nusc.scene:
 
         for i in range(1,edges.shape[0]):
             mask = np.logical_and(pts_new<=edges[i], pts_new>edges[i-1])[:,0]
-            np.save(os.path.join(save_dir, pcl_path+f"_{count}"), pts[mask])
+            np.save(os.path.join(save_dir, os.path.splitext(pcl_path)[0]+f"_{count}"), pts[mask])
             count+=1
