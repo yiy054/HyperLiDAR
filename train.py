@@ -6,7 +6,7 @@ import importlib
 import argparse
 import os
 from loader import Loader_Data
-from auxiliary.process_data.npm3d.npm3d_dataset import DatasetTrainVal, DatasetTest
+from auxiliary.process_data.nuscenes.nuscenes_dataset import DatasetTrainVal, DatasetTest
 from tqdm import tqdm
 import numpy as np
 from models.HD.online_hd import OnlineHD

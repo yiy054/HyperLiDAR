@@ -1,7 +1,7 @@
 # Model args
 source: nuscenes
 target: paris
-target_path: '/root/main/dataset/processed_npm3d'
+target_path: '/root/main/dataset/processed_nuscenes'
 npoints: 256
 batchsize: 2
 jitter: 0.2
@@ -48,7 +48,7 @@ trainer:
 logger:
   run_name: debug
   save_path: './saved_models/'
-  model_name: best_mIoU_kp_sk.pth
+  model_name: best_kp_sk.pth
 
 # data
 data_cfg_path: './cfg/data_cfg'
