@@ -53,7 +53,7 @@ for sc in nusc.scene:
                 np.expand_dims(reflectance,1),
                 ], axis=1).astype(np.float32)
 
-        np.save(os.path.join(save_dir, os.path.splitext(pcl_path)[0]), pts)
+        np.save(os.path.join(save_dir, pcl_path), pts)
         
     else:
         pts = np.concatenate([
@@ -73,7 +73,7 @@ for sc in nusc.scene:
 
         for i in range(1,edges.shape[0]):
             mask = np.logical_and(pts_new<=edges[i], pts_new>edges[i-1])[:,0]
-            np.save(os.path.join(save_dir, os.path.splitext(pcl_path)[0]+f"_{count}"), pts[mask])
+            np.save(os.path.join(save_dir, pcl_path+f"_{count}"), pts[mask])
             count+=1
 
 
@@ -81,5 +81,5 @@ for sc in nusc.scene:
 
         for i in range(1,edges.shape[0]):
             mask = np.logical_and(pts_new<=edges[i], pts_new>edges[i-1])[:,0]
-            np.save(os.path.join(save_dir, os.path.splitext(pcl_path)[0]+f"_{count}"), pts[mask])
+            np.save(os.path.join(save_dir, pcl_path+f"_{count}"), pts[mask])
             count+=1
