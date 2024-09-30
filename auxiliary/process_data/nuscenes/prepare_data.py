@@ -37,7 +37,7 @@ for sc in nusc.scene:
     pc = LidarPointCloud.from_file(pcl_path)
     points = pc.points
     print(points.shape)
-    print(pcl_path.split("/")[7])
+    print(sample)
     x = points[0]
     y = points[1]
     z = points[2]
