@@ -75,6 +75,7 @@ for sc in nusc.scene:
         for i in range(1,edges.shape[0]):
             mask = np.logical_and(pts_new<=edges[i], pts_new>edges[i-1])[:,0]
             np.save(os.path.join(save_dir, pcl_path+f"_{count}"), pts[mask])
+            print(os.path.join(save_dir, pcl_path+f"_{count}"))
             count+=1
 
 
