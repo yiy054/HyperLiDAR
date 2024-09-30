@@ -37,7 +37,7 @@ for sc in nusc.scene:
     pc = LidarPointCloud.from_file(pcl_path)
     points = pc.points
     print(points.shape)
-    print(sample)
+    print(sample['token'])
     x = points[0]
     y = points[1]
     z = points[2]
@@ -53,8 +53,7 @@ for sc in nusc.scene:
                 np.expand_dims(z,1),
                 np.expand_dims(reflectance,1),
                 ], axis=1).astype(np.float32)
-        print(pcl_path.split("/")[7])
-        np.save(os.path.join(save_dir, pcl_path.split("/")[7]), pts)
+        np.save(os.path.join(save_dir, sample['token']), pts)
         
     else:
         pts = np.concatenate([
@@ -74,8 +73,8 @@ for sc in nusc.scene:
 
         for i in range(1,edges.shape[0]):
             mask = np.logical_and(pts_new<=edges[i], pts_new>edges[i-1])[:,0]
-            np.save(os.path.join(save_dir, pcl_path.split("/")[6]+f"_{count}"), pts[mask])
-            print(os.path.join(save_dir, pcl_path.split("/")[6]+f"_{count}"))
+            np.save(os.path.join(save_dir, sample['token']+f"_{count}"), pts[mask])
+            print(os.path.join(save_dir, sample['token']+f"_{count}"))
             count+=1
 
 
@@ -83,6 +82,6 @@ for sc in nusc.scene:
 
         for i in range(1,edges.shape[0]):
             mask = np.logical_and(pts_new<=edges[i], pts_new>edges[i-1])[:,0]
-            np.save(os.path.join(save_dir, pcl_path.split("/")[6]+f"_{count}"), pts[mask])
-            print(os.path.join(save_dir, pcl_path.split("/")[6]+f"_{count}"))
+            np.save(os.path.join(save_dir, sample['token']+f"_{count}"), pts[mask])
+            print(os.path.join(save_dir, sample['token']+f"_{count}"))
             count+=1
