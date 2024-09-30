@@ -35,7 +35,7 @@ for sc in nusc.scene:
     pcl_path = os.path.join(nusc.dataroot, record['filename'])
     pc = LidarPointCloud.from_file(pcl_path)
     points = pc.points
-    labels = pc.labels
+    labels = pc.label
     print(labels.shape)
     x = 0 
     y = 0
