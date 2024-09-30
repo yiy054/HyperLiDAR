@@ -52,8 +52,8 @@ for sc in nusc.scene:
                 np.expand_dims(z,1),
                 np.expand_dims(reflectance,1),
                 ], axis=1).astype(np.float32)
-
-        np.save(os.path.join(save_dir, pcl_path.split("/")[6]), pts)
+        print(pcl_path.split("/")[7])
+        np.save(os.path.join(save_dir, pcl_path.split("/")[7]), pts)
         
     else:
         pts = np.concatenate([
