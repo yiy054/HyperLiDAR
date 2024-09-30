@@ -4,6 +4,7 @@ import numpy as np
 from sklearn.decomposition import PCA
 from nuscenes.nuscenes import NuScenes
 from nuscenes.utils.data_classes import LidarPointCloud
+from nuscenes.utils.data_io import load_bin_file
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--rootdir", type=str, required=True)
@@ -34,10 +35,11 @@ for sc in nusc.scene:
     record = nusc.get('sample_data', sample_data)
     pcl_path = os.path.join(nusc.dataroot, record['filename'])
     pc = LidarPointCloud.from_file(pcl_path)
-    print(pc.__dict__)
     points = pc.points
-    labels = nusc.get('lidarseg',sample_data)
-    print(labels.keys())
+    label_file = nusc.get('lidarseg',sample_data)['filename']
+    points_label = load_bin_file(label_file, type='lidarseg')
+
+    print(points_label.shape)
     x = 0 
     y = 0
     z = 0
