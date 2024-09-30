@@ -30,7 +30,8 @@ for sc in nusc.scene:
     labels = []
     sample = nusc.get('sample',sc['first_sample_token'])
     sample_data = sample['data']['LIDAR_TOP']
-    print(nusc.get_sample_data(sample_data)[0].shape)
+    points = nusc.get_sample_data(sample_data)[0]
+    print(points.shape)
     x = 0 
     y = 0
     z = 0
