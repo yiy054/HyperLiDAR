@@ -84,8 +84,9 @@ class OnlineHD(Classifier):
         enter = labels != -1
 
         count = torch.bincount(labels[enter])
-        print(count)
+        print(labels.shape)
         if count[0] > 0 and count[8] > 0:
+            print(points.shape)
             for i in range(len(labels)):
                 if labels[i] == 0:
                     print(points[i])
