@@ -115,6 +115,7 @@ class DatasetTrainVal():
         source_data_cfg = OmegaConf.load("./auxiliary/process_data/nuscenes/nuscenes_mini.yaml")
         lbs = np.array([source_data_cfg.learning_map[int(i)] for i in lbs])
         print("labels:", torch.bincount(lbs))
+        x = input("Enter dataloader")
 
         # data augmentation
         if self.training:
