@@ -148,7 +148,7 @@ for epoch in range(0, cfg.trainer.epoch):
     # Validation
 
     t_val = tqdm(val_loader, ncols=100, desc="Val Epoch {}".format(epoch), disable=False)
-    preds_total = torch.zeros((ds_val.__len__(), cfg.batchsize*ds_val.npoints)).to(device)
+    preds_total = torch.zeros((ds_val.__len__(), 1*ds_val.npoints)).to(device) #cfg.batchsize
     labels = torch.zeros((ds_val.__len__(), 1*ds_val.npoints)).to(device) #cfg.batchsize
     for i, data_val in enumerate(t_val):
         pts = data_val['pts']#.to(device)
