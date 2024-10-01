@@ -71,7 +71,7 @@ class OnlineHD(Classifier):
         else:
             self.encoder = Density(n_features, n_dimensions, device=device, dtype=dtype)
         self.model = Centroid(n_dimensions, n_classes, device=device, dtype=dtype)
-        self.total = torch.zeros(16)
+        self.total = torch.zeros(16, device=device)
 
     def fit(self, samples, labels):
     
