@@ -85,7 +85,7 @@ class OnlineHD(Classifier):
 
         count = torch.bincount(labels[enter])
         if count[9] > 0 and count[8] > 0:
-            print("4 label")
+            print("9 label")
             print(points[0][labels == 9])
             print("8 label")
             print(points[0][labels == 8])
@@ -136,8 +136,9 @@ class OnlineHD(Classifier):
         if len(self.cfg.bundle) > 1:
             temp = torch.zeros((self.n_dimensions), device=self.device)
             for i in self.cfg.bundle:
-                temp = torchhd.bundle(temp, torchhd.bind(self.encoders[i](samples[i][enter]), self.marks[i]))
-            encoded = torchhd.hard_quantize(temp)
+                temp = torchhd.bundle(temp, torchhd.bind(torchhd.hard_quantize(self.encoders[i](samples[i][enter])), self.marks[i]))
+            #encoded = torchhd.hard_quantize(temp)
+            encoded = temp
             del temp
         else:    
             encoded = torchhd.hard_quantize(self.encoder(samples[enter]))
