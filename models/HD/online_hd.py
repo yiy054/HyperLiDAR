@@ -92,13 +92,13 @@ class OnlineHD(Classifier):
         encoded = self.encode(samples, enter)
 
         # Check something
-        print(self.model.weight)
-        print(encoded[[labels[enter] == 11]])
-        logit = functional.cosine_similarity(encoded, self.model.weight)
-        print(logit[labels[enter] == 11])
-        logit = functional.cosine_similarity(encoded[labels[enter] == 11], encoded[labels[enter] == 12])
-        print(logit)
-        x = input("Enter")
+        #print(self.model.weight)
+        #print(encoded[[labels[enter] == 11]])
+        #logit = functional.cosine_similarity(encoded, self.model.weight)
+        #print(logit[labels[enter] == 11])
+        #logit = functional.cosine_similarity(encoded[labels[enter] == 11], encoded[labels[enter] == 12])
+        #print(logit)
+        #x = input("Enter")
 
         self.model.add_online(encoded, labels[enter], lr=self.lr)
         #adjusted_weight = self.model.weight * (1 / samples_per_label).view(-1, 1)
