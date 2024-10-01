@@ -81,6 +81,7 @@ class DatasetTrainVal():
 
         # load the data
         index = random.randint(0, len(self.filelist)-1)
+        print(index)
         if self.in_memory:
             pts = self.data[index]
         else:
@@ -90,6 +91,7 @@ class DatasetTrainVal():
         fts = np.tile(pts[:,3], [3,1]).transpose()
         # get the labels
         lbs = pts[:,4].astype(int) # the generation script label starts at 1
+        print("labels dataloader 1:", np.bincount(lbs))
         # get the point coordinates
         pts = pts[:, :3]
 
@@ -102,6 +104,8 @@ class DatasetTrainVal():
         pts = pts[mask]
         lbs = lbs[mask]
         fts = fts[mask]
+
+        print("labels dataloader 2:", np.bincount(lbs))
         
         # random selection
         if pts.shape[0] < self.npoints:
@@ -110,11 +114,12 @@ class DatasetTrainVal():
             choice = np.random.choice(pts.shape[0], self.npoints, replace=False)
         pts = pts[choice]
         lbs = lbs[choice]
+        print("labels dataloader 3:", np.bincount(lbs))
         fts = fts[choice]
 
         source_data_cfg = OmegaConf.load("./auxiliary/process_data/nuscenes/nuscenes_mini.yaml")
         lbs = np.array([source_data_cfg.learning_map[int(i)] for i in lbs])
-        print("labels dataloader:", np.bincount(lbs))
+        print("labels dataloader 4:", np.bincount(lbs))
 
         # data augmentation
         if self.training:
