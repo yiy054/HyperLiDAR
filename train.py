@@ -91,7 +91,7 @@ filelist_train = filelist_train[:2]
 
 print("Creating dataloader...", flush=True)
 ds = DatasetTrainVal(filelist_train, os.path.join(cfg.target_path, 'train_pointclouds'),
-                            training=True,
+                            training=False,
                             npoints=cfg.npoints,
                             iteration_number=(cfg.batchsize*cfg.trainer.epoch)*10,
                             jitter=cfg.jitter)
