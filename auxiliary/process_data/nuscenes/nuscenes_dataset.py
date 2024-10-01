@@ -114,8 +114,7 @@ class DatasetTrainVal():
 
         source_data_cfg = OmegaConf.load("./auxiliary/process_data/nuscenes/nuscenes_mini.yaml")
         lbs = np.array([source_data_cfg.learning_map[int(i)] for i in lbs])
-        print("labels:", np.bincount(lbs))
-        x = input("Enter dataloader")
+        print("labels dataloader:", np.bincount(lbs))
 
         # data augmentation
         if self.training:
