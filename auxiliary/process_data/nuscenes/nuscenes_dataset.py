@@ -82,7 +82,7 @@ class DatasetTrainVal():
 
         # load the data
         index = random.randint(0, len(self.filelist)-1)
-        print(index)
+        #print(index)
         if self.in_memory:
             pts = self.data[index]
         else:
