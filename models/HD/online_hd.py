@@ -101,7 +101,7 @@ class OnlineHD(Classifier):
         print(logit)
         x = input("Enter")
 
-        self.model.add_online(encoded, labels[enter], lr=self.lr)
+        self.model.add_adapt(encoded, labels[enter], lr=self.lr)
         #adjusted_weight = self.model.weight * (1 / samples_per_label).view(-1, 1)
         #self.model.weight = nn.Parameter(adjusted_weight)
 
