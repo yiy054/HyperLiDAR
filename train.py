@@ -154,7 +154,7 @@ for epoch in range(0, cfg.trainer.epoch):
         pts = data_val['pts']#.to(device)
         features = data_val['features']#.to(device)
         seg = data_val['target']#.to(device)
-        print(torch.bincount(seg.to(torch.int)))
+        #print(torch.bincount(seg.to(torch.int)))
         total_num_points = pts.shape[2]*cfg.batchsize
         labels[i] = seg.reshape((pts.shape[2]*cfg.batchsize))-1 # Reshaping flat to an array of single dimension
 
