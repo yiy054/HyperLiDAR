@@ -95,7 +95,7 @@ ds = DatasetTrainVal(filelist_train, os.path.join(cfg.target_path, 'train_pointc
                             npoints=cfg.npoints,
                             iteration_number=(cfg.batchsize*cfg.trainer.epoch)*10,
                             jitter=cfg.jitter)
-train_loader = torch.utils.data.DataLoader(ds, batch_size=cfg.batchsize, shuffle=True,
+train_loader = torch.utils.data.DataLoader(ds, batch_size=cfg.batchsize, shuffle=False,
                                     num_workers=cfg.threads)
 
 #ds_val = DatasetTrainVal("Paris.ply", os.path.join('/root/main/dataset/', 'test_10_classes'))
