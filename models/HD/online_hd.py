@@ -84,14 +84,14 @@ class OnlineHD(Classifier):
         enter = labels != -1
 
         count = torch.bincount(labels[enter])
-        if count[0] > 0 and count[8] > 0:
-            print("0 label")
-            print(points[0][labels == 0])
+        if count[4] > 0 and count[8] > 0:
+            print("4 label")
+            print(points[0][labels == 4])
             print("8 label")
             print(points[0][labels == 8])
         
             for i in self.cfg.bundle:
-                euc = torch.cdist(samples[i][labels == 0], samples[i][labels == 8], p=2)
+                euc = torch.cdist(samples[i][labels == 4], samples[i][labels == 8], p=2)
                 print(f"{i}", euc)
 
         #count = torch.bincount(labels[enter])
