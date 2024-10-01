@@ -135,7 +135,7 @@ for epoch in range(0, cfg.trainer.epoch):
             for stop in cfg.bundle:
                 x = hd_model.feature_extractor(r_clouds, stop)
                 x_append[stop] = x
-            hd_model.fit(samples=x_append, labels=labels)
+            hd_model.fit(samples=x_append, labels=labels, points=r_clouds.points)
         else:
             x = hd_model.feature_extractor(r_clouds, cfg.hd_block_stop)
             hd_model.fit(samples=x, labels=labels)

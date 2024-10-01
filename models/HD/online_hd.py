@@ -73,7 +73,7 @@ class OnlineHD(Classifier):
         self.model = Centroid(n_dimensions, n_classes, device=device, dtype=dtype)
         self.total = torch.zeros(16, device=device)
 
-    def fit(self, samples, labels):
+    def fit(self, samples, labels, points=None):
     
         if len(self.cfg.bundle) > 0:
             for i in self.cfg.bundle:
@@ -86,6 +86,8 @@ class OnlineHD(Classifier):
         count = torch.bincount(labels[enter])
         print(count)
         if count[0] > 0 and count[8] > 0:
+            print(points[labels == 0])
+            print(points[labels == 8])
             for i in self.cfg.bundle:
                 euc = torch.cdist(samples[i][labels == 0], samples[i][labels == 8], p=2)
                 print(f"{i}", euc)
