@@ -89,10 +89,10 @@ class OnlineHD(Classifier):
             print(len(points[0]))
             for i in range(len(labels)):
                 if labels[i] == 0:
-                    print(points[i])
+                    print(points[0][i])
             for i in range(len(labels)):
                 if labels[i] == 8:
-                    print(points[i])
+                    print(points[0][i])
         
             for i in self.cfg.bundle:
                 euc = torch.cdist(samples[i][labels == 0], samples[i][labels == 8], p=2)
