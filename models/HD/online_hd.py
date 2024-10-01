@@ -84,14 +84,14 @@ class OnlineHD(Classifier):
         enter = labels != -1
 
         count = torch.bincount(labels[enter])
-        if count[4] > 0 and count[8] > 0:
+        if count[9] > 0 and count[8] > 0:
             print("4 label")
-            print(points[0][labels == 4])
+            print(points[0][labels == 9])
             print("8 label")
             print(points[0][labels == 8])
         
             for i in self.cfg.bundle:
-                euc = torch.cdist(samples[i][labels == 4], samples[i][labels == 8], p=2)
+                euc = torch.cdist(samples[i][labels == 9], samples[i][labels == 8], p=2)
                 print(f"{i}", euc)
 
         #count = torch.bincount(labels[enter])
@@ -107,10 +107,10 @@ class OnlineHD(Classifier):
 
         # Check something
         print(self.model.weight)
-        print(encoded[[labels[enter] == 4]])
+        print(encoded[[labels[enter] == 9]])
         logit = functional.cosine_similarity(encoded, self.model.weight)
-        print(logit[labels[enter] == 4])
-        logit = functional.cosine_similarity(encoded[labels[enter] == 4], encoded[labels[enter] == 8])
+        print(logit[labels[enter] == 9])
+        logit = functional.cosine_similarity(encoded[labels[enter] == 9], encoded[labels[enter] == 8])
         print(logit)
         x = input("Enter")
 
