@@ -75,6 +75,7 @@ class DatasetTrainVal():
             for filename in filelist:
                 data = np.load(os.path.join(self.folder, filename))
                 self.data.append(data)
+        print(len(self.filelist)-1)
 
     #@with_indices_computation_rotation
     def __getitem__(self, index):
@@ -96,14 +97,14 @@ class DatasetTrainVal():
         pts = pts[:, :3]
 
         # pick a random point
-        pt_id = random.randint(0, pts.shape[0]-1)
-        pt = pts[pt_id]
+        #pt_id = random.randint(0, pts.shape[0]-1)
+        #pt = pts[pt_id]
 
         # create the mask
-        mask = self.compute_mask(pts[:,:2], pt, self.bs)
-        pts = pts[mask]
-        lbs = lbs[mask]
-        fts = fts[mask]
+        #mask = self.compute_mask(pts[:,:2], pt, self.bs)
+        #pts = pts[mask]
+        #lbs = lbs[mask]
+        #fts = fts[mask]
 
         print("labels dataloader 2:", np.bincount(lbs))
         
