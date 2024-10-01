@@ -91,7 +91,7 @@ filelist_train = filelist_train[:2]
 
 print("Creating dataloader...", flush=True)
 ds = DatasetTrainVal(filelist_train, os.path.join(cfg.target_path, 'train_pointclouds'),
-                            training=False,
+                            training=True,
                             npoints=cfg.npoints,
                             iteration_number=(cfg.batchsize*cfg.trainer.epoch)*10,
                             jitter=cfg.jitter)
@@ -102,15 +102,15 @@ train_loader = torch.utils.data.DataLoader(ds, batch_size=1, shuffle=False, # Ch
 #val_loader = torch.utils.data.DataLoader(ds_val, batch_size=cfg.batchsize, shuffle=False,
 #                                    num_workers=cfg.threads)
 
-ds_val = DatasetTrainVal(filelist_val, os.path.join(cfg.target_path, 'train_pointclouds'),
-                            training=False,
-                            npoints=cfg.npoints,
-                            iteration_number=cfg.batchsize*cfg.trainer.epoch*5,
-                            jitter=0)
-val_loader = torch.utils.data.DataLoader(ds_val, batch_size=1, shuffle=False,
-                                    num_workers=cfg.threads)
+#ds_val = DatasetTrainVal(filelist_val, os.path.join(cfg.target_path, 'train_pointclouds'), # Uncomment for validation
+#                            training=False,
+#                            npoints=cfg.npoints,
+#                            iteration_number=cfg.batchsize*cfg.trainer.epoch*5,
+#                            jitter=0)
+#val_loader = torch.utils.data.DataLoader(ds_val, batch_size=1, shuffle=False,
+#                                    num_workers=cfg.threads)
 
-hd_model = OnlineHD(cfg.n_features, cfg.n_dimensions, cfg.n_classes, cfg, model, device=device)
+#hd_model = OnlineHD(cfg.n_features, cfg.n_dimensions, cfg.n_classes, cfg, model, device=device)
 
 for epoch in range(0, cfg.trainer.epoch):
 
