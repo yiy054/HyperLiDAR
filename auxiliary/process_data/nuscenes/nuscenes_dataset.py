@@ -75,7 +75,7 @@ class DatasetTrainVal():
             for filename in filelist:
                 data = np.load(os.path.join(self.folder, filename))
                 self.data.append(data)
-        print(len(self.filelist)-1)
+        print("Len:", len(self.filelist)-1)
 
     #@with_indices_computation_rotation
     def __getitem__(self, index):
