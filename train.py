@@ -149,11 +149,12 @@ for epoch in range(0, cfg.trainer.epoch):
 
     t_val = tqdm(val_loader, ncols=100, desc="Val Epoch {}".format(epoch), disable=False)
     preds_total = torch.zeros((ds_val.__len__(), cfg.batchsize*ds_val.npoints)).to(device)
-    labels = torch.zeros((ds_val.__len__(), cfg.batchsize*ds_val.npoints)).to(device)
+    labels = torch.zeros((ds_val.__len__(), 1*ds_val.npoints)).to(device) #cfg.batchsize
     for i, data_val in enumerate(t_val):
         pts = data_val['pts']#.to(device)
         features = data_val['features']#.to(device)
         seg = data_val['target']#.to(device)
+
         #print(torch.bincount(seg.to(torch.int)))
         total_num_points = pts.shape[2]*1 # Change batch_size
         labels[i] = seg.reshape((pts.shape[2]*1))-1 # Reshaping flat to an array of single dimension # Change batch_size
