@@ -95,7 +95,7 @@ class OnlineHD(Classifier):
         print(self.model.weight)
         print(encoded[[labels[enter] == 1]])
         logit = functional.cosine_similarity(encoded, self.model.weight)
-        print(logit[labels[enter] == 11])
+        print(logit[labels[enter] == 1])
         logit = functional.cosine_similarity(encoded[labels[enter] == 1], encoded[labels[enter] == 7])
         print(logit)
         x = input("Enter")
