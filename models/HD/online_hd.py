@@ -71,6 +71,7 @@ class OnlineHD(Classifier):
         else:
             self.encoder = Density(n_features, n_dimensions, device=device, dtype=dtype)
         self.model = Centroid(n_dimensions, n_classes, device=device, dtype=dtype)
+        self.total = torch.zeros(16)
 
     def fit(self, samples, labels):
     
@@ -83,7 +84,8 @@ class OnlineHD(Classifier):
         enter = labels != -1
 
         count = torch.bincount(labels[enter])
-        print("\n", count, "\n")
+        self.total += count
+        print("\n", self.total, "\n")
         #samples_per_label = torch.ones((self.n_classes)).to(self.device)
         #samples_per_label[:len(count)] += count
 
