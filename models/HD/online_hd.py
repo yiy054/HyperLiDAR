@@ -83,9 +83,9 @@ class OnlineHD(Classifier):
         labels = labels.to(self.device)
         enter = labels != -1
 
-        count = torch.bincount(labels[enter])
-        self.total += torch.concatenate((count, torch.zeros(16-count.shape[0], device=self.device)))
-        print("\n", self.total, "\n")
+        #count = torch.bincount(labels[enter])
+        #self.total += torch.concatenate((count, torch.zeros(16-count.shape[0], device=self.device)))
+        #print("\n", self.total, "\n")
         #samples_per_label = torch.ones((self.n_classes)).to(self.device)
         #samples_per_label[:len(count)] += count
 
