@@ -2,7 +2,7 @@
 source: semantickitti
 target: nuscenes
 target_path: '/root/main/dataset/processed_nuscenes'
-npoints: 100
+npoints: 250
 batchsize: 2
 jitter: 0.2
 
