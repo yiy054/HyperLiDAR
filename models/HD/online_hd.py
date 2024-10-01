@@ -84,6 +84,7 @@ class OnlineHD(Classifier):
         enter = labels != -1
 
         count = torch.bincount(labels[enter])
+        print(count)
         if count[0] > 1 and count[8] > 1:
             for i in range(len(self.cfg.bundle)):
                 euc =  torch.cdist(samples[i][[labels[enter] == 0]], samples[i][[labels[enter] == 8]])
