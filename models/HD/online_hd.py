@@ -95,12 +95,12 @@ class OnlineHD(Classifier):
         encoded = self.encode(samples, enter)
 
         # Check something
-        #print(self.model.weight)
-        #print(encoded[[labels[enter] == 1]])
-        #logit = functional.cosine_similarity(encoded, self.model.weight)
-        #print(logit[labels[enter] == 1])
-        #logit = functional.cosine_similarity(encoded[labels[enter] == 1], encoded[labels[enter] == 7])
-        #print(logit)
+        print(self.model.weight)
+        print(encoded[[labels[enter] == 0]])
+        logit = functional.cosine_similarity(encoded, self.model.weight)
+        print(logit[labels[enter] == 0])
+        logit = functional.cosine_similarity(encoded[labels[enter] == 0], encoded[labels[enter] == 8])
+        print(logit)
         #x = input("Enter")
 
         self.model.add_adapt(encoded, labels[enter], lr=self.lr)
