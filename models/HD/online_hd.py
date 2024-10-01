@@ -66,7 +66,7 @@ class OnlineHD(Classifier):
                 features = 2**(((mark + 1)//3)+6)
                 self.encoders[mark] = Sinusoid(features, n_dimensions, device=device, dtype=dtype)
                 self.features[mark] = features
-                self.marks[mark] = emb(i).to(device)
+                self.marks[mark] = emb(torch.LongTensor([i])).to(device)
         else:
             self.encoder = Density(n_features, n_dimensions, device=device, dtype=dtype)
         self.model = Centroid(n_dimensions, n_classes, device=device, dtype=dtype)
