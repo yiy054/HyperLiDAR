@@ -155,14 +155,14 @@ for epoch in range(0, cfg.trainer.epoch):
         features = data_val['features']#.to(device)
         seg = data_val['target']#.to(device)
         #print(torch.bincount(seg.to(torch.int)))
-        total_num_points = pts.shape[2]*cfg.batchsize
-        labels[i] = seg.reshape((pts.shape[2]*cfg.batchsize))-1 # Reshaping flat to an array of single dimension
+        total_num_points = pts.shape[2]*1 # Change batch_size
+        labels[i] = seg.reshape((pts.shape[2]*1))-1 # Reshaping flat to an array of single dimension # Change batch_size
 
         pointcloud = np.concatenate((
-            pts.reshape((1, total_num_points, 3)), 
-            np.zeros((1, total_num_points, 1)), 
-            np.zeros((1, total_num_points, 1)) -1, 
-            np.zeros((1, total_num_points, 1))
+            pts.reshape((1, total_num_points, 3)), # Change batch_size
+            np.zeros((1, total_num_points, 1)), # Change batch_size
+            np.zeros((1, total_num_points, 1)) -1, # Change batch_size
+            np.zeros((1, total_num_points, 1)) # Change batch_size
         ), axis=2)
         r_clouds, r_inds_list = semantic_model.prepare_data(pointcloud,False,True)
         #print("r_clouds: ", r_clouds.points[0].shape)
