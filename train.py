@@ -95,8 +95,8 @@ ds = DatasetTrainVal(filelist_train, os.path.join(cfg.target_path, 'train_pointc
                             npoints=cfg.npoints,
                             iteration_number=(cfg.batchsize*cfg.trainer.epoch)*10,
                             jitter=cfg.jitter)
-train_loader = torch.utils.data.DataLoader(ds, batch_size=cfg.batchsize, shuffle=False,
-                                    num_workers=cfg.threads)
+train_loader = torch.utils.data.DataLoader(ds, batch_size=1, shuffle=False,
+                                    num_workers=1)
 
 #ds_val = DatasetTrainVal("Paris.ply", os.path.join('/root/main/dataset/', 'test_10_classes'))
 #val_loader = torch.utils.data.DataLoader(ds_val, batch_size=cfg.batchsize, shuffle=False,
@@ -154,6 +154,7 @@ for epoch in range(0, cfg.trainer.epoch):
         pts = data_val['pts']#.to(device)
         features = data_val['features']#.to(device)
         seg = data_val['target']#.to(device)
+        print(torch.bincount(seg.to(torch.int)))
         total_num_points = pts.shape[2]*cfg.batchsize
         labels[i] = seg.reshape((pts.shape[2]*cfg.batchsize))-1 # Reshaping flat to an array of single dimension
 
