@@ -83,6 +83,10 @@ class OnlineHD(Classifier):
         labels = labels.to(self.device)
         enter = labels != -1
 
+        for i in range(len(self.cfg.bundle)):
+            euc =  math.sqrt(sum((a - b) ** 2 for a, b in zip(samples[i][[labels[enter] == 0]], samples[i][[labels[enter] == 8]])))
+            print(euc)
+
         #count = torch.bincount(labels[enter])
         #self.total += torch.concatenate((count, torch.zeros(16-count.shape[0], device=self.device)))
         #print("\n", self.total, "\n")
