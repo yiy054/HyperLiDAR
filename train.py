@@ -13,6 +13,7 @@ from models.HD.online_hd import OnlineHD
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
 import matplotlib.pyplot as plt
+import warnings
 
 def compute_mIoU_torch(preds, labels, num_classes, epoch):
     IoUs = []
@@ -52,6 +53,8 @@ def compute_mIoU_torch(preds, labels, num_classes, epoch):
 
     
     return mIoU, per_class_IoUs
+
+warnings.filterwarnings("ignore")
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-cfg', '--config', help='the path to the setup config file', default='cfg/args.yaml')
