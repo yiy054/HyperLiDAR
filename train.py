@@ -86,8 +86,8 @@ model.load_state_dict(torch.load(os.path.join(cfg.logger.save_path, cfg.logger.m
 # Data Load
 filelist_train = [os.path.join(cfg.target_path, 'train_pointclouds', fname) for fname in os.listdir(os.path.join(cfg.target_path, 'train_pointclouds')) if os.path.splitext(fname)[1]==".npy"]
 filelist_train.sort()
-filelist_val = filelist_train[-2:]
-filelist_train = filelist_train[:-2]
+filelist_val = filelist_train[2:]
+filelist_train = filelist_train[:2]
 
 print("Creating dataloader...", flush=True)
 ds = DatasetTrainVal(filelist_train, os.path.join(cfg.target_path, 'train_pointclouds'),
