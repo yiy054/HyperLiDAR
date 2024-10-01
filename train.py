@@ -95,7 +95,7 @@ ds = DatasetTrainVal(filelist_train, os.path.join(cfg.target_path, 'train_pointc
                             npoints=cfg.npoints,
                             iteration_number=(cfg.batchsize*cfg.trainer.epoch)*10,
                             jitter=cfg.jitter)
-train_loader = torch.utils.data.DataLoader(ds, batch_size=1, shuffle=False,
+train_loader = torch.utils.data.DataLoader(ds, batch_size=1, shuffle=False, # Change batch_size
                                     num_workers=1)
 
 #ds_val = DatasetTrainVal("Paris.ply", os.path.join('/root/main/dataset/', 'test_10_classes'))
@@ -107,7 +107,7 @@ ds_val = DatasetTrainVal(filelist_val, os.path.join(cfg.target_path, 'train_poin
                             npoints=cfg.npoints,
                             iteration_number=cfg.batchsize*cfg.trainer.epoch*5,
                             jitter=0)
-val_loader = torch.utils.data.DataLoader(ds_val, batch_size=cfg.batchsize, shuffle=False,
+val_loader = torch.utils.data.DataLoader(ds_val, batch_size=1, shuffle=False,
                                     num_workers=cfg.threads)
 
 hd_model = OnlineHD(cfg.n_features, cfg.n_dimensions, cfg.n_classes, cfg, model, device=device)
@@ -122,10 +122,10 @@ for epoch in range(0, cfg.trainer.epoch):
         #print(seg)
         #pointcloud = np.hstack((pts.reshape((cfg.batchsize, 3, pts.shape[2])), np.zeros((cfg.batchsize, 1, pts.shape[2])), (seg-1).reshape((cfg.batchsize, 1, seg.shape[1])),np.zeros((cfg.batchsize, 1, pts.shape[2]))))
         pointcloud = np.concatenate((
-            pts.reshape((cfg.batchsize, pts.shape[2], 3)), 
-            np.zeros((cfg.batchsize, pts.shape[2], 1)), 
-            (seg - 1).reshape((cfg.batchsize, seg.shape[1], 1)), 
-            np.zeros((cfg.batchsize, pts.shape[2], 1))
+            pts.reshape((1, pts.shape[2], 3)), # Change batch_size
+            np.zeros((1, pts.shape[2], 1)), # Change batch_size
+            (seg - 1).reshape((1, seg.shape[1], 1)), # Change batch_size
+            np.zeros((1, pts.shape[2], 1)) # Change batch_size
         ), axis=2)
         #print("Pointcloud:", pointcloud.shape)
         r_clouds, r_inds_list = semantic_model.prepare_data(pointcloud,False,True)
