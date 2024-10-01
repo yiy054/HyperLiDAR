@@ -60,11 +60,13 @@ class OnlineHD(Classifier):
         self.feat_model = feat_model
         self.features = {}
         if len(self.cfg.bundle) > 0:
+            emb = torchhd.embeddings.Random(len(self.cfg.bundle), self.n_dimensions)
             self.encoders = {}
-            for mark in self.cfg.bundle:
+            for i, mark in enumerate(self.cfg.bundle):
                 features = 2**(((mark + 1)//3)+6)
-                self.encoders[mark] = Density(features, n_dimensions, device=device, dtype=dtype)
+                self.encoders[mark] = Sinusoid(features, n_dimensions, device=device, dtype=dtype)
                 self.features[mark] = features
+                self.marks[mark] = emb(i).to(device)
         else:
             self.encoder = Density(n_features, n_dimensions, device=device, dtype=dtype)
         self.model = Centroid(n_dimensions, n_classes, device=device, dtype=dtype)
@@ -119,7 +121,7 @@ class OnlineHD(Classifier):
         if len(self.cfg.bundle) > 1:
             temp = torch.zeros((self.n_dimensions), device=self.device)
             for i in self.cfg.bundle:
-                temp = torchhd.bundle(temp, self.encoders[i](samples[i][enter]))
+                temp = torchhd.bundle(temp, torchhd.bind(self.encoders[i](samples[i][enter])), self.marks[i])
             encoded = torchhd.hard_quantize(temp)
             del temp
         else:    
