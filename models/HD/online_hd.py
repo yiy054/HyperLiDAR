@@ -107,10 +107,10 @@ class OnlineHD(Classifier):
 
         # Check something
         print(self.model.weight)
-        print(encoded[[labels[enter] == 0]])
+        print(encoded[[labels[enter] == 4]])
         logit = functional.cosine_similarity(encoded, self.model.weight)
-        print(logit[labels[enter] == 0])
-        logit = functional.cosine_similarity(encoded[labels[enter] == 0], encoded[labels[enter] == 8])
+        print(logit[labels[enter] == 4])
+        logit = functional.cosine_similarity(encoded[labels[enter] == 4], encoded[labels[enter] == 8])
         print(logit)
         x = input("Enter")
 
