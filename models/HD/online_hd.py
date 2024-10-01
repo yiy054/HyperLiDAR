@@ -59,6 +59,7 @@ class OnlineHD(Classifier):
         self.cfg = cfg
         self.feat_model = feat_model
         self.features = {}
+        self.marks = {}
         if len(self.cfg.bundle) > 0:
             emb = torchhd.embeddings.Random(len(self.cfg.bundle), self.n_dimensions)
             self.encoders = {}
