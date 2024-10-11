@@ -27,8 +27,8 @@ spec:
             name: cache-volume
         resources:
           limits:
-            memory: "32G"
-            cpu: "3"
+            memory: "64G"
+            cpu: "4"
             ephemeral-storage: "2Ti"
             nvidia.com/gpu: 1
           requests:
