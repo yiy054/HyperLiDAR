@@ -161,3 +161,4 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 saved_models/ckpt_last_scalr.pth
+saved_models/scalr_model.pth
