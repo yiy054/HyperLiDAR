@@ -36,7 +36,7 @@ for filename in filenames:
     reflectance = plydata["vertex"].data["reflectance"].astype(np.float32)
     if not args.test:
         label = plydata["vertex"].data["class"].astype(np.float32)
-        print(np.bincount(label))
+        print(np.bincount(label.astype(int)))
     
     if args.test:
         pts = np.concatenate([
