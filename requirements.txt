@@ -6,7 +6,7 @@ scikit-learn==1.0.2
 tqdm==4.64.0
 omegaconf==2.1.2
 nuscenes-devkit
-torch-sparse
+#torch-sparse
 pybind11
 chardet
 h5py
