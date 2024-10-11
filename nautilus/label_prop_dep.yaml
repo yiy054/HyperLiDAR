@@ -29,7 +29,7 @@ spec:
           limits:
             memory: "12G"
             cpu: "1"
-            ephemeral-storage: "1Ti"
+            ephemeral-storage: "2Ti"
             nvidia.com/gpu: 1
           requests:
              memory: "12G"
