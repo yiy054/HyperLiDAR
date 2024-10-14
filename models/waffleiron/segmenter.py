@@ -42,8 +42,8 @@ class Segmenter(nn.Module):
         self.waffleiron.compress()
 
     def forward(self, feats, cell_ind, occupied_cell, neighbors):
-        tokens = self.embed(feats, neighbors)
+        tokens_1 = self.embed(feats, neighbors)
         print(tokens)
-        tokens = self.waffleiron(tokens, cell_ind, occupied_cell)
+        tokens = self.waffleiron(tokens_1, cell_ind, occupied_cell)
         print(tokens)
-        return self.classif(tokens)
+        return self.classif(tokens), tokens_1, tokens
