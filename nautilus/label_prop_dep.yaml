@@ -1,26 +1,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: label-hd-sm
+  name: scalr-pod
   labels:
-    k8s-app: label-hd-sm
+    k8s-app: scalr-pod
 spec:
   replicas: 1
   selector:
     matchLabels:
-      k8s-app: label-hd-sm
+      k8s-app: scalr-pod
   template:
     metadata: 
       labels:
-        k8s-app: label-hd-sm
+        k8s-app: scalr-pod
     spec:
       containers:
-      - name: label-hd-sm
+      - name: scalr-pod
         image: nvidia/cuda:11.1.1-cudnn8-devel-ubuntu18.04
         command: ["sleep", "infinity"]
         volumeMounts:
           - mountPath: /mnt/data
-            name: data
+            name: temp-ivannia-volume
           - mountPath: /root/main
             name: nuscenes-ivannia-volume
           - mountPath: /dev/shm
@@ -40,8 +40,9 @@ spec:
         - name: nuscenes-ivannia-volume
           persistentVolumeClaim:
             claimName: nuscenes-ivannia-volume
-        - name: data
-          emptyDir: {}
+        - name: temp-ivannia-volume
+          persistentVolumeClaim:
+            claimName: temp-ivannia-volume
         - emptyDir:
             medium: Memory
           name: cache-volume
