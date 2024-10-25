@@ -204,7 +204,7 @@ class WaffleIron(nn.Module):
             self.channel_mix[d].compress()
             self.spatial_mix[d].compress()
 
-    def forward(self, tokens, cell_ind, occupied_cell):
+    def forward(self, tokens, cell_ind, occupied_cell, stop=48):
         # Build all 3D to 2D projection matrices
         batch_size, nb_feat, num_points = tokens.shape
         sp_mat = get_all_projections(
@@ -212,11 +212,16 @@ class WaffleIron(nn.Module):
             occupied_cell, tokens.device, self.grids_shape,
         )
 
+        print(sp_mat.shape)
+        print(self.spatial_mix.shape)
+
         # Actual backbone
         for d, (smix, cmix) in enumerate(zip(self.spatial_mix, self.channel_mix)):
             print("Layer ", d)
             tokens = smix(tokens, sp_mat[d % len(sp_mat)])
             tokens = cmix(tokens)
             print(tokens.shape, "\n")
+            if d == stop:
+                break
 
         return tokens
