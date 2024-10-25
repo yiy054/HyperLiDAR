@@ -214,6 +214,7 @@ class WaffleIron(nn.Module):
 
         # Actual backbone
         for d, (smix, cmix) in enumerate(zip(self.spatial_mix, self.channel_mix)):
+            print("Layer ", d)
             tokens = smix(tokens, sp_mat[d % len(sp_mat)])
             tokens = cmix(tokens)
 

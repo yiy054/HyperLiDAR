@@ -20,9 +20,9 @@ spec:
         command: ["sleep", "infinity"]
         volumeMounts:
           - mountPath: /mnt/data
-            name: temp-ivannia-volume
+            name: ivannia-volume-clone
           - mountPath: /root/main
-            name: nuscenes-ivannia-volume
+            name: temp-ivannia-volume
           - mountPath: /dev/shm
             name: cache-volume
         resources:
@@ -37,9 +37,9 @@ spec:
              ephemeral-storage: "1Ti"
              nvidia.com/gpu: 1
       volumes:
-        - name: nuscenes-ivannia-volume
+        - name: ivannia-volume-clone
           persistentVolumeClaim:
-            claimName: nuscenes-ivannia-volume
+            claimName: ivannia-volume-clone
         - name: temp-ivannia-volume
           persistentVolumeClaim:
             claimName: temp-ivannia-volume
