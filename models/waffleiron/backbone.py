@@ -212,7 +212,7 @@ class WaffleIron(nn.Module):
             occupied_cell, tokens.device, self.grids_shape,
         )
 
-        print(sp_mat.shape)
+        print(len(sp_mat))
         print(self.spatial_mix.shape)
 
         # Actual backbone
