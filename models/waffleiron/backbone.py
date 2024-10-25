@@ -217,5 +217,6 @@ class WaffleIron(nn.Module):
             print("Layer ", d)
             tokens = smix(tokens, sp_mat[d % len(sp_mat)])
             tokens = cmix(tokens)
+            print(tokens.shape, "\n")
 
         return tokens
