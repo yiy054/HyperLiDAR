@@ -213,7 +213,6 @@ class WaffleIron(nn.Module):
         )
 
         print(len(sp_mat))
-        print(self.spatial_mix.shape)
 
         # Actual backbone
         for d, (smix, cmix) in enumerate(zip(self.spatial_mix, self.channel_mix)):
