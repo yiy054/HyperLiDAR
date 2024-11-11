@@ -22,6 +22,7 @@ from pyquaternion import Quaternion
 from .im_pc_dataset import ImPcDataset
 from nuscenes.utils.geometry_utils import view_points
 from nuscenes.utils.data_classes import LidarPointCloud
+from nuscenes import NuScenes
 
 # For normalizing intensities
 MEAN_INT = 18.742355
@@ -68,7 +69,7 @@ class NuScenesSemSeg(PCDataset):
         self.std_int = STD_INT
 
         # Class mapping
-        current_folder = os.path.dirname(os.path.realpath(__file__))
+        current_folder = os.path.dirname('/home/HyperLiDAR/datasets/')
         self.mapper = np.vectorize(ClassMapper().get_index)
 
         # List all keyframes
@@ -91,9 +92,21 @@ class NuScenesSemSeg(PCDataset):
             else:
                 raise ValueError(f"Unprepared nuScenes split {self.ratio}.")
         elif self.phase == "val":
-            self.list_frames = np.load(
-                os.path.join(current_folder, "list_files_nuscenes.npz")
-            )[self.phase]
+            nusc = NuScenes(version='v1.0-mini', dataroot=kwargs['rootdir'], verbose=True)
+            #self.list_frames = np.load(
+            #    os.path.join(current_folder, "list_files_nuscenes.npz")
+            #)[self.phase]
+            array = []
+            for i in range(len(nusc.sample)):
+                base = nusc.sample[i]
+                for j, f in enumerate(os.listdir('/mnt/data/dataset/nuscenes/samples/LIDAR_TOP')):
+                    if f[42:-8] == str(base['timestamp']):
+                        break
+                sample = 'samples/LIDAR_TOP/' + f
+                lidarseg = 'lidarseg/v1.0-mini/' + base['data']['LIDAR_TOP'] + '_lidarseg.bin'
+                token = base['data']['LIDAR_TOP']
+                array.append([sample, lidarseg, token])
+            self.list_frames = array
 
     def __len__(self):
         return len(self.list_frames)
