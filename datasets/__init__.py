@@ -14,7 +14,7 @@
 
 from .pc_dataset import Collate
 from .im_pc_dataset import CollateDistillation
-from .merged_datasets import MergedDatasetsDistill
+#from .merged_datasets import MergedDatasetsDistill
 from .nuscenes_for_scalr import (
     NuScenesSemSeg,
     NuScenesSemSeg_1p,
@@ -49,5 +49,5 @@ LIST_DATASETS_DISTILL = {
     "semantic_kitti": SemanticKITTIDistill,
     "panda64": PandaSet64Distill,
     "pandagt": PandaSetGTDistill,
-    "merged_datasets": MergedDatasetsDistill,
+    #"merged_datasets": MergedDatasetsDistill,
 }
