@@ -1,4 +1,5 @@
 numpy
+setuptools<60.0
 #==1.23.0
 matplotlib
 #==3.2.2
