@@ -26,12 +26,12 @@ from .semantic_kitti_for_scalr import (
     SemanticKITTISemSeg_1p,
     SemanticKITTIDistill,
 )
-from .pandaset_for_scalr import (
-    Pandaset64SemSeg,
-    PandasetGTSemSeg,
-    PandaSet64Distill,
-    PandaSetGTDistill,
-)
+#from .pandaset_for_scalr import (
+#    Pandaset64SemSeg,
+#    PandasetGTSemSeg,
+#    PandaSet64Distill,
+#    PandaSetGTDistill,
+#)
 
 
 LIST_DATASETS = {
@@ -40,14 +40,14 @@ LIST_DATASETS = {
     "nuscenes_10p": NuScenesSemSeg_10p,
     "semantic_kitti": SemanticKITTISemSeg,
     "semantic_kitti_1p": SemanticKITTISemSeg_1p,
-    "panda64": Pandaset64SemSeg,
-    "pandagt": PandasetGTSemSeg,
+    #"panda64": Pandaset64SemSeg,
+    #"pandagt": PandasetGTSemSeg,
 }
 
 LIST_DATASETS_DISTILL = {
     "nuscenes": NuScenesDistill,
     "semantic_kitti": SemanticKITTIDistill,
-    "panda64": PandaSet64Distill,
-    "pandagt": PandaSetGTDistill,
+    #"panda64": PandaSet64Distill,
+    #"pandagt": PandaSetGTDistill,
     #"merged_datasets": MergedDatasetsDistill,
 }
