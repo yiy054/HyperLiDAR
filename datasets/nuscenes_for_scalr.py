@@ -96,6 +96,7 @@ class NuScenesSemSeg(PCDataset):
             #    os.path.join(current_folder, "list_files_nuscenes.npz")
             #)[self.phase]
             array = []
+            print(int(len(nusc.sample)*0.8))
             for i in range(int(len(nusc.sample)*0.8)):
                 base = nusc.sample[i]
                 for j, f in enumerate(os.listdir('/mnt/data/dataset/nuscenes/samples/LIDAR_TOP')):
