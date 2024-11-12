@@ -20,8 +20,8 @@ echo Y | conda install pytorch==1.7.1 torchvision torchaudio cudatoolkit=11.0 -c
 echo Y | pip install -r requirements.txt
 cd cpp_wrappers
 bash compile_wrappers.sh
-pip install --force-reinstall torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu117
-conda install -c torchhd torchhd
+echo Y | pip install --force-reinstall torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu117
+echo Y | conda install -c torchhd torchhd
 #export LD_LIBRARY_PATH=/root/anaconda3/envs/3DLabelProp/lib:$LD_LIBRARY_PATH
 # OR export LD_LIBRARY_PATH=/home/ubuntu/anaconda3/envs/3DLabelProp/lib:$LD_LIBRARY_PATH
 

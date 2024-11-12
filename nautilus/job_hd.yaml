@@ -32,7 +32,7 @@ spec:
         command: ["/bin/sh", "-c"]
         args:
           - cd /root/main && bash initial_setup.sh;
-            eval "$(/opt/conda/bin/conda shell.bash hook)";
+            eval "$(/root/anaconda3/bin/conda shell.bash hook)";
             conda create -y -n env python=3.8;
             conda activate env;
             git clone https://github.com/DarthIV02/HyperLiDAR.git /home/HyperLiDAR;
@@ -41,6 +41,15 @@ spec:
         volumeMounts:
           - mountPath: /root/main
             name: temp-ivannia-volume
+        resources:
+          limits:
+            memory: "10G"
+            cpu: "1"
+            ephemeral-storage: "2Ti"
+          requests:
+             memory: "8G"
+             cpu: "1"
+             ephemeral-storage: "1Ti"
       volumes:
         - name: temp-ivannia-volume
           persistentVolumeClaim:
