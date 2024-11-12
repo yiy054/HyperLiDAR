@@ -31,7 +31,7 @@ model = Segmenter(
 )
 
 # Load pretrained model
-ckpt = torch.load('./saved_models/ckpt_last_scalr.pth', map_location="cuda:0")
+ckpt = torch.load('/root/main/ScaLR/saved_models/ckpt_last_scalr.pth', map_location="cuda:0")
 ckpt = ckpt["net"]
 
 new_ckpt = {}

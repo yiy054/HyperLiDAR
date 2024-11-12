@@ -11,7 +11,7 @@ spec:
         command: 
         - "python"
         args: 
-          - "/home/HyperLiDAR/hd_train"
+          - "hd_train.py "
         volumeMounts:
           - mountPath: /root/main
             name: temp-ivannia-volume
@@ -38,6 +38,11 @@ spec:
             git clone https://github.com/DarthIV02/HyperLiDAR.git /home/HyperLiDAR;
             cd /home/HyperLiDAR;
             bash nautilus/3dlabelprop_setup.sh;
+            git clone https://github.com/valeoai/WaffleIron;
+            pip install -e WaffleIron/;
+            wget https://github.com/valeoai/ScaLR/releases/download/v0.1.0/info_datasets.tar.gz;
+            tar -xvzf info_datasets.tar.gz;
+            rm info_datasets.tar.gz;
         volumeMounts:
           - mountPath: /root/main
             name: temp-ivannia-volume

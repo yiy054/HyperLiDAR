@@ -29,3 +29,4 @@ plyfile
 seaborn
 ipython
 ipykernel
+torchmetrics
