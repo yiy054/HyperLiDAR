@@ -75,29 +75,44 @@ class NuScenesSemSeg(PCDataset):
         # List all keyframes
         self.ratio = ratio
         if self.phase == "train":
-            if self.ratio == "100p":
-                self.list_frames = np.load(
-                    os.path.join(current_folder, "list_files_nuscenes.npz")
-                )[self.phase]
-            elif self.ratio == "10p":
-                self.list_frames = np.load(
-                    os.path.join(current_folder, "nuscenes-ratio_10-v_0.npy"),
-                    allow_pickle=True,
-                )
-            elif self.ratio == "1p":
-                self.list_frames = np.load(
-                    os.path.join(current_folder, "nuscenes-ratio_100-v_0.npy"),
-                    allow_pickle=True,
-                )
-            else:
-                raise ValueError(f"Unprepared nuScenes split {self.ratio}.")
+            #if self.ratio == "100p":
+            #    self.list_frames = np.load(
+            #        os.path.join(current_folder, "list_files_nuscenes.npz")
+            #    )[self.phase]
+            #elif self.ratio == "10p":
+            #    self.list_frames = np.load(
+            #        os.path.join(current_folder, "nuscenes-ratio_10-v_0.npy"),
+            #        allow_pickle=True,
+            #    )
+            #elif self.ratio == "1p":
+            #    self.list_frames = np.load(
+            #        os.path.join(current_folder, "nuscenes-ratio_100-v_0.npy"),
+            #        allow_pickle=True,
+            #    )
+            #else:
+            #   raise ValueError(f"Unprepared nuScenes split {self.ratio}.")
+            nusc = NuScenes(version='v1.0-mini', dataroot=kwargs['rootdir'], verbose=True)
+            #self.list_frames = np.load(
+            #    os.path.join(current_folder, "list_files_nuscenes.npz")
+            #)[self.phase]
+            array = []
+            for i in range(int(len(nusc.sample)*0.8)):
+                base = nusc.sample[i]
+                for j, f in enumerate(os.listdir('/mnt/data/dataset/nuscenes/samples/LIDAR_TOP')):
+                    if f[42:-8] == str(base['timestamp']):
+                        break
+                sample = 'samples/LIDAR_TOP/' + f
+                lidarseg = 'lidarseg/v1.0-mini/' + base['data']['LIDAR_TOP'] + '_lidarseg.bin'
+                token = base['data']['LIDAR_TOP']
+                array.append([sample, lidarseg, token])
+            self.list_frames = array
         elif self.phase == "val":
             nusc = NuScenes(version='v1.0-mini', dataroot=kwargs['rootdir'], verbose=True)
             #self.list_frames = np.load(
             #    os.path.join(current_folder, "list_files_nuscenes.npz")
             #)[self.phase]
             array = []
-            for i in range(len(nusc.sample)):
+            for i in range(int(len(nusc.sample)*0.8), len(nusc.sample)):
                 base = nusc.sample[i]
                 for j, f in enumerate(os.listdir('/mnt/data/dataset/nuscenes/samples/LIDAR_TOP')):
                     if f[42:-8] == str(base['timestamp']):
