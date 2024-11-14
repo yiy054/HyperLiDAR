@@ -16,7 +16,7 @@ apt-get -y install libcereal-dev libstb-dev
 #cd /home
 #git clone https://github.com/DarthIV02/3DLabelProp.git
 #cd 3DLabelProp/
-echo Y | conda install pytorch==1.7.1 torchvision torchaudio cudatoolkit=11.0 -c pytorch
+echo Y | conda install pytorch==2.4.1 torchvision==0.19.1 torchaudio cudatoolkit=11.0 -c pytorch
 echo Y | pip install -r requirements.txt
 cd cpp_wrappers
 bash compile_wrappers.sh
