@@ -30,3 +30,4 @@ seaborn
 ipython
 ipykernel
 torchmetrics
+wandb

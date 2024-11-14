@@ -7,6 +7,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision
 import argparse
+import wandb
+from torchmetrics.segmentation import MeanIoU
 
 # Note: this example requires the torchmetrics library: https://torchmetrics.readthedocs.io
 import torchmetrics
@@ -19,6 +21,8 @@ from torchhd import embeddings
 parser = argparse.ArgumentParser()
 parser.add_argument('-stop', '--layers', type=int, help='how many layers deep', default=0)
 args = parser.parse_args()
+
+wandb.login()
 
 model = Segmenter(
     input_channels=5,
@@ -93,6 +97,17 @@ test_loader = torch.utils.data.DataLoader(
         collate_fn=Collate(),
     )
 
+run = wandb.init(
+    # Set the project where this run will be logged
+    project="scalr_hd",
+    # Track hyperparameters and run metadata
+    config={
+        "encoding": "Random * Level 1000",
+        "hd_dim": 10000,
+        "training_samples": len(train_loader),
+    },
+)
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Using {} device".format(device))
 
@@ -166,12 +181,14 @@ def val():
                     samples_hv = encode(samples).reshape((1, DIMENSIONS))
                     outputs = model_hd(samples_hv, dot=True)
                     outputs = torch.tensor(outputs.argmax().data, device='cuda:0').reshape((1))
-                    l = torch.tensor([l])
-                    accuracy.update(outputs.cpu(), l)
+                    #l = torch.tensor([l])
+                    #accuracy.update(outputs.cpu(), l)
+                    print(outputs.shape)
+                    print(l.shape)
         else:
             break
 
-    print(f"Testing accuracy of {(accuracy.compute().item() * 100):.3f}%")
+    #print(f"Testing accuracy of {(accuracy.compute().item() * 100):.3f}%")
 
 for it, batch in enumerate(train_loader):
     
