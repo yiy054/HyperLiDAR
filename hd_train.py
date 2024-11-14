@@ -150,16 +150,21 @@ def val():
     for it, batch in enumerate(test_loader):
         if it < 3:
             # Network inputs
-            #print(batch["upsample"])
-            feat = batch["feat"].cuda(0, non_blocking=True)
-            labels = batch["labels_orig"].cuda(0, non_blocking=True)
-            batch["upsample"] = [
-                up.cuda(0, non_blocking=True) for up in batch["upsample"]
-            ]
-            cell_ind = batch["cell_ind"].cuda(0, non_blocking=True)
-            occupied_cell = batch["occupied_cells"].cuda(0, non_blocking=True)
-            neighbors_emb = batch["neighbors_emb"].cuda(0, non_blocking=True)
-            #net_inputs = (feat, cell_ind, occupied_cell, neighbors_emb)
+            
+            feat = batch["feat"]
+            labels = batch["labels_orig"]
+            cell_ind = batch["cell_ind"]
+            occupied_cell = batch["occupied_cells"]
+            neighbors_emb = batch["neighbors_emb"]
+            if device_string != 'cpu':
+                feat = feat.cuda(0, non_blocking=True)
+                labels = labels.cuda(0, non_blocking=True)
+                batch["upsample"] = [
+                    up.cuda(0, non_blocking=True) for up in batch["upsample"]
+                ]
+                cell_ind = cell_ind.cuda(0, non_blocking=True)
+                occupied_cell = occupied_cell.cuda(0, non_blocking=True)
+                neighbors_emb = neighbors_emb.cuda(0, non_blocking=True)
 
             with torch.no_grad():
                 out = model(feat, cell_ind, occupied_cell, neighbors_emb, stop)
