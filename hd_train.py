@@ -56,8 +56,8 @@ for k in ckpt.keys():
 
 model.load_state_dict(new_ckpt)
 
-torch.cuda.set_device(device_string) # cuda:0
-model = model.cuda(device_string) # cuda:0
+torch.cuda.set_device(device) # cuda:0
+model = model.cuda(device) # cuda:0
 
 model.eval()
 
