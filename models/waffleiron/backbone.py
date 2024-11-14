@@ -212,15 +212,11 @@ class WaffleIron(nn.Module):
             occupied_cell, tokens.device, self.grids_shape,
         )
 
-        print(len(sp_mat))
-
         # Actual backbone
         for d, (smix, cmix) in enumerate(zip(self.spatial_mix, self.channel_mix)):
             if d == stop:
                 break
-            print("Layer ", d)
             tokens = smix(tokens, sp_mat[d % len(sp_mat)])
             tokens = cmix(tokens)
-            print(tokens.shape, "\n")
 
         return tokens

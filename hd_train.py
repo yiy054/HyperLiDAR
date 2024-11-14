@@ -102,17 +102,6 @@ test_loader = torch.utils.data.DataLoader(
         collate_fn=Collate(),
     )
 
-run = wandb.init(
-    # Set the project where this run will be logged
-    project="scalr_hd",
-    # Track hyperparameters and run metadata
-    config={
-        "encoding": "Random * Level 1000",
-        "hd_dim": 10000,
-        "training_samples": len(train_loader),
-    },
-)
-
 DIMENSIONS = 10000
 FEAT_SIZE = 768
 NUM_LEVELS = 1000
@@ -140,6 +129,19 @@ model_hd = Centroid(DIMENSIONS, num_classes)
 model_hd = model_hd.to(device)
 
 stop = args.layers
+
+run = wandb.init(
+    # Set the project where this run will be logged
+    project="scalr_hd",
+    # Track hyperparameters and run metadata
+    config={
+        "encoding": "Random * Level 1000",
+        "hd_dim": 10000,
+        "training_samples": len(train_loader),
+    },
+    id=f"hd_param_stop_layer_{stop}",
+    key=["9487c04b8eff0c16cac4e785f2b57c3a475767d3"],
+)
 
 def forward_model(it, batch, stop):
     feat = batch["feat"]
@@ -172,25 +174,23 @@ def forward_model(it, batch, stop):
             most_common_value = torch.bincount(lab_tens).argmax()
             labels_v_single.append(most_common_value)
     
-    return batch, embed, tokens, labels_v_single, labels_v
+    return tokens, labels_v_single
 
-def val():
+def val(stop):
     #accuracy = torchmetrics.Accuracy("multiclass", num_classes=num_classes)
     miou = MulticlassJaccardIndex(num_classes=16, average=None)
 
     model_hd.normalize()
     
-    stop = 0
     output_array = []
     labels_array = []
 
     for it, batch in enumerate(test_loader):
-        if it < 3:
+        if it < 10:
             # Network inputs
             
-                batch, embed, tokens, labels_v_single, labels_v = forward_model(it, batch, stop)
+                tokens, labels_v_single = forward_model(it, batch, stop)
 
-                i = 0
                 #HD Testing
                 for samples, l in tqdm(zip(tokens,labels_v_single), desc="Testing"):
                     if l != 255: # Make sure its not noise
@@ -204,18 +204,11 @@ def val():
                         output_array.append(outputs.cpu())
                         labels_array.append(l)
 
-                        if i>10:
-                            break
-                        else:
-                            i+=1
         else:
             break
     
     l = torch.tensor(labels_array)
     out = torch.tensor(output_array)
-
-    print(l)
-    print(out)
 
     accuracy = miou(out, l)
     mean = torch.mean(accuracy)
@@ -223,27 +216,21 @@ def val():
     print(f"Mean accuracy of {mean}")
     log_data = {f"class_{i}_IoU": c for i, c in enumerate(accuracy)}
     log_data["meanIoU"] = mean
-    print(log_data)
     wandb.log(log_data)
 
 for it, batch in enumerate(train_loader):
     
     # Network inputs
     
-    batch, embed, tokens, labels_v_single, labels_v = forward_model(it, batch, stop)
+    tokens, labels_v_single = forward_model(it, batch, stop)
 
     #HD Training
-    i = 0
     for samples, labels in tqdm(zip(tokens,labels_v_single), desc="Training"):
         if labels != 255:
             samples = samples.to(device)
             labels = labels.to(device)
             samples_hv = encode(samples).reshape((1, DIMENSIONS))
             model_hd.add(samples_hv, labels)
-        if i > 10:
-            break
-        else:
-            i += 1
 
 
     # Voxels to points
@@ -254,4 +241,4 @@ for it, batch in enumerate(train_loader):
     #    token_upsample.append(temp.T)
     #token_2 = torch.cat(token_upsample, dim=0)
     
-    val()
+    val(stop)

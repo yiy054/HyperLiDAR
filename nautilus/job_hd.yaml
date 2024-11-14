@@ -22,7 +22,7 @@ spec:
             wget https://github.com/valeoai/ScaLR/releases/download/v0.1.0/info_datasets.tar.gz;
             tar -xvzf info_datasets.tar.gz;
             rm info_datasets.tar.gz;
-            echo "9487c04b8eff0c16cac4e785f2b57c3a475767d3" | python hd_train.py -stop 0;
+            python hd_train.py -stop 0;
         volumeMounts:
           - mountPath: /root/main
             name: temp-ivannia-volume
@@ -33,10 +33,12 @@ spec:
             memory: "15G"
             cpu: "1"
             ephemeral-storage: "2Ti"
+            nvidia.com/gpu: 1
           requests:
              memory: "12G"
              cpu: "1"
              ephemeral-storage: "1Ti"
+             nvidia.com/gpu: 1
       volumes:
         - name: temp-ivannia-volume
           persistentVolumeClaim:
