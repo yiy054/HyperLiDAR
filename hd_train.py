@@ -193,7 +193,7 @@ def val():
                 i = 0
                 #HD Testing
                 for samples, l in tqdm(zip(tokens,labels_v_single), desc="Testing"):
-                    if labels != 255: # Make sure its not noise
+                    if l != 255: # Make sure its not noise
                         
                         samples = samples.to(device)
                         samples_hv = encode(samples).reshape((1, DIMENSIONS))
