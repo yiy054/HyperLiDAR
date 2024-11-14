@@ -175,11 +175,15 @@ def forward_model(it, batch, stop):
     return batch, embed, tokens, labels_v_single, labels_v
 
 def val():
-    accuracy = torchmetrics.Accuracy("multiclass", num_classes=num_classes)
-    
+    #accuracy = torchmetrics.Accuracy("multiclass", num_classes=num_classes)
+    miou = MeanIoU(num_classes=16, per_class=True)
+
     model_hd.normalize()
     
     stop = 0
+    output_array = []
+    labels_array = []
+
     for it, batch in enumerate(test_loader):
         if it < 3:
             # Network inputs
@@ -188,19 +192,30 @@ def val():
 
                 #HD Testing
                 for samples, l in tqdm(zip(tokens,labels_v_single), desc="Testing"):
-                    samples = samples.to(device)
-
-                    samples_hv = encode(samples).reshape((1, DIMENSIONS))
-                    outputs = model_hd(samples_hv, dot=True)
-                    outputs = torch.tensor(outputs.argmax().data, device=device_string).reshape((1))
-                    #l = torch.tensor([l])
-                    #accuracy.update(outputs.cpu(), l)
-                    print(outputs.shape)
-                    print(l.shape)
+                    if labels != 255: # Make sure its not noise
+                        
+                        samples = samples.to(device)
+                        samples_hv = encode(samples).reshape((1, DIMENSIONS))
+                        outputs = model_hd(samples_hv, dot=True)
+                        outputs = outputs.argmax().data#, device=device_string).reshape((1))
+                        #l = torch.tensor([l])
+                        #accuracy.update(outputs.cpu(), l)
+                        output_array.append(outputs.cpu())
+                        labels_array.append(l)
         else:
             break
+    
+    l = torch.tensor(labels_array)
+    out = torch.tensor(output_array)
 
-    #print(f"Testing accuracy of {(accuracy.compute().item() * 100):.3f}%")
+    accuracy = miou(out, l)
+    mean = torch.mean(accuracy)
+
+    print(f"Mean accuracy of {mean}")
+    wandb.log({"meanIoU": mean})
+    for i, c in enumerate(accuracy):
+        print(f"Testing accuracy of {accuracy}")
+        wandb.log({f"IoU in class {i}": c})
 
 for it, batch in enumerate(train_loader):
     
@@ -208,7 +223,7 @@ for it, batch in enumerate(train_loader):
     
     batch, embed, tokens, labels_v_single, labels_v = forward_model(it, batch, stop)
 
-        #HD Training
+    #HD Training
     i = 0
     for samples, labels in tqdm(zip(tokens,labels_v_single), desc="Training"):
         if labels != 255:
