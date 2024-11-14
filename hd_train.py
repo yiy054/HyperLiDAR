@@ -22,7 +22,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-stop', '--layers', type=int, help='how many layers deep', default=0)
 args = parser.parse_args()
 
-wandb.login()
+wandb.login(key=["9487c04b8eff0c16cac4e785f2b57c3a475767d3"])
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Using {} device".format(device))
@@ -140,7 +140,6 @@ run = wandb.init(
         "training_samples": len(train_loader),
     },
     id=f"hd_param_stop_layer_{stop}",
-    key=["9487c04b8eff0c16cac4e785f2b57c3a475767d3"],
 )
 
 def forward_model(it, batch, stop):
