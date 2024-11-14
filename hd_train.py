@@ -24,6 +24,10 @@ args = parser.parse_args()
 
 wandb.login()
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print("Using {} device".format(device))
+device_string = "cuda:0" if torch.cuda.is_available() else "cpu"
+
 model = Segmenter(
     input_channels=5,
     feat_channels=768,
@@ -35,7 +39,7 @@ model = Segmenter(
 )
 
 # Load pretrained model
-ckpt = torch.load('/root/main/ScaLR/saved_models/ckpt_last_scalr.pth', map_location="cpu") # cuda:0
+ckpt = torch.load('/root/main/ScaLR/saved_models/ckpt_last_scalr.pth', map_location=device_string) # cuda:0
 ckpt = ckpt["net"]
 
 new_ckpt = {}
@@ -52,8 +56,8 @@ for k in ckpt.keys():
 
 model.load_state_dict(new_ckpt)
 
-torch.cuda.set_device("cuda:0")
-model = model.cuda("cuda:0")
+torch.cuda.set_device(device_string) # cuda:0
+model = model.cuda(device_string) # cuda:0
 
 model.eval()
 
@@ -107,9 +111,6 @@ run = wandb.init(
         "training_samples": len(train_loader),
     },
 )
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print("Using {} device".format(device))
 
 DIMENSIONS = 10000
 FEAT_SIZE = 768
@@ -180,7 +181,7 @@ def val():
 
                     samples_hv = encode(samples).reshape((1, DIMENSIONS))
                     outputs = model_hd(samples_hv, dot=True)
-                    outputs = torch.tensor(outputs.argmax().data, device='cuda:0').reshape((1))
+                    outputs = torch.tensor(outputs.argmax().data, device=device_string).reshape((1))
                     #l = torch.tensor([l])
                     #accuracy.update(outputs.cpu(), l)
                     print(outputs.shape)
