@@ -141,6 +141,39 @@ model_hd = model_hd.to(device)
 
 stop = args.layers
 
+def forward_model(it, batch, stop):
+    feat = batch["feat"]
+    labels = batch["labels_orig"]
+    cell_ind = batch["cell_ind"]
+    occupied_cell = batch["occupied_cells"]
+    neighbors_emb = batch["neighbors_emb"]
+    if device_string != 'cpu':
+        feat = feat.cuda(0, non_blocking=True)
+        labels = labels.cuda(0, non_blocking=True)
+        batch["upsample"] = [
+            up.cuda(0, non_blocking=True) for up in batch["upsample"]
+        ]
+        cell_ind = cell_ind.cuda(0, non_blocking=True)
+        occupied_cell = occupied_cell.cuda(0, non_blocking=True)
+        neighbors_emb = neighbors_emb.cuda(0, non_blocking=True)
+
+    with torch.no_grad():
+        out = model(feat, cell_ind, occupied_cell, neighbors_emb, stop)
+        embed, tokens = out[0][0], out[1][0]
+        embed = embed.transpose(0, 1)
+        tokens = tokens.transpose(0, 1)
+
+        labels_v = [[] for i in range(embed.shape[0])]
+        for i, vox in enumerate(batch["upsample"][0]):
+            labels_v[vox].append(labels[i])
+        labels_v_single = []
+        for labels_ in labels_v:
+            lab_tens = torch.tensor(labels_)
+            most_common_value = torch.bincount(lab_tens).argmax()
+            labels_v_single.append(most_common_value)
+    
+    return batch, embed, tokens, labels_v_single, labels_v
+
 def val():
     accuracy = torchmetrics.Accuracy("multiclass", num_classes=num_classes)
     
@@ -151,35 +184,7 @@ def val():
         if it < 3:
             # Network inputs
             
-            feat = batch["feat"]
-            labels = batch["labels_orig"]
-            cell_ind = batch["cell_ind"]
-            occupied_cell = batch["occupied_cells"]
-            neighbors_emb = batch["neighbors_emb"]
-            if device_string != 'cpu':
-                feat = feat.cuda(0, non_blocking=True)
-                labels = labels.cuda(0, non_blocking=True)
-                batch["upsample"] = [
-                    up.cuda(0, non_blocking=True) for up in batch["upsample"]
-                ]
-                cell_ind = cell_ind.cuda(0, non_blocking=True)
-                occupied_cell = occupied_cell.cuda(0, non_blocking=True)
-                neighbors_emb = neighbors_emb.cuda(0, non_blocking=True)
-
-            with torch.no_grad():
-                out = model(feat, cell_ind, occupied_cell, neighbors_emb, stop)
-                embed, tokens = out[0][0], out[1][0]
-                embed = embed.transpose(0, 1)
-                tokens = tokens.transpose(0, 1)
-
-                labels_v = [[] for i in range(embed.shape[0])]
-                for i, vox in enumerate(batch["upsample"][0]):
-                    labels_v[vox].append(labels[i])
-                labels_v_single = []
-                for labels_ in labels_v:
-                    lab_tens = torch.tensor(labels_)
-                    most_common_value = torch.bincount(lab_tens).argmax()
-                    labels_v_single.append(most_common_value)
+                batch, embed, tokens, labels_v_single, labels_v = forward_model(it, batch, stop)
 
                 #HD Testing
                 for samples, l in tqdm(zip(tokens,labels_v_single), desc="Testing"):
@@ -200,58 +205,29 @@ def val():
 for it, batch in enumerate(train_loader):
     
     # Network inputs
-    #print(batch["upsample"])
-    feat = batch["feat"]
-    labels = batch["labels_orig"]
-    cell_ind = batch["cell_ind"]
-    occupied_cell = batch["occupied_cells"]
-    neighbors_emb = batch["neighbors_emb"]
-    if device_string != 'cpu':
-        feat = feat.cuda(0, non_blocking=True)
-        labels = labels.cuda(0, non_blocking=True)
-        batch["upsample"] = [
-            up.cuda(0, non_blocking=True) for up in batch["upsample"]
-        ]
-        cell_ind = cell_ind.cuda(0, non_blocking=True)
-        occupied_cell = occupied_cell.cuda(0, non_blocking=True)
-        neighbors_emb = neighbors_emb.cuda(0, non_blocking=True)
-    #net_inputs = (feat, cell_ind, occupied_cell, neighbors_emb)
-
-    with torch.no_grad():
-        out = model(feat, cell_ind, occupied_cell, neighbors_emb, stop)
-        embed, tokens = out[0][0], out[1][0]
-        embed = embed.transpose(0, 1)
-        tokens = tokens.transpose(0, 1)
-
-        labels_v = [[] for i in range(embed.shape[0])]
-        for i, vox in enumerate(batch["upsample"][0]):
-            labels_v[vox].append(labels[i])
-        labels_v_single = []
-        for labels_ in labels_v:
-            lab_tens = torch.tensor(labels_)
-            most_common_value = torch.bincount(lab_tens).argmax()
-            labels_v_single.append(most_common_value)
+    
+    batch, embed, tokens, labels_v_single, labels_v = forward_model(it, batch, stop)
 
         #HD Training
-        i = 0
-        for samples, labels in tqdm(zip(tokens,labels_v_single), desc="Training"):
-            if labels != 255:
-                samples = samples.to(device)
-                labels = labels.to(device)
-                samples_hv = encode(samples).reshape((1, DIMENSIONS))
-                model_hd.add(samples_hv, labels)
-            if i > 10:
-                break
-            else:
-                i += 1
+    i = 0
+    for samples, labels in tqdm(zip(tokens,labels_v_single), desc="Training"):
+        if labels != 255:
+            samples = samples.to(device)
+            labels = labels.to(device)
+            samples_hv = encode(samples).reshape((1, DIMENSIONS))
+            model_hd.add(samples_hv, labels)
+        if i > 10:
+            break
+        else:
+            i += 1
 
 
-        # Voxels to points
-        #token_upsample = []
-        #temp = None
-        #for id_b, closest_point in enumerate(batch["upsample"]):
-        #    temp = tokens[id_b, :, closest_point]
-        #    token_upsample.append(temp.T)
-        #token_2 = torch.cat(token_upsample, dim=0)
+    # Voxels to points
+    #token_upsample = []
+    #temp = None
+    #for id_b, closest_point in enumerate(batch["upsample"]):
+    #    temp = tokens[id_b, :, closest_point]
+    #    token_upsample.append(temp.T)
+    #token_2 = torch.cat(token_upsample, dim=0)
     
     val()
