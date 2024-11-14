@@ -214,6 +214,9 @@ def val():
     l = torch.tensor(labels_array)
     out = torch.tensor(output_array)
 
+    print(l)
+    print(out)
+
     accuracy = miou(out, l)
     mean = torch.mean(accuracy)
 
