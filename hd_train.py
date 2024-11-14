@@ -228,12 +228,17 @@ for it, batch in enumerate(train_loader):
             labels_v_single.append(most_common_value)
 
         #HD Training
+        i = 0
         for samples, labels in tqdm(zip(tokens,labels_v_single), desc="Training"):
             if labels != 255:
                 samples = samples.to(device)
                 labels = labels.to(device)
                 samples_hv = encode(samples).reshape((1, DIMENSIONS))
                 model_hd.add(samples_hv, labels)
+            if i > 10:
+                break
+            else:
+                i += 1
 
 
         # Voxels to points
