@@ -218,10 +218,10 @@ def val():
     mean = torch.mean(accuracy)
 
     print(f"Mean accuracy of {mean}")
-    wandb.log({"meanIoU": mean})
-    for i, c in enumerate(accuracy):
-        print(f"Testing accuracy of {accuracy}")
-        wandb.log({f"IoU in class {i}": c})
+    log_data = {f"class_{i}_IoU": c for i, c in enumerate(accuracy)}
+    log_data["meanIoU"] = mean
+    print(log_data)
+    wandb.log(log_data)
 
 for it, batch in enumerate(train_loader):
     
