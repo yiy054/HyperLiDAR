@@ -8,7 +8,7 @@ import torch.nn.functional as F
 import torchvision
 import argparse
 import wandb
-from torchmetrics.segmentation import MeanIoU
+from torchmetrics.classification import MulticlassJaccardIndex
 
 # Note: this example requires the torchmetrics library: https://torchmetrics.readthedocs.io
 import torchmetrics
@@ -176,7 +176,7 @@ def forward_model(it, batch, stop):
 
 def val():
     #accuracy = torchmetrics.Accuracy("multiclass", num_classes=num_classes)
-    miou = MeanIoU(num_classes=16, per_class=True)
+    miou = MulticlassJaccardIndex(num_classes=16, average=None)
 
     model_hd.normalize()
     
