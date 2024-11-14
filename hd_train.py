@@ -190,6 +190,7 @@ def val():
             
                 batch, embed, tokens, labels_v_single, labels_v = forward_model(it, batch, stop)
 
+                i = 0
                 #HD Testing
                 for samples, l in tqdm(zip(tokens,labels_v_single), desc="Testing"):
                     if labels != 255: # Make sure its not noise
@@ -202,6 +203,11 @@ def val():
                         #accuracy.update(outputs.cpu(), l)
                         output_array.append(outputs.cpu())
                         labels_array.append(l)
+
+                        if i>10:
+                            break
+                        else:
+                            i+=1
         else:
             break
     
