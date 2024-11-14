@@ -115,7 +115,7 @@ class NuScenesSemSeg(PCDataset):
             array = []
             for i in range(int(len(nusc.sample)*0.8), len(nusc.sample)):
                 base = nusc.sample[i]
-                for j, f in enumerate(os.listdir('/mnt/data/dataset/nuscenes/samples/LIDAR_TOP')):
+                for j, f in enumerate(os.listdir('/root/main/dataset/nuscenes/samples/LIDAR_TOP')):
                     if f[42:-8] == str(base['timestamp']):
                         break
                 sample = 'samples/LIDAR_TOP/' + f
