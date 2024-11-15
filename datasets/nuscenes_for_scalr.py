@@ -123,21 +123,28 @@ class NuScenesSemSeg(PCDataset):
                 token = base['data']['LIDAR_TOP']
                 array.append([sample, lidarseg, token])
             self.list_frames = array
+        
+        self.scramble = np.random.permutation(len(self.list_frames))
 
     def __len__(self):
         return len(self.list_frames)
 
     def load_pc(self, index):
         # Load point cloud
+        if self.phase == 'train':
+            pc_load = self.list_frames[self.scramble[index]]
+        else:
+            pc_load = self.list_frames[index]
+
         pc = np.fromfile(
-            os.path.join(self.rootdir, self.list_frames[index][0]),
+            os.path.join(self.rootdir, pc_load[0]),
             dtype=np.float32,
         )
         pc = pc.reshape((-1, 5))[:, :4]
 
         # Load segmentation labels
         labels = np.fromfile(
-            os.path.join(self.rootdir, self.list_frames[index][1]),
+            os.path.join(self.rootdir, pc_load[1]),
             dtype=np.uint8,
         )
         labels = self.mapper(labels)
@@ -146,7 +153,7 @@ class NuScenesSemSeg(PCDataset):
         labels = labels - 1
         labels[labels == -1] = 255
 
-        return pc, labels, self.list_frames[index][2]
+        return pc, labels, pc_load[2]
 
 
 class NuScenesDistill(ImPcDataset):

@@ -217,27 +217,30 @@ def val(stop):
     log_data["meanIoU"] = mean
     wandb.log(log_data)
 
+num_samples_per_class = {}
+
+def int_sampling(tokens, labels_v_single):
+
+    return None
+
 for it, batch in enumerate(train_loader):
     
     # Network inputs
     
     tokens, labels_v_single = forward_model(it, batch, stop)
+    training_ids = int_sampling(tokens, labels_v_single)
+    tokens, labels_v_single = tokens[training_ids], labels_v_single[training_ids]
+
+    # Intelligent sampling
+    
 
     #HD Training
-    for samples, labels in tqdm(zip(tokens,labels_v_single), desc="Training"):
-        if labels != 255:
-            samples = samples.to(device)
-            labels = labels.to(device)
-            samples_hv = encode(samples).reshape((1, DIMENSIONS))
-            model_hd.add(samples_hv, labels)
+    #for samples, labels in tqdm(zip(tokens,labels_v_single), desc="Training"):
+    #    if labels != 255:
+    #        samples = samples.to(device)
+    #        labels = labels.to(device)
+    #        samples_hv = encode(samples).reshape((1, DIMENSIONS))
+    #        model_hd.add(samples_hv, labels)
 
-
-    # Voxels to points
-    #token_upsample = []
-    #temp = None
-    #for id_b, closest_point in enumerate(batch["upsample"]):
-    #    temp = tokens[id_b, :, closest_point]
-    #    token_upsample.append(temp.T)
-    #token_2 = torch.cat(token_upsample, dim=0)
-    
-    val(stop)
+    #if it == 0 % 20: # Test every 10 samples
+    #    val(stop)
