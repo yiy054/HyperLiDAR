@@ -160,7 +160,7 @@ def forward_model(it, batch, stop):
 
     with torch.no_grad():
         out = model(feat, cell_ind, occupied_cell, neighbors_emb, stop)
-        embed, tokens = out[0][0], out[1][0]
+        embed, tokens, soa_result = out[0][0], out[1][0], out[2][0]
         embed = embed.transpose(0, 1)
         tokens = tokens.transpose(0, 1)
 
@@ -173,7 +173,7 @@ def forward_model(it, batch, stop):
             most_common_value = torch.bincount(lab_tens).argmax()
             labels_v_single.append(most_common_value)
     
-    return tokens, labels_v_single
+    return tokens, labels_v_single, soa_result
 
 def val(stop):
     #accuracy = torchmetrics.Accuracy("multiclass", num_classes=num_classes)
@@ -219,7 +219,7 @@ def val(stop):
 
 num_samples_per_class = {}
 
-def int_sampling(tokens, labels_v_single):
+def intelligent_sampling(tokens, labels_v_single):
 
     return None
 
@@ -227,11 +227,9 @@ for it, batch in enumerate(train_loader):
     
     # Network inputs
     
-    tokens, labels_v_single = forward_model(it, batch, stop)
-    training_ids = int_sampling(tokens, labels_v_single)
-    tokens, labels_v_single = tokens[training_ids], labels_v_single[training_ids]
-
-    # Intelligent sampling
+    tokens, labels_v_single, soa_result = forward_model(it, batch, stop)
+    #training_ids = intelligent_sampling(tokens, labels_v_single)
+    #tokens, labels_v_single = tokens[training_ids], labels_v_single[training_ids]
     
 
     #HD Training
@@ -244,3 +242,13 @@ for it, batch in enumerate(train_loader):
 
     #if it == 0 % 20: # Test every 10 samples
     #    val(stop)
+
+    # SOA comparison:
+    miou = MulticlassJaccardIndex(num_classes=16, average=None)
+    accuracy = miou(s, l)
+    mean = torch.mean(accuracy)
+
+    print(f"Mean accuracy of {mean}")
+    log_data = {f"class_{i}_IoU": c for i, c in enumerate(accuracy)}
+    log_data["meanIoU"] = mean
+    wandb.log(log_data)
