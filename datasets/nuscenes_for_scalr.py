@@ -74,6 +74,11 @@ class NuScenesSemSeg(PCDataset):
 
         # List all keyframes
         self.ratio = ratio
+
+        nusc = NuScenes(version='v1.0-mini', dataroot=kwargs['rootdir'], verbose=True)
+        array = []
+        self.scramble = np.random.permutation(len(nusc.sample))
+
         if self.phase == "train":
             #if self.ratio == "100p":
             #    self.list_frames = np.load(
@@ -91,30 +96,9 @@ class NuScenesSemSeg(PCDataset):
             #    )
             #else:
             #   raise ValueError(f"Unprepared nuScenes split {self.ratio}.")
-            nusc = NuScenes(version='v1.0-mini', dataroot=kwargs['rootdir'], verbose=True)
-            #self.list_frames = np.load(
-            #    os.path.join(current_folder, "list_files_nuscenes.npz")
-            #)[self.phase]
-            array = []
-            print(int(len(nusc.sample)*0.70))
+
             for i in range(int(len(nusc.sample)*0.70)):
-                base = nusc.sample[i]
-                for j, f in enumerate(os.listdir('/root/main/dataset/nuscenes/samples/LIDAR_TOP')):
-                    if f[42:-8] == str(base['timestamp']):
-                        break
-                sample = 'samples/LIDAR_TOP/' + f
-                lidarseg = 'lidarseg/v1.0-mini/' + base['data']['LIDAR_TOP'] + '_lidarseg.bin'
-                token = base['data']['LIDAR_TOP']
-                array.append([sample, lidarseg, token])
-            self.list_frames = array
-        elif self.phase == "val":
-            nusc = NuScenes(version='v1.0-mini', dataroot=kwargs['rootdir'], verbose=True)
-            #self.list_frames = np.load(
-            #    os.path.join(current_folder, "list_files_nuscenes.npz")
-            #)[self.phase]
-            array = []
-            for i in range(int(len(nusc.sample)*0.70), int(len(nusc.sample)*0.85)):
-                base = nusc.sample[i]
+                base = nusc.sample[self.scramble[i]]
                 for j, f in enumerate(os.listdir('/root/main/dataset/nuscenes/samples/LIDAR_TOP')):
                     if f[42:-8] == str(base['timestamp']):
                         break
@@ -124,7 +108,17 @@ class NuScenesSemSeg(PCDataset):
                 array.append([sample, lidarseg, token])
             self.list_frames = array
         
-        self.scramble = np.random.permutation(len(self.list_frames))
+        elif self.phase == "val":
+            for i in range(int(len(nusc.sample)*0.70), int(len(nusc.sample)*0.85)):
+                base = nusc.sample[self.scramble[i]]
+                for j, f in enumerate(os.listdir('/root/main/dataset/nuscenes/samples/LIDAR_TOP')):
+                    if f[42:-8] == str(base['timestamp']):
+                        break
+                sample = 'samples/LIDAR_TOP/' + f
+                lidarseg = 'lidarseg/v1.0-mini/' + base['data']['LIDAR_TOP'] + '_lidarseg.bin'
+                token = base['data']['LIDAR_TOP']
+                array.append([sample, lidarseg, token])
+            self.list_frames = array
 
     def __len__(self):
         return len(self.list_frames)
@@ -132,7 +126,7 @@ class NuScenesSemSeg(PCDataset):
     def load_pc(self, index):
         # Load point cloud
         if self.phase == 'train':
-            pc_load = self.list_frames[self.scramble[index]]
+            pc_load = self.list_frames[index]
         else:
             pc_load = self.list_frames[index]
 
