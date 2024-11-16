@@ -96,8 +96,8 @@ class NuScenesSemSeg(PCDataset):
             #    os.path.join(current_folder, "list_files_nuscenes.npz")
             #)[self.phase]
             array = []
-            print(int(len(nusc.sample)*0.8))
-            for i in range(int(len(nusc.sample)*0.8)):
+            print(int(len(nusc.sample)*0.70))
+            for i in range(int(len(nusc.sample)*0.70)):
                 base = nusc.sample[i]
                 for j, f in enumerate(os.listdir('/root/main/dataset/nuscenes/samples/LIDAR_TOP')):
                     if f[42:-8] == str(base['timestamp']):
@@ -113,7 +113,7 @@ class NuScenesSemSeg(PCDataset):
             #    os.path.join(current_folder, "list_files_nuscenes.npz")
             #)[self.phase]
             array = []
-            for i in range(int(len(nusc.sample)*0.8), len(nusc.sample)):
+            for i in range(int(len(nusc.sample)*0.70), int(len(nusc.sample)*0.85)):
                 base = nusc.sample[i]
                 for j, f in enumerate(os.listdir('/root/main/dataset/nuscenes/samples/LIDAR_TOP')):
                     if f[42:-8] == str(base['timestamp']):
