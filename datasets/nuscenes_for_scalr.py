@@ -93,8 +93,9 @@ class NuScenesSemSeg(PCDataset):
             token = base['data']['LIDAR_TOP']
             array.append([sample, lidarseg, token])
         self.list_frames = array
+        self.phase = "train"
     
-    def init_testing(self):
+    def init_val(self):
         array = []
         for i in range(int(len(self.nusc.sample)*0.70), int(len(self.nusc.sample)*0.85)):
             base = self.nusc.sample[self.scramble[i]]
@@ -106,6 +107,21 @@ class NuScenesSemSeg(PCDataset):
             token = base['data']['LIDAR_TOP']
             array.append([sample, lidarseg, token])
         self.list_frames = array
+        self.phase = "trainval"
+    
+    def init_test(self):
+        array = []
+        for i in range(int(len(self.nusc.sample)*0.85), int(len(self.nusc.sample))):
+            base = self.nusc.sample[self.scramble[i]]
+            for j, f in enumerate(os.listdir('/root/main/dataset/nuscenes/samples/LIDAR_TOP')):
+                if f[42:-8] == str(base['timestamp']):
+                    break
+            sample = 'samples/LIDAR_TOP/' + f
+            lidarseg = 'lidarseg/v1.0-mini/' + base['data']['LIDAR_TOP'] + '_lidarseg.bin'
+            token = base['data']['LIDAR_TOP']
+            array.append([sample, lidarseg, token])
+        self.list_frames = array
+        self.phase = "test"
 
     def load_pc(self, index):
         # Load point cloud

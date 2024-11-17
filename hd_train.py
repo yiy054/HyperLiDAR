@@ -76,18 +76,16 @@ kwargs = {
 DATASET = LIST_DATASETS.get("nuscenes")
 
 # Train dataset
-train_dataset = DATASET(
+dataset_train = DATASET(
     phase="train",
     **kwargs,
 )
-
-test_dataset = DATASET(
-    phase="val",
-    **kwargs,
-)
+dataset_test = copy.deepcopy(dataset_train)
+dataset_train.init_training()
+dataset_test.init_testing()
 
 train_loader = torch.utils.data.DataLoader(
-        train_dataset,
+        dataset_train,
         batch_size=1,
         pin_memory=True,
         drop_last=True,
@@ -95,7 +93,7 @@ train_loader = torch.utils.data.DataLoader(
     )
 
 test_loader = torch.utils.data.DataLoader(
-        test_dataset,
+        dataset_test,
         batch_size=1,
         pin_memory=True,
         drop_last=True,
