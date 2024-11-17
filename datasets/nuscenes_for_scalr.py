@@ -109,10 +109,10 @@ class NuScenesSemSeg(PCDataset):
 
     def load_pc(self, index):
         # Load point cloud
-        if self.phase == 'train':
-            pc_load = self.list_frames[index]
-        else:
-            pc_load = self.list_frames[index]
+        #if self.phase == 'train':
+        #    pc_load = self.list_frames[index]
+        #else:
+        pc_load = self.list_frames[index]
 
         pc = np.fromfile(
             os.path.join(self.rootdir, pc_load[0]),
