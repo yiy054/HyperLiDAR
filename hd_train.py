@@ -142,11 +142,13 @@ class Encoder(nn.Module):
         self.value = embeddings.Level(levels, out_features)
 
     def forward(self, x):
-        print(x)
-        print(max(x))
-        print(min(x))
-        here = input("Enter")
-        sample_hv = torchhd.bind(self.position.weight, self.value(x))
+        # Find the min and max values
+        min_val = torch.min(x)
+        max_val = torch.max(x)
+
+        # Normalize the tensor
+        norm_x = (x - min_val) / (max_val - min_val)
+        sample_hv = torchhd.bind(self.position.weight, self.value(norm_x))
         sample_hv = torchhd.multiset(sample_hv)
         return torchhd.hard_quantize(sample_hv)
 
@@ -264,9 +266,6 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
         samples = samples.to(device)
         lab = lab.to(device).reshape((1,))
         samples_hv = encode(samples).reshape((1, DIMENSIONS))
-        print(samples_hv.shape)
-        print(lab.shape)
-        print(lab)
         model_hd.add_online(samples_hv, lab, lr=0.001)
         outputs = model_hd(samples_hv, dot=True)
         outputs = outputs.argmax().data#, device=device_string).reshape((1))
