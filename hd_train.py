@@ -269,7 +269,7 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
         labels_array_t.append(lab)
 
     if it % 20 == 0: # Test every 10 samples
-        print(torchhd.cosine_similarity(model_hd.weights))
+        print(torchhd.cosine_similarity(model_hd.weight))
         x = input("Enter")
         val(stop)
 
