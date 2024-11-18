@@ -16,6 +16,9 @@ from tqdm import tqdm
 from collections import OrderedDict
 import warnings
 import copy
+import random
+import numpy as np
+import os
 
 import torchhd
 from torchhd.models import Centroid
@@ -24,7 +27,19 @@ from torchhd import embeddings
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-stop', '--layers', type=int, help='how many layers deep', default=0)
+parser.add_argument('-soa', '--soa', action="store_true", default=False, help='Plot SOA')
+parser.add_argument(
+        "--seed", default=None, type=int, help="Seed for initializing training"
+    )
 args = parser.parse_args()
+
+# Set seed
+if args.seed is not None:
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    torch.cuda.manual_seed(args.seed)
+    os.environ["PYTHONHASHSEED"] = str(args.seed)
 
 wandb.login(key="9487c04b8eff0c16cac4e785f2b57c3a475767d3")
 
@@ -160,7 +175,12 @@ num_classes = 16
 model_hd = Centroid(DIMENSIONS, num_classes)
 model_hd = model_hd.to(device)
 
-stop = args.layers
+if not args.soa:
+    stop = args.layers
+    name = f"hd_param_stop_layer_corrected_{stop}"
+else:
+    stop = 48
+    name = f"hd_param_SoA"
 
 run = wandb.init(
     # Set the project where this run will be logged
@@ -171,7 +191,7 @@ run = wandb.init(
         "hd_dim": 10000,
         "training_samples": len(train_loader),
     },
-    id=f"hd_param_stop_layer_corrected_{stop}",
+    id=name,
 )
 
 def forward_model(it, batch, stop):
@@ -196,13 +216,14 @@ def forward_model(it, batch, stop):
         with torch.no_grad():
             out = model(*net_inputs, stop)
             encode, tokens, out = out[0], out[1], out[2]
+            pred_label = out.max(1)[1]
 
     # Confusion matrix
     with torch.no_grad():
         nb_class = out.shape[1]
         where = labels != 255
     
-    return tokens[0,:,where], labels[where], out[0,:,where]
+    return tokens[0,:,where], labels[where], pred_label[0,:,where]
 
 def val(stop):
     #accuracy = torchmetrics.Accuracy("multiclass", num_classes=num_classes)
@@ -217,19 +238,24 @@ def val(stop):
         tokens = torch.transpose(tokens, 0,1)
 
         #HD Testing
-        for samples, l in zip(tokens,labels):
-            
-            samples = samples.to(device)
-            samples_hv = encode(samples).reshape((1, DIMENSIONS))
-            outputs = model_hd(samples_hv, dot=True)
-            outputs = outputs.argmax().data#, device=device_string).reshape((1))
-            #l = torch.tensor([l])
-            #accuracy.update(outputs.cpu(), l)
-            output_array.append(outputs.cpu())
-            labels_array.append(l)
+        if not args.soa:
+            for samples, l in zip(tokens,labels):
+                
+                samples = samples.to(device)
+                samples_hv = encode(samples).reshape((1, DIMENSIONS))
+                outputs = model_hd(samples_hv, dot=True)
+                outputs = outputs.argmax().data#, device=device_string).reshape((1))
+                #l = torch.tensor([l])
+                #accuracy.update(outputs.cpu(), l)
+                output_array.append(outputs.cpu())
+                labels_array.append(l)
     
-    l = torch.tensor(labels_array)
-    out = torch.tensor(output_array)
+    if not args.soa:
+        l = torch.tensor(labels_array)
+        out = torch.tensor(output_array)
+    else:
+        l = labels
+        out = full
 
     accuracy = miou(out, l)
     mean = torch.mean(accuracy)
@@ -260,28 +286,28 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
     tokens = torch.transpose(tokens, 0,1)
 
     #HD Training
-    for samples, lab in zip(tokens,labels):
-        samples = samples.to(device)
-        lab = lab.to(device).reshape((1,))
-        samples_hv = encode(samples).reshape((1, DIMENSIONS))
-        model_hd.add_online(samples_hv, lab, lr=0.0001)
-        outputs = model_hd(samples_hv, dot=True)
-        outputs = outputs.argmax().data#, device=device_string).reshape((1))
-        #l = torch.tensor([l])
-        #accuracy.update(outputs.cpu(), l)
-        output_array_t.append(outputs.cpu())
-        labels_array_t.append(lab)
+    if not args.soa:
+        for samples, lab in zip(tokens,labels):
+            samples = samples.to(device)
+            lab = lab.to(device).reshape((1,))
+            samples_hv = encode(samples).reshape((1, DIMENSIONS))
+            model_hd.add_online(samples_hv, lab, lr=0.0001)
+            outputs = model_hd(samples_hv, dot=True)
+            outputs = outputs.argmax().data#, device=device_string).reshape((1))
+            #l = torch.tensor([l])
+            #accuracy.update(outputs.cpu(), l)
+            output_array_t.append(outputs.cpu())
+            labels_array_t.append(lab)
 
-    print(torch.bincount(labels))
+    if it % 20 == 0: # Test every 10 samples
+        val(stop)
 
-    print(torchhd.cosine_similarity(model_hd.weight, model_hd.weight))
-    x = input("Enter")
-
-    #if it % 20 == 0: # Test every 10 samples
-    #    val(stop)
-
-    l = torch.tensor(labels_array_t)
-    out = torch.tensor(output_array_t)
+    if not args.soa:
+        l = torch.tensor(labels_array_t)
+        out = torch.tensor(output_array_t)
+    else:
+        l = labels
+        out = soa_result
 
     accuracy = miou(out, l)
     mean = torch.mean(accuracy)
