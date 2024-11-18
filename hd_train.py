@@ -131,7 +131,7 @@ val_loader = torch.utils.data.DataLoader(
 
 DIMENSIONS = 10000
 FEAT_SIZE = 768
-NUM_LEVELS = 5000
+NUM_LEVELS = 8000
 BATCH_SIZE = 1  # for GPUs with enough memory we can process multiple images at ones
 
 class Encoder(nn.Module):
@@ -143,8 +143,8 @@ class Encoder(nn.Module):
 
     def forward(self, x):
         # Find the min and max values
-        min_val = -2000 #torch.min(x)
-        max_val = 2000 #torch.max(x)
+        min_val = torch.min(x)
+        max_val = torch.max(x)
 
         # Normalize the tensor
         norm_x = (x - min_val) / (max_val - min_val)
@@ -206,8 +206,6 @@ def forward_model(it, batch, stop):
 
 def val(stop):
     #accuracy = torchmetrics.Accuracy("multiclass", num_classes=num_classes)
-
-    model_hd.normalize()
     
     output_array = []
     labels_array = []
@@ -266,7 +264,7 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
         samples = samples.to(device)
         lab = lab.to(device).reshape((1,))
         samples_hv = encode(samples).reshape((1, DIMENSIONS))
-        model_hd.add_online(samples_hv, lab, lr=0.001)
+        model_hd.add_online(samples_hv, lab, lr=0.0001)
         outputs = model_hd(samples_hv, dot=True)
         outputs = outputs.argmax().data#, device=device_string).reshape((1))
         #l = torch.tensor([l])
