@@ -210,6 +210,7 @@ def val(stop):
         # Network inputs
         
         tokens, labels, full = forward_model(it, batch, stop)
+        tokens = torch.transpose(tokens, 0,1)
 
         #HD Testing
         for samples, l in tqdm(zip(tokens,labels), desc="Testing"):
@@ -245,7 +246,7 @@ labels_array_t = []
 
 miou = MulticlassJaccardIndex(num_classes=16, average=None)
 
-for it, batch in enumerate(train_loader):
+for it, batch in tqdm(enumerate(train_loader), desc="Training"):
     
     # Network inputs
     
@@ -255,7 +256,7 @@ for it, batch in enumerate(train_loader):
     tokens = torch.transpose(tokens, 0,1)
 
     #HD Training
-    for samples, lab in tqdm(zip(tokens,labels), desc="Training"):
+    for samples, lab in zip(tokens,labels):
         samples = samples.to(device)
         lab = lab.to(device)
         samples_hv = encode(samples).reshape((1, DIMENSIONS))
