@@ -146,6 +146,7 @@ class Encoder(nn.Module):
         sample_hv = torchhd.bind(self.position.weight, self.value(x))
         sample_hv = torchhd.multiset(sample_hv)
         print(torchhd.hard_quantize(sample_hv))
+        x = input("Enter")
         return torchhd.hard_quantize(sample_hv)
 
 
