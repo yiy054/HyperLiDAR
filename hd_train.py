@@ -196,7 +196,7 @@ def forward_model(it, batch, stop):
         nb_class = out.shape[1]
         where = labels != 255
     
-    return tokens[0,:,where], labels[where], out[where]
+    return tokens[0,:,where], labels[where], out[0,:,where]
 
 def val(stop):
     #accuracy = torchmetrics.Accuracy("multiclass", num_classes=num_classes)
@@ -209,7 +209,7 @@ def val(stop):
     for it, batch in enumerate(val_loader):
         # Network inputs
         
-        tokens, labels = forward_model(it, batch, stop)
+        tokens, labels, full = forward_model(it, batch, stop)
 
         #HD Testing
         for samples, l in tqdm(zip(tokens,labels), desc="Testing"):
