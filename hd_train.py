@@ -279,8 +279,8 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
     print(torchhd.cosine_similarity(model_hd.weight, model_hd.weight))
     x = input("Enter")
 
-    if it % 20 == 0: # Test every 10 samples
-        val(stop)
+    #if it % 20 == 0: # Test every 10 samples
+    #    val(stop)
 
     l = torch.tensor(labels_array_t)
     out = torch.tensor(output_array_t)
