@@ -131,7 +131,7 @@ val_loader = torch.utils.data.DataLoader(
 
 DIMENSIONS = 10000
 FEAT_SIZE = 768
-NUM_LEVELS = 1000
+NUM_LEVELS = 5000
 BATCH_SIZE = 1  # for GPUs with enough memory we can process multiple images at ones
 
 class Encoder(nn.Module):
@@ -143,8 +143,8 @@ class Encoder(nn.Module):
 
     def forward(self, x):
         # Find the min and max values
-        min_val = torch.min(x)
-        max_val = torch.max(x)
+        min_val = -2000 #torch.min(x)
+        max_val = 2000 #torch.max(x)
 
         # Normalize the tensor
         norm_x = (x - min_val) / (max_val - min_val)
