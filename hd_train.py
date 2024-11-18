@@ -262,7 +262,7 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
     #HD Training
     for samples, lab in zip(tokens,labels):
         samples = samples.to(device)
-        lab = lab.to(device)
+        lab = lab.to(device).reshape((1,))
         samples_hv = encode(samples).reshape((1, DIMENSIONS))
         print(samples_hv.shape)
         print(lab.shape)
