@@ -13,10 +13,14 @@ from torchmetrics.classification import MulticlassJaccardIndex
 # Note: this example requires the torchmetrics library: https://torchmetrics.readthedocs.io
 import torchmetrics
 from tqdm import tqdm
+from collections import OrderedDict
+import warnings
+import copy
 
 import torchhd
 from torchhd.models import Centroid
 from torchhd import embeddings
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-stop', '--layers', type=int, help='how many layers deep', default=0)
@@ -38,23 +42,46 @@ model = Segmenter(
     layer_norm=True,
 )
 
+classif = torch.nn.Conv1d(
+    768, 16, 1
+)
+torch.nn.init.constant_(classif.bias, 0)
+torch.nn.init.constant_(classif.weight, 0)
+model.classif = torch.nn.Sequential(
+    torch.nn.BatchNorm1d(768),
+    classif,
+)
+
+for p in model.parameters():
+    p.requires_grad = False
+for p in model.classif.parameters():
+    p.requires_grad = True
+
+def get_optimizer(parameters):
+    return torch.optim.AdamW(
+        parameters,
+        lr=0.001,
+        weight_decay=0.003,
+    )
+
+optim = get_optimizer(model.parameters())
+
 # Load pretrained model
-ckpt = torch.load('/root/main/ScaLR/saved_models/ckpt_last_scalr.pth', map_location=device_string) # cuda:0
-ckpt = ckpt["net"]
+path_to_ckpt = '/root/main/ScaLR/saved_models/ckpt_last_scalr.pth'
+checkpoint = torch.load(path_to_ckpt,
+    map_location=device_string)
+state_dict = checkpoint["net"]  # Adjust key as needed
+new_state_dict = OrderedDict()
 
-new_ckpt = {}
-for k in ckpt.keys():
-    if k.startswith("module"):
-        if k.startswith("module.classif.0"):
-            continue
-        elif k.startswith("module.classif.1"):
-            new_ckpt["classif" + k[len("module.classif.1") :]] = ckpt[k]
-        else:
-            new_ckpt[k[len("module.") :]] = ckpt[k]
-    else:
-        new_ckpt[k] = ckpt[k]
+for k, v in state_dict.items():
+    new_key = k.replace("module.", "")  # Remove "module." prefix
+    new_state_dict[new_key] = v
 
-model.load_state_dict(new_ckpt)
+model.load_state_dict(new_state_dict)
+
+print(
+    f"Checkpoint loaded on {device_string}: {path_to_ckpt}"
+)
 
 if device_string != 'cpu':
     torch.cuda.set_device(device_string) # cuda:0
@@ -64,7 +91,7 @@ model.eval()
 
 kwargs = {
         "rootdir": '/root/main/dataset/nuscenes',
-        "input_feat": ["xyz", "intensity", "radius"],
+        "input_feat": ["intensity", "xyz", "radius"],
         "voxel_size": 0.1,
         "num_neighbors": 16,
         "dim_proj": [2, 1, 0],
@@ -76,13 +103,15 @@ kwargs = {
 DATASET = LIST_DATASETS.get("nuscenes")
 
 # Train dataset
-dataset_train = DATASET(
+dataset = DATASET(
     phase="train",
     **kwargs,
 )
-dataset_test = copy.deepcopy(dataset_train)
+#print(dataset.voxel_size)
+dataset_train = copy.deepcopy(dataset)
+dataset_val = copy.deepcopy(dataset)
 dataset_train.init_training()
-dataset_test.init_testing()
+dataset_val.init_val()
 
 train_loader = torch.utils.data.DataLoader(
         dataset_train,
@@ -92,8 +121,8 @@ train_loader = torch.utils.data.DataLoader(
         collate_fn=Collate(),
     )
 
-test_loader = torch.utils.data.DataLoader(
-        dataset_test,
+val_loader = torch.utils.data.DataLoader(
+        dataset_val,
         batch_size=1,
         pin_memory=True,
         drop_last=True,
@@ -104,7 +133,6 @@ DIMENSIONS = 10000
 FEAT_SIZE = 768
 NUM_LEVELS = 1000
 BATCH_SIZE = 1  # for GPUs with enough memory we can process multiple images at ones
-
 
 class Encoder(nn.Module):
     def __init__(self, out_features, size, levels):
@@ -137,7 +165,7 @@ run = wandb.init(
         "hd_dim": 10000,
         "training_samples": len(train_loader),
     },
-    id=f"hd_param_stop_layer_{stop}",
+    id=f"hd_param_stop_layer_corrected_{stop}",
 )
 
 def forward_model(it, batch, stop):
@@ -155,54 +183,45 @@ def forward_model(it, batch, stop):
         cell_ind = cell_ind.cuda(0, non_blocking=True)
         occupied_cell = occupied_cell.cuda(0, non_blocking=True)
         neighbors_emb = neighbors_emb.cuda(0, non_blocking=True)
+    net_inputs = (feat, cell_ind, occupied_cell, neighbors_emb)
 
+    with torch.autocast("cuda", enabled=True):
+        # Logits
+        with torch.no_grad():
+            out = model(*net_inputs, stop)
+            encode, tokens, out = out[0], out[1], out[2]
+
+    # Confusion matrix
     with torch.no_grad():
-        out = model(feat, cell_ind, occupied_cell, neighbors_emb, stop)
-        embed, tokens, soa_result = out[0][0], out[1][0], out[2][0]
-        embed = embed.transpose(0, 1)
-        tokens = tokens.transpose(0, 1)
-
-        labels_v = [[] for i in range(embed.shape[0])]
-        for i, vox in enumerate(batch["upsample"][0]):
-            labels_v[vox].append(labels[i])
-        labels_v_single = []
-        for labels_ in labels_v:
-            lab_tens = torch.tensor(labels_)
-            most_common_value = torch.bincount(lab_tens).argmax()
-            labels_v_single.append(most_common_value)
+        nb_class = out.shape[1]
+        where = labels != 255
     
-    return tokens, labels_v_single, soa_result
+    return tokens[where], labels[where], out[where]
 
 def val(stop):
     #accuracy = torchmetrics.Accuracy("multiclass", num_classes=num_classes)
-    miou = MulticlassJaccardIndex(num_classes=16, average=None)
 
     model_hd.normalize()
     
     output_array = []
     labels_array = []
 
-    for it, batch in enumerate(test_loader):
-        if it < 10:
-            # Network inputs
+    for it, batch in enumerate(val_loader):
+        # Network inputs
+        
+        tokens, labels = forward_model(it, batch, stop)
+
+        #HD Testing
+        for samples, l in tqdm(zip(tokens,labels), desc="Testing"):
             
-                tokens, labels_v_single = forward_model(it, batch, stop)
-
-                #HD Testing
-                for samples, l in tqdm(zip(tokens,labels_v_single), desc="Testing"):
-                    if l != 255: # Make sure its not noise
-                        
-                        samples = samples.to(device)
-                        samples_hv = encode(samples).reshape((1, DIMENSIONS))
-                        outputs = model_hd(samples_hv, dot=True)
-                        outputs = outputs.argmax().data#, device=device_string).reshape((1))
-                        #l = torch.tensor([l])
-                        #accuracy.update(outputs.cpu(), l)
-                        output_array.append(outputs.cpu())
-                        labels_array.append(l)
-
-        else:
-            break
+            samples = samples.to(device)
+            samples_hv = encode(samples).reshape((1, DIMENSIONS))
+            outputs = model_hd(samples_hv, dot=True)
+            outputs = outputs.argmax().data#, device=device_string).reshape((1))
+            #l = torch.tensor([l])
+            #accuracy.update(outputs.cpu(), l)
+            output_array.append(outputs.cpu())
+            labels_array.append(l)
     
     l = torch.tensor(labels_array)
     out = torch.tensor(output_array)
@@ -210,43 +229,54 @@ def val(stop):
     accuracy = miou(out, l)
     mean = torch.mean(accuracy)
 
-    print(f"Mean accuracy of {mean}")
-    log_data = {f"class_{i}_IoU": c for i, c in enumerate(accuracy)}
-    log_data["meanIoU"] = mean
+    print(f"Validation Mean accuracy of {mean}")
+    log_data = {f"Validation class_{i}_IoU": c for i, c in enumerate(accuracy)}
+    log_data["Validation meanIoU"] = mean
     wandb.log(log_data)
 
-num_samples_per_class = {}
+#num_samples_per_class = {}
 
-def intelligent_sampling(tokens, labels_v_single):
+#def intelligent_sampling(tokens, labels_v_single):
 
-    return None
+#    return None
+
+output_array_t = []
+labels_array_t = []
+
+miou = MulticlassJaccardIndex(num_classes=16, average=None)
 
 for it, batch in enumerate(train_loader):
     
     # Network inputs
     
-    tokens, labels_v_single, soa_result = forward_model(it, batch, stop)
+    tokens, labels, soa_result = forward_model(it, batch, stop)
     #training_ids = intelligent_sampling(tokens, labels_v_single)
     #tokens, labels_v_single = tokens[training_ids], labels_v_single[training_ids]
     
 
     #HD Training
-    #for samples, labels in tqdm(zip(tokens,labels_v_single), desc="Training"):
-    #    if labels != 255:
-    #        samples = samples.to(device)
-    #        labels = labels.to(device)
-    #        samples_hv = encode(samples).reshape((1, DIMENSIONS))
-    #        model_hd.add(samples_hv, labels)
+    for samples, lab in tqdm(zip(tokens,labels), desc="Training"):
+        samples = samples.to(device)
+        lab = lab.to(device)
+        samples_hv = encode(samples).reshape((1, DIMENSIONS))
+        outputs = model_hd(samples_hv, dot=True)
+        outputs = outputs.argmax().data#, device=device_string).reshape((1))
+        #l = torch.tensor([l])
+        #accuracy.update(outputs.cpu(), l)
+        output_array_t.append(outputs.cpu())
+        labels_array_t.append(lab)
+        model_hd.add(samples_hv, lab)
 
-    #if it == 0 % 20: # Test every 10 samples
-    #    val(stop)
+    if it == 0 % 20: # Test every 10 samples
+        val(stop)
 
-    # SOA comparison:
-    miou = MulticlassJaccardIndex(num_classes=16, average=None)
-    accuracy = miou(s, l)
+    l = torch.tensor(labels_array_t)
+    out = torch.tensor(output_array_t)
+
+    accuracy = miou(out, l)
     mean = torch.mean(accuracy)
 
-    print(f"Mean accuracy of {mean}")
-    log_data = {f"class_{i}_IoU": c for i, c in enumerate(accuracy)}
-    log_data["meanIoU"] = mean
+    print(f"Training mean accuracy of {mean}")
+    log_data = {f"Training class_{i}_IoU": c for i, c in enumerate(accuracy)}
+    log_data["Training meanIoU"] = mean
     wandb.log(log_data)

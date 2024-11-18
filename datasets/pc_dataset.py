@@ -50,6 +50,7 @@ class PCDataset(Dataset):
         self.input_feat = input_feat
 
         # Downsample input point cloud by small voxelization
+        self.voxel_size = voxel_size
         self.downsample = tr.Voxelize(
             dims=(0, 1, 2),
             voxel_size=voxel_size,
