@@ -252,7 +252,8 @@ for it, batch in enumerate(train_loader):
     tokens, labels, soa_result = forward_model(it, batch, stop)
     #training_ids = intelligent_sampling(tokens, labels_v_single)
     #tokens, labels_v_single = tokens[training_ids], labels_v_single[training_ids]
-    
+    print(tokens.shape)
+    print(labels.shape)
 
     #HD Training
     for samples, lab in tqdm(zip(tokens,labels), desc="Training"):
