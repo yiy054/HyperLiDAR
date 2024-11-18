@@ -142,11 +142,8 @@ class Encoder(nn.Module):
         self.value = embeddings.Level(levels, out_features)
 
     def forward(self, x):
-        print(self.value(x))
         sample_hv = torchhd.bind(self.position.weight, self.value(x))
         sample_hv = torchhd.multiset(sample_hv)
-        print(torchhd.hard_quantize(sample_hv))
-        x = input("Enter")
         return torchhd.hard_quantize(sample_hv)
 
 
@@ -272,6 +269,8 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
         labels_array_t.append(lab)
 
     if it % 20 == 0: # Test every 10 samples
+        print(torchhd.cosine_similarity(model_hd.weights))
+        x = input("Enter")
         val(stop)
 
     l = torch.tensor(labels_array_t)
