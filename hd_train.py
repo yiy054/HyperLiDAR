@@ -206,14 +206,14 @@ def val(stop):
     output_array = []
     labels_array = []
 
-    for it, batch in enumerate(val_loader):
+    for it, batch in tqdm(enumerate(val_loader), desc="Testing"):
         # Network inputs
         
         tokens, labels, full = forward_model(it, batch, stop)
         tokens = torch.transpose(tokens, 0,1)
 
         #HD Testing
-        for samples, l in tqdm(zip(tokens,labels), desc="Testing"):
+        for samples, l in zip(tokens,labels):
             
             samples = samples.to(device)
             samples_hv = encode(samples).reshape((1, DIMENSIONS))
