@@ -268,9 +268,12 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
         output_array_t.append(outputs.cpu())
         labels_array_t.append(lab)
 
+    print(torch.bincount(labels))
+
+    print(torchhd.cosine_similarity(model_hd.weight, model_hd.weight))
+    x = input("Enter")
+
     if it % 20 == 0: # Test every 10 samples
-        print(torchhd.cosine_similarity(model_hd.weight, model_hd.weight))
-        x = input("Enter")
         val(stop)
 
     l = torch.tensor(labels_array_t)
