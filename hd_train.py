@@ -26,7 +26,7 @@ from torchhd import embeddings
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-stop', '--layers', type=int, help='how many layers deep', default=0)
+parser.add_argument('-stop', '--layers', type=int, help='how many layers deep', default=48)
 parser.add_argument('-soa', '--soa', action="store_true", default=False, help='Plot SOA')
 parser.add_argument(
         "--seed", default=None, type=int, help="Seed for initializing training"
@@ -254,8 +254,8 @@ def val(stop):
         l = torch.tensor(labels_array)
         out = torch.tensor(output_array)
     else:
-        l = labels
-        out = full
+        l = labels.cpu()
+        out = full.cpu()
 
     accuracy = miou(out, l)
     mean = torch.mean(accuracy)
@@ -306,8 +306,8 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
         l = torch.tensor(labels_array_t)
         out = torch.tensor(output_array_t)
     else:
-        l = labels
-        out = soa_result
+        l = labels.cpu()
+        out = soa_result.cpu()
 
     print(out)
     print(l)
