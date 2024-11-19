@@ -313,6 +313,8 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
     print(l)
     print(out.shape)
     print(l.shape)
+    print(torch.bincount(l))
+    print(torch.bincount(out))
 
     accuracy = miou(out, l)
     mean = torch.mean(accuracy)
