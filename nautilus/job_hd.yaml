@@ -22,7 +22,7 @@ spec:
             wget https://github.com/valeoai/ScaLR/releases/download/v0.1.0/info_datasets.tar.gz;
             tar -xvzf info_datasets.tar.gz;
             rm info_datasets.tar.gz;
-            python hd_train.py -soa ;
+            python hd_train.py --soa --seed 0;
         volumeMounts:
           - mountPath: /root/main
             name: temp-ivannia-volume
