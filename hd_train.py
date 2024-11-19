@@ -177,10 +177,10 @@ model_hd = model_hd.to(device)
 
 if not args.soa:
     stop = args.layers
-    name = f"hd_param_stop_layer_corrected_{stop}"
+    name = f"hd_param_layer_{stop}"
 else:
     stop = 48
-    name = f"hd_param_SoA"
+    name = f"ScaLR_SoA"
 
 run = wandb.init(
     # Set the project where this run will be logged
