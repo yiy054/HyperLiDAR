@@ -299,8 +299,8 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
             output_array_t.append(outputs.cpu())
             labels_array_t.append(lab)
 
-    if it % 20 == 0: # Test every 10 samples
-        val(stop)
+    #if it % 10 == 0: # Test every 10 samples
+    #    val(stop)
 
     if not args.soa:
         l = torch.tensor(labels_array_t)
@@ -308,6 +308,11 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
     else:
         l = labels
         out = soa_result
+
+    print(out)
+    print(l)
+    print(out.shape)
+    print(l.shape)
 
     accuracy = miou(out, l)
     mean = torch.mean(accuracy)
