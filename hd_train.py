@@ -153,19 +153,22 @@ class Encoder(nn.Module):
     def __init__(self, out_features, size, levels):
         super(Encoder, self).__init__()
         self.flatten = torch.nn.Flatten()
-        self.position = embeddings.Random(size, out_features)
-        self.value = embeddings.Level(levels, out_features)
+        #self.position = embeddings.Random(size, out_features)
+        #self.value = embeddings.Level(levels, out_features)
+        self.rp = torchhd.embeddings.Projection(size, out_features, device=kwargs['device'])
 
     def forward(self, x):
         # Find the min and max values
-        min_val = torch.min(x)
-        max_val = torch.max(x)
+        #min_val = torch.min(x)
+        #max_val = torch.max(x)
 
         # Normalize the tensor
-        norm_x = (x - min_val) / (max_val - min_val)
-        sample_hv = torchhd.bind(self.position.weight, self.value(norm_x))
-        sample_hv = torchhd.multiset(sample_hv)
-        return torchhd.hard_quantize(sample_hv)
+        #norm_x = (x - min_val) / (max_val - min_val)
+        projected = self.rp(x)
+        #sample_hv = torchhd.bind(self.position.weight, self.value(norm_x))
+        #sample_hv = torchhd.multiset(sample_hv)
+        #hv_all = torch.sum(hv_all, dim=0).sign()
+        return torchhd.hard_quantize(projected)
 
 
 encode = Encoder(DIMENSIONS, FEAT_SIZE, NUM_LEVELS)

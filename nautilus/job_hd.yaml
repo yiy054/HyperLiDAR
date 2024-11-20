@@ -1,12 +1,12 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: scalr-job-48
+  name: scalr-job-soa
 spec:
   template:
     spec:
       containers:
-      - name: scalr-job-48
+      - name: scalr-job-soa
         image: nvidia/cuda:11.1.1-cudnn8-devel-ubuntu18.04
         command: ["/bin/sh", "-c"]
         args:
@@ -22,7 +22,7 @@ spec:
             wget https://github.com/valeoai/ScaLR/releases/download/v0.1.0/info_datasets.tar.gz;
             tar -xvzf info_datasets.tar.gz;
             rm info_datasets.tar.gz;
-            python hd_train.py --layers 48 --seed 0;
+            python hd_train.py --soa --seed 0;
         volumeMounts:
           - mountPath: /root/main
             name: temp-ivannia-volume
