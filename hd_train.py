@@ -150,7 +150,7 @@ NUM_LEVELS = 8000
 BATCH_SIZE = 1  # for GPUs with enough memory we can process multiple images at ones
 
 class Encoder(nn.Module):
-    def __init__(self, out_features, size, levels, device=torch.device("cpu")):
+    def __init__(self, out_features, size, levels, device=torch.device("cuda:0")):
         super(Encoder, self).__init__()
         self.flatten = torch.nn.Flatten()
         #self.position = embeddings.Random(size, out_features)
