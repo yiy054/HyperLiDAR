@@ -301,7 +301,7 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
             samples_hv = encode(samples).reshape((1, DIMENSIONS))
             model_hd.add_online(samples_hv, lab, lr=0.01) # Lr change
 
-        for samples, lab in zip(tokens,labels):    
+        for samples, lab in zip(soa_result,labels):    
             outputs = model_hd(samples_hv, dot=True)
             outputs = outputs.argmax().data#, device=device_string).reshape((1))
             #l = torch.tensor([l])
