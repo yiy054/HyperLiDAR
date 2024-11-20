@@ -295,7 +295,7 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
 
     #HD Training
     if not args.soa:
-        for samples, lab in zip(tokens,soa_result):
+        for samples, lab in zip(soa_result,labels):
             samples = samples.to(device)
             lab = lab.to(device).reshape((1,))
             samples_hv = encode(samples).reshape((1, DIMENSIONS))
