@@ -338,11 +338,12 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
 
     # Convert confusion matrix to string for saving
     cm_str = "\n".join(["\t".join(map(str, row)) for row in cm])
+    matrix_str = "\n".join(["\t".join(map(str, row.tolist())) for row in out_complete])
     # Save to a text file
     file_path = f"{name}_results.txt"
     with open(file_path, "a") as f:
         f.write(f"\nSample {it}:\n")
-        f.write(out_complete)
+        f.write(matrix_str)
         f.write(f"\nConfusion Matrix fo sample {it}:\n")
         f.write(cm_str)
 
