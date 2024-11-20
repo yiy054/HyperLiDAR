@@ -233,7 +233,7 @@ def forward_model(it, batch, stop):
         nb_class = out.shape[1]
         where = labels != 255
     
-    return tokens[0,:,where], labels[where], pred_label[0, where]
+    return tokens[0,:,where], labels[where], pred_label[0, where], out[0]
 
 def val(stop):
     #accuracy = torchmetrics.Accuracy("multiclass", num_classes=num_classes)
@@ -292,7 +292,7 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
     
     # Network inputs
     
-    tokens, labels, soa_result = forward_model(it, batch, stop)
+    tokens, labels, soa_result, out_complete = forward_model(it, batch, stop)
     #training_ids = intelligent_sampling(tokens, labels_v_single)
     #tokens, labels_v_single = tokens[training_ids], labels_v_single[training_ids]
     tokens = torch.transpose(tokens, 0,1)
@@ -341,6 +341,8 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
     # Save to a text file
     file_path = f"{name}_results.txt"
     with open(file_path, "a") as f:
+        f.write(f"\nSample {it}:\n")
+        f.write(out_complete)
         f.write(f"\nConfusion Matrix fo sample {it}:\n")
         f.write(cm_str)
 
