@@ -155,7 +155,7 @@ class Encoder(nn.Module):
         self.flatten = torch.nn.Flatten()
         #self.position = embeddings.Random(size, out_features)
         #self.value = embeddings.Level(levels, out_features)
-        self.rp = torchhd.embeddings.Projection(size, out_features, device=kwargs['device'])
+        self.rp = torchhd.embeddings.Projection(size, out_features)
 
     def forward(self, x):
         # Find the min and max values
