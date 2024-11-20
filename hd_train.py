@@ -296,7 +296,9 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
     #training_ids = intelligent_sampling(tokens, labels_v_single)
     #tokens, labels_v_single = tokens[training_ids], labels_v_single[training_ids]
     tokens = torch.transpose(tokens, 0,1)
-    soa_result = torch.transpose(soa_result, 0,1)
+    
+    # If you are returning the full arrey of (16, voxels) then transpose
+    #soa_result = torch.transpose(soa_result, 0,1)
 
     #HD Training
     if not args.soa:
