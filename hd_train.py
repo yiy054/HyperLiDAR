@@ -145,7 +145,7 @@ val_loader = torch.utils.data.DataLoader(
     )
 
 DIMENSIONS = 10000
-FEAT_SIZE = 768
+FEAT_SIZE = 16
 NUM_LEVELS = 8000
 BATCH_SIZE = 1  # for GPUs with enough memory we can process multiple images at ones
 
@@ -230,7 +230,7 @@ def forward_model(it, batch, stop):
         nb_class = out.shape[1]
         where = labels != 255
     
-    return tokens[0,:,where], labels[where], pred_label[0,where]
+    return tokens[0,:,where], labels[where], out[0,:,where]
 
 def val(stop):
     #accuracy = torchmetrics.Accuracy("multiclass", num_classes=num_classes)
@@ -291,10 +291,11 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
     #training_ids = intelligent_sampling(tokens, labels_v_single)
     #tokens, labels_v_single = tokens[training_ids], labels_v_single[training_ids]
     tokens = torch.transpose(tokens, 0,1)
+    soa_result = torch.transpose(soa_result, 0,1)
 
     #HD Training
     if not args.soa:
-        for samples, lab in zip(tokens,labels):
+        for samples, lab in zip(tokens,soa_result):
             samples = samples.to(device)
             lab = lab.to(device).reshape((1,))
             samples_hv = encode(samples).reshape((1, DIMENSIONS))
