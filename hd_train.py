@@ -19,6 +19,7 @@ import copy
 import random
 import numpy as np
 import os
+from sklearn.metrics import confusion_matrix
 
 import torchhd
 from torchhd.models import Centroid
@@ -28,9 +29,11 @@ from torchhd import embeddings
 parser = argparse.ArgumentParser()
 parser.add_argument('-stop', '--layers', type=int, help='how many layers deep', default=48)
 parser.add_argument('-soa', '--soa', action="store_true", default=False, help='Plot SOA')
+parser.add_argument('-number_samples', '--number_samples', type=int, help='how many scans to train', default=10000)
 parser.add_argument(
         "--seed", default=None, type=int, help="Seed for initializing training"
     )
+parser.add_argument('-val', '--val', action="store_true", default=True, help='Train with validation for each scan')
 args = parser.parse_args()
 
 # Set seed
@@ -223,12 +226,7 @@ def forward_model(it, batch, stop):
         with torch.no_grad():
             out = model(*net_inputs, stop)
             encode, tokens, out = out[0], out[1], out[2]
-            print(out[0][:,0])
-            print(out.max(1).shape)
-            print(out.max(1)[0][:,0])
             pred_label = out.max(1)[1]
-            print(out.max(1)[1])
-            print(pred_label.shape)
 
     x = input()
 
@@ -237,7 +235,7 @@ def forward_model(it, batch, stop):
         nb_class = out.shape[1]
         where = labels != 255
     
-    return tokens[0,:,where], labels[where], out[0,:,where]
+    return tokens[0,:,where], labels[where], pred_label[where]
 
 def val(stop):
     #accuracy = torchmetrics.Accuracy("multiclass", num_classes=num_classes)
@@ -290,6 +288,8 @@ labels_array_t = []
 
 miou = MulticlassJaccardIndex(num_classes=16, average=None)
 
+# Train
+
 for it, batch in tqdm(enumerate(train_loader), desc="Training"):
     
     # Network inputs
@@ -302,27 +302,25 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
 
     #HD Training
     if not args.soa:
-        for samples, lab in zip(soa_result,labels):
+        for samples, lab in zip(tokens,labels):
             samples = samples.to(device)
             lab = lab.to(device).reshape((1,))
             samples_hv = encode(samples).reshape((1, DIMENSIONS))
             model_hd.add_online(samples_hv, lab, lr=0.01) # Lr change
 
-        for samples, lab in zip(soa_result,labels):
+        for samples, lab in zip(tokens,labels):
             samples = samples.to(device)
             lab = lab.to(device).reshape((1,))
             samples_hv = encode(samples).reshape((1, DIMENSIONS))
             outputs = model_hd(samples_hv, dot=True)
             outputs = outputs.argmax().data#, device=device_string).reshape((1))
-            #l = torch.tensor([l])
-            #accuracy.update(outputs.cpu(), l)
             output_array_t.append(outputs.cpu())
             labels_array_t.append(lab)
 
-        #print(torchhd.cosine_similarity(model_hd.weight, model_hd.weight))
         #x = input()
-    #if it % 10 == 0: # Test every 10 samples
-    #    val(stop)
+    if args.val:
+        if it % 10 == 0: # Test every 10 samples
+            val(stop)
 
     if not args.soa:
         l = torch.tensor(labels_array_t)
@@ -331,17 +329,25 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
         l = labels.cpu()
         out = soa_result.cpu()
 
-    #print(out)
-    #print(l)
-    #print(out.shape)
-    #print(l.shape)
-    #print(torch.bincount(l))
-    #print(torch.bincount(out))
-
     accuracy = miou(out, l)
     mean = torch.mean(accuracy)
+    # Generate confusion matrix
+    cm = confusion_matrix(out, l)
+
+    # PRINT RESULTS 
+
+    # Convert confusion matrix to string for saving
+    cm_str = "\n".join(["\t".join(map(str, row)) for row in cm])
+    # Save to a text file
+    file_path = f"{name}_results.txt"
+    with open(file_path, "a") as f:
+        f.write(f"Confusion Matrix fo sample {it}:\n")
+        f.write(cm_str)
 
     print(f"Training mean accuracy of {mean}")
     log_data = {f"Training class_{i}_IoU": c for i, c in enumerate(accuracy)}
     log_data["Training meanIoU"] = mean
     wandb.log(log_data)
+
+    if it == args.number_samples:
+        break
