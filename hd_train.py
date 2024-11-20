@@ -298,7 +298,7 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
     tokens = torch.transpose(tokens, 0,1)
     
     # If you are returning the full arrey of (16, voxels) then transpose
-    # soa_result = torch.transpose(soa_result, 0,1)
+    out_complete = torch.transpose(out_complete, 0,1)
 
     #HD Training
     if not args.soa:
@@ -340,7 +340,7 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
 
     # Convert confusion matrix to string for saving
     cm_str = "\n".join(["\t".join(map(str, row)) for row in cm])
-    matrix_str = "\n".join(["\t".join(map(str, row.tolist())).join('\n') for row in out_complete])
+    matrix_str = "\n".join(["\t".join(map(str, row.tolist())) for row in out_complete])
     # Save to a text file
     file_path = f"{name}_results.txt"
     with open(file_path, "a") as f:
