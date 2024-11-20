@@ -341,7 +341,7 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
     # Save to a text file
     file_path = f"{name}_results.txt"
     with open(file_path, "a") as f:
-        f.write(f"Confusion Matrix fo sample {it}:\n")
+        f.write(f"\nConfusion Matrix fo sample {it}:\n")
         f.write(cm_str)
 
     print(f"Training mean accuracy of {mean}")
