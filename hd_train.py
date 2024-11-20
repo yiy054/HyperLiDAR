@@ -228,8 +228,6 @@ def forward_model(it, batch, stop):
             encode, tokens, out = out[0], out[1], out[2]
             pred_label = out.max(1)[1]
 
-    x = input()
-
     # Confusion matrix
     with torch.no_grad():
         nb_class = out.shape[1]
