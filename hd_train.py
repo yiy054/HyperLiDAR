@@ -299,7 +299,7 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
             samples = samples.to(device)
             lab = lab.to(device).reshape((1,))
             samples_hv = encode(samples).reshape((1, DIMENSIONS))
-            model_hd.add_online(samples_hv, lab, lr=0.0001) # Lr change
+            model_hd.add_online(samples_hv, lab, lr=0.01) # Lr change
 
         for samples, lab in zip(tokens,labels):    
             outputs = model_hd(samples_hv, dot=True)
