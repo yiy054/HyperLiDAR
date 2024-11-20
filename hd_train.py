@@ -156,6 +156,8 @@ class Encoder(nn.Module):
         #self.position = embeddings.Random(size, out_features)
         #self.value = embeddings.Level(levels, out_features)
         self.rp = torchhd.embeddings.Projection(size, out_features, device=device)
+        self.rp = self.rp.to(device)
+        self.device = device
 
     def forward(self, x):
         # Find the min and max values
@@ -166,6 +168,7 @@ class Encoder(nn.Module):
         #norm_x = (x - min_val) / (max_val - min_val)
         #print(x.shape)
         #print(x.type())
+        x = x.to(self.device)
         projected = self.rp(x.type(torch.FloatTensor))
         #sample_hv = torchhd.bind(self.position.weight, self.value(norm_x))
         #sample_hv = torchhd.multiset(sample_hv)
