@@ -223,8 +223,11 @@ def forward_model(it, batch, stop):
         with torch.no_grad():
             out = model(*net_inputs, stop)
             encode, tokens, out = out[0], out[1], out[2]
-            print(out.shape)
+            print(out[0][:,0])
+            print(out.max(1).shape)
+            print(out.max(1)[0][:,0])
             pred_label = out.max(1)[1]
+            print(out.max(1)[1])
             print(pred_label.shape)
 
     x = input()
