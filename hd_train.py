@@ -164,6 +164,8 @@ class Encoder(nn.Module):
 
         # Normalize the tensor
         #norm_x = (x - min_val) / (max_val - min_val)
+        print(x.shape)
+        print(x.type())
         projected = self.rp(x)
         #sample_hv = torchhd.bind(self.position.weight, self.value(norm_x))
         #sample_hv = torchhd.multiset(sample_hv)
