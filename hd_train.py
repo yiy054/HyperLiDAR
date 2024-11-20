@@ -334,16 +334,19 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
     # Generate confusion matrix
     cm = confusion_matrix(out, l)
 
+    print(out_complete.shape)
+
     # PRINT RESULTS 
 
     # Convert confusion matrix to string for saving
     cm_str = "\n".join(["\t".join(map(str, row)) for row in cm])
-    matrix_str = "\n".join(["\t".join(map(str, row.tolist())) for row in out_complete])
+    matrix_str = "\n".join(["\n".join(map(str, row.tolist())) for row in out_complete])
     # Save to a text file
     file_path = f"{name}_results.txt"
     with open(file_path, "a") as f:
         f.write(f"\nSample {it}:\n")
         f.write(matrix_str)
+        f.write('\n')
         f.write(f"\nConfusion Matrix fo sample {it}:\n")
         f.write(cm_str)
 
