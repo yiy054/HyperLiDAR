@@ -150,12 +150,12 @@ NUM_LEVELS = 8000
 BATCH_SIZE = 1  # for GPUs with enough memory we can process multiple images at ones
 
 class Encoder(nn.Module):
-    def __init__(self, out_features, size, levels):
+    def __init__(self, out_features, size, levels, device=torch.device("cpu")):
         super(Encoder, self).__init__()
         self.flatten = torch.nn.Flatten()
         #self.position = embeddings.Random(size, out_features)
         #self.value = embeddings.Level(levels, out_features)
-        self.rp = torchhd.embeddings.Projection(size, out_features)
+        self.rp = torchhd.embeddings.Projection(size, out_features, device=device)
 
     def forward(self, x):
         # Find the min and max values
@@ -173,7 +173,7 @@ class Encoder(nn.Module):
         return torchhd.hard_quantize(projected)
 
 
-encode = Encoder(DIMENSIONS, FEAT_SIZE, NUM_LEVELS)
+encode = Encoder(DIMENSIONS, FEAT_SIZE, NUM_LEVELS, device=device)
 encode = encode.to(device)
 
 num_classes = 16
