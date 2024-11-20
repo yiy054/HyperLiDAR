@@ -302,8 +302,8 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
             output_array_t.append(outputs.cpu())
             labels_array_t.append(lab)
 
-    if it % 10 == 0: # Test every 10 samples
-        val(stop)
+    #if it % 10 == 0: # Test every 10 samples
+    #    val(stop)
 
     if not args.soa:
         l = torch.tensor(labels_array_t)
