@@ -340,7 +340,7 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
 
     # Convert confusion matrix to string for saving
     cm_str = "\n".join(["\t".join(map(str, row)) for row in cm])
-    matrix_str = "\n".join(["\t".join(map(str, row.tolist()), "\n") for row in out_complete])
+    matrix_str = "\n".join(["\t".join(map(str, row.tolist())).join('\n') for row in out_complete])
     # Save to a text file
     file_path = f"{name}_results.txt"
     with open(file_path, "a") as f:
