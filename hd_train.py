@@ -33,7 +33,7 @@ parser.add_argument('-number_samples', '--number_samples', type=int, help='how m
 parser.add_argument(
         "--seed", default=None, type=int, help="Seed for initializing training"
     )
-parser.add_argument('-val', '--val', action="store_true", default=True, help='Train with validation for each scan')
+parser.add_argument('-val', '--val', action="store_true", default=False, help='Train with validation for each scan')
 args = parser.parse_args()
 
 # Set seed
