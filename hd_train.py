@@ -148,7 +148,7 @@ val_loader = torch.utils.data.DataLoader(
     )
 
 DIMENSIONS = 10000
-FEAT_SIZE = 728
+FEAT_SIZE = 768
 NUM_LEVELS = 8000
 BATCH_SIZE = 1  # for GPUs with enough memory we can process multiple images at ones
 
