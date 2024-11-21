@@ -53,6 +53,7 @@ for i in range(num_samples):
 
     # normalize
     min_val = torch.min(first_sample, axis=0).values
+    print(min_val.shape)
     first_sample = (first_sample - min_val) / (torch.max(first_sample, axis=0).values - min_val)
     #m = nn.Softmax(dim=0)
     #first_sample = m(first_sample)
