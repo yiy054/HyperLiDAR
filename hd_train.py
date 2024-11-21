@@ -370,5 +370,5 @@ for i, a in enumerate(out_complete):
     # The shape of this array `a`, turned into slices
     slices = tuple(slice(0,s) for s in sizes[i])
     # Overwrite a block slice of `result` with this array `a`
-    result[i][slices] = a
+    result[i][slices] = a.cpu()
 np.save("SoA_results.npy", result)
