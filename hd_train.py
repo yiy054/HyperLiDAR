@@ -362,11 +362,11 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
         break
 
 
-sizes = [a.shape for a in out_complete]
+sizes = [a.shape for a in arrays_samples]
 max_sizes = np.max(list(zip(*sizes)), -1)
 # The resultant array has stacked on the first dimension
-result = np.full((len(out_complete),) + tuple(max_sizes), 0)
-for i, a in enumerate(out_complete):
+result = np.full((len(arrays_samples),) + tuple(max_sizes), 0)
+for i, a in enumerate(arrays_samples):
     # The shape of this array `a`, turned into slices
     slices = tuple(slice(0,s) for s in sizes[i])
     # Overwrite a block slice of `result` with this array `a`
