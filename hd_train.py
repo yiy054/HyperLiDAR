@@ -356,7 +356,7 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
     log_data["Training meanIoU"] = mean
     wandb.log(log_data)
 
-    arrays_samples.append(matrix_str)
+    arrays_samples.append(out_complete)
 
     if it == args.number_samples:
         break
