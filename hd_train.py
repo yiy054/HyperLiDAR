@@ -233,7 +233,7 @@ def forward_model(it, batch, stop):
         nb_class = out.shape[1]
         where = labels != 255
     
-    return tokens[0,:,where], labels[where], pred_label[0, where], out[0]
+    return tokens[0,:,where], labels[where], pred_label[0, where], out[0, :, where]
 
 def val(stop):
     #accuracy = torchmetrics.Accuracy("multiclass", num_classes=num_classes)
