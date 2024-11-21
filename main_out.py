@@ -51,9 +51,6 @@ for i in range(num_samples):
     first_label = torch.Tensor(labels[i][:int(num_voxels[i])]).to(torch.int32).to(device)
     #print(first_sample.shape)
 
-    # normalize
-    min_val = torch.min(first_sample, axis=0).values
-    first_sample = (first_sample - min_val) / (torch.max(first_sample, axis=0).values - min_val)
     #m = nn.Softmax(dim=1)
     #first_sample = m(first_sample)
     #print(first_sample)
