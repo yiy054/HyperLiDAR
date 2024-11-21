@@ -49,12 +49,14 @@ for i in range(num_samples):
     # compute the accuracy of the one sample
     first_sample = torch.Tensor(arrays[i][:int(num_voxels[i])]).to(device)
     first_label = torch.Tensor(labels[i][:int(num_voxels[i])]).to(torch.int32).to(device)
-    print(first_sample.shape)
+    #print(first_sample.shape)
 
     # normalize
-    m = nn.Softmax(dim=1)
-    first_sample = m(first_sample)
-    print(first_sample)
+    min_val = torch.min(first_sample, axis=0)
+    first_sample = (first_sample - min_val) / (torch.max(first_sample, axis=0) - min_val)
+    #m = nn.Softmax(dim=1)
+    #first_sample = m(first_sample)
+    #print(first_sample)
 
     #pred_ts = torch.Tensor(np.argmax(first_sample, axis=1)).to(device)
     #label_ts = torch.Tensor(first_label).to(torch.int32).to(device)
