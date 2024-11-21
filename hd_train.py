@@ -371,7 +371,7 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
 sizes = [a.shape for a in arrays_samples]
 max_sizes = np.max(list(zip(*sizes)), -1)
 # The resultant array has stacked on the first dimension
-result = np.full((len(arrays_samples),) + tuple(max_sizes), 0)
+result = np.full((len(arrays_samples),) + tuple(max_sizes), 0.0)
 for i, a in enumerate(arrays_samples):
     # The shape of this array `a`, turned into slices
     slices = tuple(slice(0,s) for s in sizes[i])
