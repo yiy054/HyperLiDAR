@@ -39,9 +39,9 @@ model = model.to(device)
 miou = MulticlassJaccardIndex(num_classes=16, average=None).to(device)
 
 #arrays = np.load('SoA_results.npy')
-features = np.load('SoA_features.npy')
-labels = np.load('SoA_labels.npy')
-num_voxels = np.load('num_voxels.npy')
+features = np.load('/home/outputs/SoA_features.npy')
+labels = np.load('/home/outputs/SoA_labels.npy')
+num_voxels = np.load('/home/outputs/num_voxels.npy')
 #print(arrays)
 
 num_samples = len(features)
