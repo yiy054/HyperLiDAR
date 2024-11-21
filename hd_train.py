@@ -360,6 +360,7 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
     wandb.log(log_data)
 
     arrays_samples.append(out_complete)
+    print(arrays_samples)
     labels_samples.append(labels)
     voxels_per_sample.append(len(labels))
 
@@ -376,6 +377,7 @@ for i, a in enumerate(arrays_samples):
     slices = tuple(slice(0,s) for s in sizes[i])
     # Overwrite a block slice of `result` with this array `a`
     result[i][slices] = a.cpu()
+print(result)
 np.save("SoA_results.npy", result)
 
 sizes = [a.shape for a in labels_samples]
