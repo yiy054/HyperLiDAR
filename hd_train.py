@@ -286,6 +286,9 @@ labels_array_t = []
 
 miou = MulticlassJaccardIndex(num_classes=16, average=None)
 
+arrays_samples = []
+
+
 # Train
 
 for it, batch in tqdm(enumerate(train_loader), desc="Training"):
@@ -334,8 +337,6 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
     # Generate confusion matrix
     cm = confusion_matrix(out, l)
 
-    print(out_complete.shape)
-
     # PRINT RESULTS 
 
     # Convert confusion matrix to string for saving
@@ -355,5 +356,19 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
     log_data["Training meanIoU"] = mean
     wandb.log(log_data)
 
+    arrays_samples.append(matrix_str)
+
     if it == args.number_samples:
         break
+
+
+sizes = [a.shape for a in out_complete]
+max_sizes = np.max(list(zip(*sizes)), -1)
+# The resultant array has stacked on the first dimension
+result = np.full((len(out_complete),) + tuple(max_sizes), 0)
+for i, a in enumerate(out_complete):
+    # The shape of this array `a`, turned into slices
+    slices = tuple(slice(0,s) for s in sizes[i])
+    # Overwrite a block slice of `result` with this array `a`
+    result[i][slices] = a
+np.save("SoA_results.npy", result)
