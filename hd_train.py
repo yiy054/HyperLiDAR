@@ -333,6 +333,8 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
         l = labels.cpu()
         out = soa_result.cpu()
 
+    print(out)
+
     accuracy = miou(out, l)
     mean = torch.mean(accuracy)
     # Generate confusion matrix
