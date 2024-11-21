@@ -48,8 +48,10 @@ num_samples = len(features)
 
 def normalize(samples):
     # normalize
-    min_val = torch.min(samples, axis=1).values
-    max_val = torch.max(samples, axis=1).values
+    min_val = torch.min(samples, axis=0).values
+    print(min_val.shape)
+    max_val = torch.max(samples, axis=0).values
+    #samples = (samples - min_val) / (max_val - min_val)
     for s in range(len(samples)):
         samples[s] = (samples[s] - min_val[s]) / (max_val[s] - min_val[s])
     #m = nn.Softmax(dim=0)
