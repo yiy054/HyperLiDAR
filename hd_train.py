@@ -287,7 +287,8 @@ labels_array_t = []
 miou = MulticlassJaccardIndex(num_classes=16, average=None)
 
 arrays_samples = []
-
+labels_samples = []
+voxels_per_sample = []
 
 # Train
 
@@ -357,6 +358,8 @@ for it, batch in tqdm(enumerate(train_loader), desc="Training"):
     wandb.log(log_data)
 
     arrays_samples.append(out_complete)
+    labels_samples.append(labels)
+    voxels_per_sample.append(len(labels))
 
     if it == args.number_samples:
         break
@@ -372,3 +375,16 @@ for i, a in enumerate(arrays_samples):
     # Overwrite a block slice of `result` with this array `a`
     result[i][slices] = a.cpu()
 np.save("SoA_results.npy", result)
+
+sizes = [a.shape for a in labels_samples]
+max_sizes = np.max(list(zip(*sizes)), -1)
+# The resultant array has stacked on the first dimension
+result = np.full((len(labels_samples),) + tuple(max_sizes), 0)
+for i, a in enumerate(labels_samples):
+    # The shape of this array `a`, turned into slices
+    slices = tuple(slice(0,s) for s in sizes[i])
+    # Overwrite a block slice of `result` with this array `a`
+    result[i][slices] = a.cpu()
+np.save("SoA_labels.npy", result)
+
+np.save("bum_voxels.npy", torch.Tensor(voxels_per_sample))
