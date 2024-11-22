@@ -60,17 +60,18 @@ def normalize(samples, min_val=None, max_val=None):
     #print(first_sample)
     return samples
 
-min_val = 0
-max_val = 0
+min_val = torch.zeros((768))
+max_val = torch.zeros((768))
 
 for i in range(num_samples):
     first_sample = torch.Tensor(features[i][:int(num_voxels[i])]).to(device)
     min_here = torch.min(first_sample, axis=0).values
     max_here = torch.max(first_sample, axis=0).values
-    if min_here < min_val:
-        min_val = min_here
-    if max_here > max_here:
-        max_val = max_here
+    for f in range(len(min_here)):
+        if min_here[f] < min_val[f]:
+            min_val[f] = min_here[f]
+        if max_here[f] > max_here[f]:
+            max_val[f] = max_here[f]
 
 for i in range(num_samples):
     # compute the accuracy of the one sample
