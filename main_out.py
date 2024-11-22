@@ -51,8 +51,8 @@ for i in range(num_samples):
     first_label = torch.Tensor(labels[i][:int(num_voxels[i])]).to(torch.int32).to(device)
     #print(first_sample.shape)
 
-    #m = nn.Softmax(dim=1)
-    #first_sample = m(first_sample)
+    m = nn.Softmax(dim=1)
+    first_sample = m(first_sample)
     #print(first_sample)
 
     #pred_ts = torch.Tensor(np.argmax(first_sample, axis=1)).to(device)
@@ -81,21 +81,16 @@ for i in range(num_samples):
     # compute the accuracy of the one sample
     first_sample = torch.Tensor(arrays[i][:int(num_voxels[i])]).to(device)
     first_label = torch.Tensor(labels[i][:int(num_voxels[i])]).to(torch.int32).to(device)
-    print(first_sample.shape)
+    #print(first_sample.shape)
 
     # normalize
     m = nn.Softmax(dim=1)
     first_sample = m(first_sample)
-    print(first_sample)
+    #print(first_sample)
 
-    #pred_ts = torch.Tensor(np.argmax(first_sample, axis=1)).to(device)
-    #label_ts = torch.Tensor(first_label).to(torch.int32).to(device)
-
-    # HD training
-    samples_hv = encode(first_sample)
-    #model.add(samples_hv, first_label)
 
     # HD prediction
+    samples_hv = encode(first_sample)
     pred_hd = model(samples_hv, dot=True).argmax(1).data
 
     #print('pred_ts', pred_ts)
