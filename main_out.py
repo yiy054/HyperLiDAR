@@ -45,6 +45,7 @@ num_voxels = np.load('/home/outputs/num_voxels.npy')
 #print(arrays)
 
 num_samples = len(arrays)
+"""
 for i in range(num_samples):
     # compute the accuracy of the one sample
     first_sample = torch.Tensor(arrays[i][:int(num_voxels[i])]).to(device)
@@ -72,7 +73,7 @@ for i in range(num_samples):
     avg_acc = torch.mean(accuracy)
     print(f'accuracy of sample {i}: {accuracy}')
     print(f'avg acc of sample {i}: {avg_acc}')
-
+"""
 
 #####################################################
 # Pure inference
@@ -84,14 +85,17 @@ for i in range(num_samples):
     #print(first_sample.shape)
 
     # normalize
-    m = nn.Softmax(dim=1)
-    first_sample = m(first_sample)
+    #m = nn.Softmax(dim=1)
+    #first_sample = m(first_sample)
     #print(first_sample)
 
 
     # HD prediction
-    samples_hv = encode(first_sample)
-    pred_hd = model(samples_hv, dot=True).argmax(1).data
+    #samples_hv = encode(first_sample)
+    #pred_hd = model(samples_hv, dot=True).argmax(1).data
+    
+    # JUST output
+    pred_hd = first_sample.max(1)[1]
 
     #print('pred_ts', pred_ts)
     print('pred_hd', pred_hd)
