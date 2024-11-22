@@ -49,16 +49,31 @@ num_samples = len(features)
 
 def normalize(samples, min_val=None, max_val=None):
     # normalize # 0 -> 768 # 1 -> 16487
-    if min_val == None:
-        min_val = torch.min(samples, axis=0).values
-    if max_val == None:
-        max_val = torch.max(samples, axis=0).values
-    samples = (samples - min_val) / (max_val - min_val)
+
+    ##### MIN MAX #####
+
+    #if min_val == None:
+    #    min_val = torch.min(samples, axis=0).values
+    #if max_val == None:
+    #    max_val = torch.max(samples, axis=0).values
+    #samples = (samples - min_val) / (max_val - min_val)
     #for s in range(len(samples)):
     #    samples[s] = (samples[s] - min_val[s]) / (max_val[s] - min_val[s])
+    
+    ##### SOFTMAX #####
+
     #m = nn.Softmax(dim=0)
     #first_sample = m(first_sample)
     #print(first_sample)
+
+    ### Z-Score ####
+
+    # Compute mean and std for each feature (dim=0 for columns)
+    mean = torch.mean(samples, dim=0)
+    std = torch.std(samples, dim=0)
+
+    samples = (samples - mean) / (std + 1e-8)
+
     return samples
 
 # Minimizing over all the samples
