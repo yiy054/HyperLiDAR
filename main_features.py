@@ -46,19 +46,31 @@ num_voxels = np.load('/home/outputs/num_voxels.npy')
 
 num_samples = len(features)
 
-def normalize(samples):
-    # normalize
-    min_val = torch.min(samples, axis=0).values
-    print(min_val.shape)
-    max_val = torch.max(samples, axis=0).values
-    #samples = (samples - min_val) / (max_val - min_val)
-    for s in range(len(samples)):
-        samples[s] = (samples[s] - min_val[s]) / (max_val[s] - min_val[s])
+def normalize(samples, min_val=None, max_val=None):
+    # normalize # 0 -> 768 # 1 -> 16487
+    if min_val == None:
+        min_val = torch.min(samples, axis=0).values
+    if max_val == None:
+        max_val = torch.max(samples, axis=0).values
+    samples = (samples - min_val) / (max_val - min_val)
+    #for s in range(len(samples)):
+    #    samples[s] = (samples[s] - min_val[s]) / (max_val[s] - min_val[s])
     #m = nn.Softmax(dim=0)
     #first_sample = m(first_sample)
     #print(first_sample)
     return samples
 
+min_val = 0
+max_val = 0
+
+for i in range(num_samples):
+    first_sample = torch.Tensor(features[i][:int(num_voxels[i])]).to(device)
+    min_here = torch.min(first_sample, axis=0).values
+    max_here = torch.max(first_sample, axis=0).values
+    if min_here < min_val:
+        min_val = min_here
+    if max_here > max_here:
+        max_val = max_here
 
 for i in range(num_samples):
     # compute the accuracy of the one sample
@@ -68,7 +80,7 @@ for i in range(num_samples):
     #pred_ts = torch.Tensor(np.argmax(first_sample, axis=1)).to(device)
     #label_ts = torch.Tensor(first_label).to(torch.int32).to(device)
 
-    first_sample = normalize(first_sample)
+    first_sample = normalize(first_sample, min_val, max_val)
 
     # HD training
     samples_hv = encode(first_sample)
@@ -94,7 +106,7 @@ for i in range(num_samples):
     first_sample = torch.Tensor(features[i][:int(num_voxels[i])]).to(device)
     first_label = torch.Tensor(labels[i][:int(num_voxels[i])]).to(torch.int32).to(device)
 
-    first_sample = normalize(first_sample)
+    first_sample = normalize(first_sample, min_val, max_val)
 
     #pred_ts = torch.Tensor(np.argmax(first_sample, axis=1)).to(device)
     #label_ts = torch.Tensor(first_label).to(torch.int32).to(device)
