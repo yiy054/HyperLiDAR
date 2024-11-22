@@ -6,6 +6,7 @@ from torchmetrics.classification import MulticlassJaccardIndex
 import torchhd
 from torchhd.models import Centroid
 from torchhd import embeddings
+import matplotlib.pyplot as plt
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Using {} device".format(device))
@@ -60,6 +61,8 @@ def normalize(samples, min_val=None, max_val=None):
     #print(first_sample)
     return samples
 
+# Minimizing over all the samples
+'''
 min_val = torch.zeros((768))
 max_val = torch.zeros((768))
 
@@ -72,6 +75,11 @@ for i in range(num_samples):
             min_val[f] = min_here[f]
         if max_here[f] > max_here[f]:
             max_val[f] = max_here[f]
+'''
+
+#####################################################
+# Training and Inference
+#####################################################
 
 for i in range(num_samples):
     # compute the accuracy of the one sample
@@ -81,7 +89,7 @@ for i in range(num_samples):
     #pred_ts = torch.Tensor(np.argmax(first_sample, axis=1)).to(device)
     #label_ts = torch.Tensor(first_label).to(torch.int32).to(device)
 
-    first_sample = normalize(first_sample, min_val, max_val)
+    first_sample = normalize(first_sample) # min_val, max_val
 
     # HD training
     samples_hv = encode(first_sample)
@@ -107,7 +115,7 @@ for i in range(num_samples):
     first_sample = torch.Tensor(features[i][:int(num_voxels[i])]).to(device)
     first_label = torch.Tensor(labels[i][:int(num_voxels[i])]).to(torch.int32).to(device)
 
-    first_sample = normalize(first_sample, min_val, max_val)
+    first_sample = normalize(first_sample) # min_val, max_val
 
     #pred_ts = torch.Tensor(np.argmax(first_sample, axis=1)).to(device)
     #label_ts = torch.Tensor(first_label).to(torch.int32).to(device)
