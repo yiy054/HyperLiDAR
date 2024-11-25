@@ -7,6 +7,7 @@ import torchhd
 from torchhd.models import Centroid
 from torchhd import embeddings
 import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Using {} device".format(device))
@@ -111,15 +112,15 @@ for i in range(num_samples):
     model.add(samples_hv, first_label)
 
     # HD prediction
-    pred_hd = model(samples_hv, dot=True).argmax(1).data
+    #pred_hd = model(samples_hv, dot=True).argmax(1).data
 
     #print('pred_ts', pred_ts)
-    print('pred_hd', pred_hd)
-    print('label', first_label)
-    accuracy = miou(pred_hd, first_label)
-    avg_acc = torch.mean(accuracy)
-    print(f'accuracy of sample {i}: {accuracy}')
-    print(f'avg acc of sample {i}: {avg_acc}')
+    #print('pred_hd', pred_hd)
+    #print('label', first_label)
+    #accuracy = miou(pred_hd, first_label)
+    #avg_acc = torch.mean(accuracy)
+    #print(f'accuracy of sample {i}: {accuracy}')
+    #print(f'avg acc of sample {i}: {avg_acc}')
 
 
 #####################################################
@@ -146,6 +147,9 @@ for i in range(num_samples):
     print('pred_hd', pred_hd)
     print('label', first_label)
     accuracy = miou(pred_hd, first_label)
+    cm = confusion_matrix(pred_hd, first_label)
+    print("Confusion matrix \n")
+    print(cm)
     avg_acc = torch.mean(accuracy)
     print(f'accuracy of sample {i}: {accuracy}')
     print(f'avg acc of sample {i}: {avg_acc}')
