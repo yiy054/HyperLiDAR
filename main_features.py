@@ -93,6 +93,25 @@ for i in range(num_samples):
             max_val[f] = max_here[f]
 '''
 
+CLASS_NAME = [
+        "barrier",
+        "bicycle",
+        "bus",
+        "car",
+        "construction_vehicle",
+        "motorcycle",
+        "pedestrian",
+        "traffic_cone",
+        "trailer",
+        "truck",
+        "driveable_surface",
+        "other_flat",
+        "sidewalk",
+        "terrain",
+        "manmade",
+        "vegetation",
+    ]
+
 #####################################################
 # Training and Inference
 #####################################################
@@ -147,27 +166,11 @@ for i in range(num_samples):
     print('pred_hd', pred_hd)
     print('label', first_label)
     accuracy = miou(pred_hd, first_label)
-    cm = confusion_matrix(pred_hd, first_label)
+    cm = confusion_matrix(pred_hd, first_label, labels=CLASS_NAME)
     print("Confusion matrix \n")
     print(cm)
     avg_acc = torch.mean(accuracy)
     print(f'accuracy of sample {i}: {accuracy}')
     print(f'avg acc of sample {i}: {avg_acc}')
-
-
-
-
-
-"""
-accuracy = torchmetrics.Accuracy("multiclass", num_classes=num_classes)
-
-with torch.no_grad():
-    model.normalize()
-
-    for samples, labels in tqdm(test_ld, desc="Testing"):
-        samples = samples.to(device)
-
-        samples_hv = encode(samples)
-        outputs = model(samples_hv, dot=True)
-        accuracy.update(outputs.cpu(), labels)
-"""
+    print("Similarity between HVs")
+    print(torchhd.cosine_similarity(model.weights, model.weights))
