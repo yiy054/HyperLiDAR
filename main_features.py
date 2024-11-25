@@ -13,7 +13,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Using {} device".format(device))
 
 INPUT_DIM = 768
-HD_DIM = 50000
+HD_DIM = 20000
 num_classes = 16
 
 class Encoder(nn.Module):
