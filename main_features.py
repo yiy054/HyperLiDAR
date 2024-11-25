@@ -119,7 +119,7 @@ CLASS_NAME = [
 for i in range(num_samples):
     # compute the accuracy of the one sample
     first_sample = torch.Tensor(features[i][:int(num_voxels[i])]).to(device)
-    first_label = torch.Tensor(labels[i][:int(num_voxels[i])]).to(torch.int32).to(device)
+    first_label = torch.Tensor(labels[i][:int(num_voxels[i])]).to(torch.int64).to(device)
 
     #pred_ts = torch.Tensor(np.argmax(first_sample, axis=1)).to(device)
     #label_ts = torch.Tensor(first_label).to(torch.int32).to(device)
