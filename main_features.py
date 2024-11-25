@@ -128,7 +128,7 @@ for i in range(num_samples):
 
     # HD training
     samples_hv = encode(first_sample)
-    model.add_online(samples_hv, first_label, lr=0.0005)
+    model.add_online(samples_hv, first_label, lr=0.00001)
 
     # HD prediction
     #pred_hd = model(samples_hv, dot=True).argmax(1).data
