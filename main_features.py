@@ -173,4 +173,4 @@ for i in range(num_samples):
     print(f'accuracy of sample {i}: {accuracy}')
     print(f'avg acc of sample {i}: {avg_acc}')
     print("Similarity between HVs")
-    print(torchhd.cosine_similarity(model.weights, model.weights))
+    print(torchhd.cosine_similarity(model.weight, model.weight))
