@@ -68,6 +68,7 @@ class HD_Model:
                 
                 # HD training
                 samples_hv = self.encode(first_sample[vox])
+                samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
                 print(samples_hv.shape)
                 self.model.add(samples_hv, label)
 
