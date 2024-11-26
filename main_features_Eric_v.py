@@ -133,8 +133,8 @@ class HD_Model:
         print("================================")
 
         #print('pred_ts', pred_ts)
-        print('pred_hd', final_pred)
-        print('label', final_labels)
+        print('pred_hd', final_pred, "\tShape: ", final_pred.shape)
+        print('label', final_labels, "\tShape: ", final_labels.shape)
         accuracy = miou(final_pred, final_labels)
         avg_acc = torch.mean(accuracy)
         print(f'accuracy of sample {i}: {accuracy}')
@@ -170,8 +170,8 @@ def test_soa(results, labels, num_voxels, device):
     print("================================")
 
     #print('pred_ts', pred_ts)
-    print('pred_hd', final_pred)
-    print('label', final_labels)
+    print('pred', final_pred, "\tShape: ", final_pred.shape)
+    print('label', final_labels, "\tShape: ", final_labels.shape)
     accuracy = miou(final_pred, final_labels)
     avg_acc = torch.mean(accuracy)
     print(f'accuracy of sample {i}: {accuracy}')
