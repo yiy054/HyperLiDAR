@@ -57,12 +57,19 @@ class HD_Model:
 
             first_sample = self.normalize(first_sample) # Z1 score seems to work
 
+            print(first_sample.shape)
+            print(first_label.shape)
+
             for vox in range(len(first_sample)):
+                
+                label = first_label[vox]
                 if vox % 5000 == 0:
                     print(f"Sample {i}: Voxel {vox}")
+                
                 # HD training
                 samples_hv = self.encode(first_sample[vox])
-                self.model.add(samples_hv, first_label[vox])
+                print(samples_hv.shape)
+                self.model.add(samples_hv, label)
 
     def retrain(self, features, labels, num_voxels):
         for e in tqdm(range(10), desc="Epoch"):
