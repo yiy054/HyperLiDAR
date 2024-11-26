@@ -110,7 +110,7 @@ class HD_Model:
         
         # Metric
         miou = MulticlassJaccardIndex(num_classes=16, average=None).to(self.device)
-        final_shape = torch.sum(num_voxels)
+        final_shape = int(np.sum(num_voxels))
         final_labels = torch.empty((final_shape), device=self.device)
         final_pred = torch.empty((final_shape), device=self.device)
         
