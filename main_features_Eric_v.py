@@ -105,8 +105,8 @@ class HD_Model:
 
                 print(f"Misclassified for {i}: ", count)
 
-                # If you want to test for each sample
-                self.test_hd(features, labels, num_voxels)
+            # If you want to test for each sample
+            self.test_hd(features, labels, num_voxels)
 
     def test_hd(self, features, labels, num_voxels, epoch=0):
 
