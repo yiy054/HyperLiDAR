@@ -115,7 +115,7 @@ class HD_Model:
         final_pred = torch.empty((final_shape), device=self.device)
         
         start_idx = 0
-        for i in range(len(features)):
+        for i in tqdm(range(len(features)), desc="Testing"):
             shape_sample = int(num_voxels[i])
             first_sample = torch.Tensor(features[i][:shape_sample]).to(self.device)
             first_label = torch.Tensor(labels[i][:shape_sample]).to(torch.int64)
@@ -135,7 +135,7 @@ class HD_Model:
         #print('pred_ts', pred_ts)
         print('pred_hd', final_pred)
         print('label', final_labels)
-        accuracy = miou(final_pred, first_label)
+        accuracy = miou(final_pred, final_labels)
         avg_acc = torch.mean(accuracy)
         print(f'accuracy of sample {i}: {accuracy}')
         print(f'avg acc of sample {i}: {avg_acc}')
@@ -147,7 +147,7 @@ class HD_Model:
         print("================================")
 
 def test_soa(results, labels, num_voxels, device):
-    assert len(features) == len(labels)
+    assert len(results) == len(labels)
         
     # Metric
     miou = MulticlassJaccardIndex(num_classes=16, average=None).to(device)
@@ -156,7 +156,7 @@ def test_soa(results, labels, num_voxels, device):
     final_pred = torch.empty((final_shape), device=device)
     
     start_idx = 0
-    for i in range(len(features)):
+    for i in tqdm(range(len(results)), desc="Testing SoA"):
         shape_sample = int(num_voxels[i])
         first_sample = torch.Tensor(results[i][:shape_sample]).to(device)
         first_label = torch.Tensor(labels[i][:shape_sample]).to(torch.int64)
@@ -172,7 +172,7 @@ def test_soa(results, labels, num_voxels, device):
     #print('pred_ts', pred_ts)
     print('pred_hd', final_pred)
     print('label', final_labels)
-    accuracy = miou(final_pred, first_label)
+    accuracy = miou(final_pred, final_labels)
     avg_acc = torch.mean(accuracy)
     print(f'accuracy of sample {i}: {accuracy}')
     print(f'avg acc of sample {i}: {avg_acc}')
@@ -199,6 +199,9 @@ if __name__ == "__main__":
     features = np.load('/home/outputs/SoA_features.npy')
     labels = np.load('/home/outputs/SoA_labels.npy')
     num_voxels = np.load('/home/outputs/num_voxels.npy')
+
+    print("SOA results\n")
+    test_soa(arrays, labels, num_voxels, device)
 
     model = HD_Model(INPUT_DIM, HD_DIM, num_classes, device)
 
