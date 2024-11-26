@@ -206,7 +206,7 @@ if __name__ == "__main__":
             "hd_dim": 10000,
             "training_samples": 10,
         },
-        id="retraining_hd_simple",
+        id="retraining_hd_simple2",
     )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
