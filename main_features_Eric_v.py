@@ -78,19 +78,29 @@ class HD_Model:
 
                 first_sample = self.normalize(first_sample) # Z1 score seems to work
 
-                for vox in range(len(first_sample)):
-                    # HD training
-                    samples_hv = self.encode(first_sample[vox])
-                    pred_hd = model(samples_hv, dot=True).argmax(1).data
-                    # When we need the similarites
-                    #similarities = cosine_similarity(samples_hv, self.model.weight)[0]
-                    #pred = np.argmax(similarities)
-                    label = first_label[vox]
+                #for vox in range(len(first_sample)):
+                samples_hv = self.encode(first_sample)
+                sim = self.model(samples_hv, dot=True)
+                pred_hd = sim.argmax(1).data
 
-                    if pred_hd != label:
-                        self.weight.index_add_(0, label, samples_hv, alpha=1.0)
-                        self.weight.index_add_(0, pred_hd, samples_hv, alpha=-1.0)
-                        count += 1
+                is_wrong = first_label != pred_hd
+
+                # cancel update if all predictions were correct
+                if is_wrong.sum().item() == 0:
+                    continue
+
+                # only update wrongly predicted inputs
+                #logit = logit[is_wrong]
+                samples_hv = samples_hv[is_wrong]
+                first_label = first_label[is_wrong]
+                pred_hd = pred_hd[is_wrong]
+
+                #alpha1 = 1.0 - logit.gather(1, target.unsqueeze(1))
+                #alpha2 = logit.gather(1, pred.unsqueeze(1)) - 1.0
+
+                self.model.weight.index_add_(0, first_label, samples_hv)
+                self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1.0)
+
             print("Misclassified: ", count)
 
     def test(self, features, labels, num_voxels):
@@ -99,7 +109,7 @@ class HD_Model:
         # Metric
         miou = MulticlassJaccardIndex(num_classes=16, average=None).to(self.device)
         
-        for i in range(features):
+        for i in range(len(features)):
             first_sample = torch.Tensor(features[i][:int(num_voxels[i])]).to(self.device)
             first_label = torch.Tensor(labels[i][:int(num_voxels[i])]).to(torch.int64).to(self.device)
 
