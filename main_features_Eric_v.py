@@ -172,7 +172,7 @@ def test_soa(results, labels, num_voxels, device):
     #print('pred_ts', pred_ts)
     print('pred_hd', final_pred)
     print('label', final_labels)
-    accuracy = miou(pred_hd, first_label)
+    accuracy = miou(final_pred, first_label)
     avg_acc = torch.mean(accuracy)
     print(f'accuracy of sample {i}: {accuracy}')
     print(f'avg acc of sample {i}: {avg_acc}')
