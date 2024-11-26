@@ -95,13 +95,15 @@ class HD_Model:
                 first_label = first_label[is_wrong]
                 pred_hd = pred_hd[is_wrong]
 
+                count = first_label.shape[0]
+
                 #alpha1 = 1.0 - logit.gather(1, target.unsqueeze(1))
                 #alpha2 = logit.gather(1, pred.unsqueeze(1)) - 1.0
 
                 self.model.weight.index_add_(0, first_label, samples_hv)
                 self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1.0)
 
-            print("Misclassified: ", count)
+                print(f"Misclassified for {i}: ", count)
 
     def test(self, features, labels, num_voxels):
         assert len(features) == len(labels)
