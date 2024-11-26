@@ -105,37 +105,46 @@ class HD_Model:
 
                 print(f"Misclassified for {i}: ", count)
 
-    def test(self, features, labels, num_voxels):
+    def test_hd(self, features, labels, num_voxels):
         assert len(features) == len(labels)
         
         # Metric
         miou = MulticlassJaccardIndex(num_classes=16, average=None).to(self.device)
+        final_shape = torch.sum(num_voxels)
+        final_labels = torch.empty((final_shape), device=self.device)
+        final_pred = torch.empty((final_shape), device=self.device)
         
+        start_idx = 0
         for i in range(len(features)):
-            first_sample = torch.Tensor(features[i][:int(num_voxels[i])]).to(self.device)
-            first_label = torch.Tensor(labels[i][:int(num_voxels[i])]).to(torch.int64).to(self.device)
+            shape_sample = int(num_voxels[i])
+            first_sample = torch.Tensor(features[i][shape_sample]).to(self.device)
+            first_label = torch.Tensor(labels[i][shape_sample]).to(torch.int64)
+            final_labels[start_idx:start_idx+shape_sample] = first_label
 
             first_sample = self.normalize(first_sample) # Z1 score seems to work
 
             # HD inference
             samples_hv = self.encode(first_sample)
             pred_hd = self.model(samples_hv, dot=True).argmax(1).data
+            final_pred[start_idx:start_idx+shape_sample] = pred_hd
 
-            print("================================")
+            start_idx += shape_sample
 
-            #print('pred_ts', pred_ts)
-            print('pred_hd', pred_hd)
-            print('label', first_label)
-            accuracy = miou(pred_hd, first_label)
-            avg_acc = torch.mean(accuracy)
-            print(f'accuracy of sample {i}: {accuracy}')
-            print(f'avg acc of sample {i}: {avg_acc}')
+        print("================================")
 
-            #cm = confusion_matrix(pred_hd, first_label, labels=torch.Tensor(range(0,15)))
-            #print("Confusion matrix \n")
-            #print(cm)
+        #print('pred_ts', pred_ts)
+        print('pred_hd', final_pred)
+        print('label', final_labels)
+        accuracy = miou(pred_hd, first_label)
+        avg_acc = torch.mean(accuracy)
+        print(f'accuracy of sample {i}: {accuracy}')
+        print(f'avg acc of sample {i}: {avg_acc}')
 
-            print("================================")
+        #cm = confusion_matrix(pred_hd, first_label, labels=torch.Tensor(range(0,15)))
+        #print("Confusion matrix \n")
+        #print(cm)
+
+        print("================================")
 
 if __name__ == "__main__":
 
@@ -148,6 +157,7 @@ if __name__ == "__main__":
 
     
     # Loading the data
+    arrays = np.load('/home/outputs/SoA_results.npy')
     features = np.load('/home/outputs/SoA_features.npy')
     labels = np.load('/home/outputs/SoA_labels.npy')
     num_voxels = np.load('/home/outputs/num_voxels.npy')
@@ -155,6 +165,6 @@ if __name__ == "__main__":
     model = HD_Model(INPUT_DIM, HD_DIM, num_classes, device)
 
     model.train(features, labels, num_voxels)
-    model.test(features, labels, num_voxels)
+    model.test_hd(features, labels, num_voxels)
     model.retrain(features, labels, num_voxels)
-    model.test(features, labels, num_voxels)
+    model.test_hd(features, labels, num_voxels)
