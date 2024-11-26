@@ -117,8 +117,8 @@ class HD_Model:
         start_idx = 0
         for i in range(len(features)):
             shape_sample = int(num_voxels[i])
-            first_sample = torch.Tensor(features[i][shape_sample]).to(self.device)
-            first_label = torch.Tensor(labels[i][shape_sample]).to(torch.int64)
+            first_sample = torch.Tensor(features[i][:shape_sample]).to(self.device)
+            first_label = torch.Tensor(labels[i][:shape_sample]).to(torch.int64)
             final_labels[start_idx:start_idx+shape_sample] = first_label
 
             first_sample = self.normalize(first_sample) # Z1 score seems to work
@@ -145,6 +145,49 @@ class HD_Model:
         #print(cm)
 
         print("================================")
+
+"""
+def test_soa(results, labels, num_voxels, device):
+    assert len(features) == len(labels)
+        
+    # Metric
+    miou = MulticlassJaccardIndex(num_classes=16, average=None).to(sdevice)
+    final_shape = int(np.sum(num_voxels))
+    final_labels = torch.empty((final_shape), device=device)
+    final_pred = torch.empty((final_shape), device=device)
+    
+    start_idx = 0
+    for i in range(len(features)):
+        shape_sample = int(num_voxels[i])
+        first_sample = torch.Tensor(features[i][shape_sample]).to(device)
+        first_label = torch.Tensor(labels[i][shape_sample]).to(torch.int64)
+        final_labels[start_idx:start_idx+shape_sample] = first_label
+
+        first_sample = normalize(first_sample) # Z1 score seems to work
+
+        # HD inference
+        samples_hv = encode(first_sample)
+        pred_hd = model(samples_hv, dot=True).argmax(1).data
+        final_pred[start_idx:start_idx+shape_sample] = pred_hd
+
+        start_idx += shape_sample
+
+    print("================================")
+
+    #print('pred_ts', pred_ts)
+    print('pred_hd', final_pred)
+    print('label', final_labels)
+    accuracy = miou(pred_hd, first_label)
+    avg_acc = torch.mean(accuracy)
+    print(f'accuracy of sample {i}: {accuracy}')
+    print(f'avg acc of sample {i}: {avg_acc}')
+
+    #cm = confusion_matrix(pred_hd, first_label, labels=torch.Tensor(range(0,15)))
+    #print("Confusion matrix \n")
+    #print(cm)
+
+    print("================================")
+"""
 
 if __name__ == "__main__":
 
