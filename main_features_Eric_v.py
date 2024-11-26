@@ -51,7 +51,7 @@ class HD_Model:
 
         print("\nTrain First\n")
 
-        for i in range(len(features)):
+        for i in tqdm(range(len(features)), desc="1st Training:"):
             first_sample = torch.Tensor(features[i][:int(num_voxels[i])]).to(self.device)
             first_label = torch.Tensor(labels[i][:int(num_voxels[i])]).to(torch.int64).to(self.device)
 
