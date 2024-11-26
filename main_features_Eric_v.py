@@ -10,6 +10,7 @@ from torchhd.models import Centroid
 from torchhd import embeddings
 from sklearn.metrics import confusion_matrix
 from tqdm import tqdm
+import wandb
 
 class Encoder(nn.Module):
     def __init__(self, hd_dim, size):
@@ -69,6 +70,9 @@ class HD_Model:
             self.model.add(samples_hv, first_label)
 
     def retrain(self, features, labels, num_voxels):
+        
+        """ Retrain with misclassified samples (also substract)"""
+        
         for e in tqdm(range(10), desc="Epoch"):
             count = 0
 
@@ -90,22 +94,24 @@ class HD_Model:
                     continue
 
                 # only update wrongly predicted inputs
-                #logit = logit[is_wrong]
                 samples_hv = samples_hv[is_wrong]
                 first_label = first_label[is_wrong]
                 pred_hd = pred_hd[is_wrong]
 
                 count = first_label.shape[0]
 
-                #alpha1 = 1.0 - logit.gather(1, target.unsqueeze(1))
-                #alpha2 = logit.gather(1, pred.unsqueeze(1)) - 1.0
-
                 self.model.weight.index_add_(0, first_label, samples_hv)
                 self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1.0)
 
                 print(f"Misclassified for {i}: ", count)
 
-    def test_hd(self, features, labels, num_voxels):
+                # If you want to test for each sample
+                self.test_hd(features, labels, num_voxels)
+
+    def test_hd(self, features, labels, num_voxels, epoch=0):
+
+        """ Testing over all the samples in all the scans given """
+
         assert len(features) == len(labels)
         
         # Metric
@@ -137,8 +143,12 @@ class HD_Model:
         print('label', final_labels, "\tShape: ", final_labels.shape)
         accuracy = miou(final_pred, final_labels)
         avg_acc = torch.mean(accuracy)
-        print(f'accuracy of sample {i}: {accuracy}')
-        print(f'avg acc of sample {i}: {avg_acc}')
+        print(f'accuracy: {accuracy}')
+        print(f'avg acc: {avg_acc}')
+
+        log_data = {f"Training class_{i}_IoU": c for i, c in enumerate(accuracy)}
+        log_data["Retraining epoch"] = avg_acc
+        wandb.log(log_data)
 
         #cm = confusion_matrix(pred_hd, first_label, labels=torch.Tensor(range(0,15)))
         #print("Confusion matrix \n")
@@ -169,13 +179,12 @@ def test_soa(results, labels, num_voxels, device):
 
     print("================================")
 
-    #print('pred_ts', pred_ts)
     print('pred', final_pred, "\tShape: ", final_pred.shape)
     print('label', final_labels, "\tShape: ", final_labels.shape)
     accuracy = miou(final_pred, final_labels)
     avg_acc = torch.mean(accuracy)
-    print(f'accuracy of sample {i}: {accuracy}')
-    print(f'avg acc of sample {i}: {avg_acc}')
+    print(f'accuracy: {accuracy}')
+    print(f'avg acc: {avg_acc}')
 
     #cm = confusion_matrix(pred_hd, first_label, labels=torch.Tensor(range(0,15)))
     #print("Confusion matrix \n")
@@ -186,6 +195,20 @@ def test_soa(results, labels, num_voxels, device):
 
 if __name__ == "__main__":
 
+    wandb.login(key="9487c04b8eff0c16cac4e785f2b57c3a475767d3")
+
+    run = wandb.init(
+        # Set the project where this run will be logged
+        project="scalr_hd",
+        # Track hyperparameters and run metadata
+        config={
+            "encoding": "Random Projection",
+            "hd_dim": 10000,
+            "training_samples": 10,
+        },
+        id="retraining_hd_simple",
+    )
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Using {} device".format(device))
 
@@ -193,12 +216,11 @@ if __name__ == "__main__":
     HD_DIM = 10000
     num_classes = 16
 
-    
     # Loading the data
-    arrays = np.load('/home/outputs/SoA_results.npy')
-    features = np.load('/home/outputs/SoA_features.npy')
-    labels = np.load('/home/outputs/SoA_labels.npy')
-    num_voxels = np.load('/home/outputs/num_voxels.npy')
+    arrays = np.load('/root/main/ScaLR/debug/SoA_results.npy')
+    features = np.load('/root/main/ScaLR/debug/SoA_features.npy')
+    labels = np.load('/root/main/ScaLR/debug/SoA_labels.npy')
+    num_voxels = np.load('/root/main/ScaLR/debug/num_voxels.npy')
 
     print("SOA results\n")
     test_soa(arrays, labels, num_voxels, device)
