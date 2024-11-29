@@ -354,6 +354,7 @@ if __name__ == "__main__":
         random.seed(args.seed)
         np.random.seed(args.seed)
         torch.manual_seed(args.seed)
+        torch.cuda.manual_seed(args.seed)
         os.environ["PYTHONHASHSEED"] = str(args.seed)
 
     DIMENSIONS = 10000
@@ -368,8 +369,6 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Using {} device".format(device))
     device_string = "cuda:0" if torch.cuda.is_available() else "cpu"
-    if device_string != "cpu":
-        torch.cuda.manual_seed(args.seed)
 
     kwargs = {
         "rootdir": '/root/main/dataset/nuscenes',
