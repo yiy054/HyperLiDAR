@@ -222,16 +222,17 @@ class HD_Model:
         print("\nTrain First\n")
 
         for it, batch in tqdm(enumerate(self.train_loader), desc="1st Training"):
-            features, labels, soa_result = self.feature_extractor.forward_model(it, batch, self.stop)
-            features = torch.transpose(features, 0, 1).to(self.device)
-            labels = labels.to(torch.int64).to(self.device)
+            if it == 0:
+                features, labels, soa_result = self.feature_extractor.forward_model(it, batch, self.stop)
+                features = torch.transpose(features, 0, 1).to(self.device)
+                labels = labels.to(torch.int64).to(self.device)
 
-            features = self.normalize(features) # Z1 score seems to work
+                features = self.normalize(features) # Z1 score seems to work
 
-            # HD training
-            samples_hv = self.encode(features)
-            #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
-            self.model.add(samples_hv, labels)
+                # HD training
+                samples_hv = self.encode(features)
+                #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
+                self.model.add(samples_hv, labels)
 
     def retrain(self, epochs):
         
@@ -240,38 +241,41 @@ class HD_Model:
         for e in tqdm(range(epochs), desc="Epoch"):
             count = 0
 
-            for it, batch in tqdm(enumerate(self.train_loader), desc="1st Training"):
-                features, labels, soa_result = self.feature_extractor.forward_model(it, batch, self.stop)
-                features = torch.transpose(features, 0, 1).to(self.device)
-                labels = labels.to(torch.int64).to(self.device)
+            if e == 0:
 
-                features = self.normalize(features) # Z1 score seems to work
+                for it, batch in tqdm(enumerate(self.train_loader), desc="1st Training"):
+                    if it == 0:
+                        features, labels, soa_result = self.feature_extractor.forward_model(it, batch, self.stop)
+                        features = torch.transpose(features, 0, 1).to(self.device)
+                        labels = labels.to(torch.int64).to(self.device)
 
-                #for vox in range(len(first_sample)):
-                samples_hv = self.encode(features)
-                sim = self.model(samples_hv, dot=True)
-                pred_hd = sim.argmax(1).data
+                        features = self.normalize(features) # Z1 score seems to work
 
-                is_wrong = labels != pred_hd
+                        #for vox in range(len(first_sample)):
+                        samples_hv = self.encode(features)
+                        sim = self.model(samples_hv, dot=True)
+                        pred_hd = sim.argmax(1).data
 
-                # cancel update if all predictions were correct
-                if is_wrong.sum().item() == 0:
-                    continue
+                        is_wrong = labels != pred_hd
 
-                # only update wrongly predicted inputs
-                samples_hv = samples_hv[is_wrong]
-                labels = labels[is_wrong]
-                pred_hd = pred_hd[is_wrong]
+                        # cancel update if all predictions were correct
+                        if is_wrong.sum().item() == 0:
+                            continue
 
-                count = labels.shape[0]
+                        # only update wrongly predicted inputs
+                        samples_hv = samples_hv[is_wrong]
+                        labels = labels[is_wrong]
+                        pred_hd = pred_hd[is_wrong]
 
-                self.model.weight.index_add_(0, labels, samples_hv)
-                self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1.0)
+                        count = labels.shape[0]
 
-                #print(f"Misclassified for {it}: ", count)
+                        self.model.weight.index_add_(0, labels, samples_hv)
+                        self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1.0)
 
-            # If you want to test for each sample
-            self.test_hd()
+                    #print(f"Misclassified for {it}: ", count)
+
+                # If you want to test for each sample
+                self.test_hd()
 
     def test_hd(self, loader='val'):
 
@@ -291,22 +295,23 @@ class HD_Model:
         
         start_idx = 0
         for it, batch in tqdm(enumerate(self.train_loader), desc="1st Training"):
-            features, labels, soa_result = self.feature_extractor.forward_model(it, batch, self.stop)
-            shape_sample = labels.shape[0]
-            features = torch.transpose(features, 0, 1).to(self.device)
-            labels = labels.to(torch.int64).to(self.device)
+            if it == 0:
+                features, labels, soa_result = self.feature_extractor.forward_model(it, batch, self.stop)
+                shape_sample = labels.shape[0]
+                features = torch.transpose(features, 0, 1).to(self.device)
+                labels = labels.to(torch.int64).to(self.device)
 
-            
-            final_labels[start_idx:start_idx+shape_sample] = labels
+                
+                final_labels[start_idx:start_idx+shape_sample] = labels
 
-            features = self.normalize(features) # Z1 score seems to work
+                features = self.normalize(features) # Z1 score seems to work
 
-            # HD inference
-            samples_hv = self.encode(features)
-            pred_hd = self.model(samples_hv, dot=True).argmax(1).data
-            final_pred[start_idx:start_idx+shape_sample] = pred_hd
+                # HD inference
+                samples_hv = self.encode(features)
+                pred_hd = self.model(samples_hv, dot=True).argmax(1).data
+                final_pred[start_idx:start_idx+shape_sample] = pred_hd
 
-            start_idx += shape_sample
+                start_idx += shape_sample
 
         print("================================")
 
