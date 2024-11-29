@@ -116,15 +116,24 @@ class Feature_Extractor:
             neighbors_emb = neighbors_emb.cuda(0, non_blocking=True)
         net_inputs = (feat, cell_ind, occupied_cell, neighbors_emb)
 
-        with torch.autocast("cuda", enabled=True):
-            # Logits
-            with torch.no_grad():
-                out = self.model(*net_inputs, stop)
-                encode, tokens, out = out[0], out[1], out[2]
-                pred_label = out.max(1)[1]
+        if device_string != 'cpu':
+            with torch.autocast("cuda", enabled=True):
+                # Logits
+                with torch.no_grad():
+                    out = self.model(*net_inputs, stop)
+                    encode, tokens, out = out[0], out[1], out[2]
+                    pred_label = out.max(1)[1]
 
-                # Only return samples that are not noise
-                where = labels != 255
+                    # Only return samples that are not noise
+                    where = labels != 255
+        else:
+            with torch.no_grad():
+                    out = self.model(*net_inputs, stop)
+                    encode, tokens, out = out[0], out[1], out[2]
+                    pred_label = out.max(1)[1]
+
+                    # Only return samples that are not noise
+                    where = labels != 255
         
         return tokens[0,:,where], labels[where], pred_label[0, where]
 
@@ -340,7 +349,6 @@ if __name__ == "__main__":
         random.seed(args.seed)
         np.random.seed(args.seed)
         torch.manual_seed(args.seed)
-        torch.cuda.manual_seed(args.seed)
         os.environ["PYTHONHASHSEED"] = str(args.seed)
 
     DIMENSIONS = 10000
@@ -355,6 +363,8 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Using {} device".format(device))
     device_string = "cuda:0" if torch.cuda.is_available() else "cpu"
+    if device_string != "cpu":
+        torch.cuda.manual_seed(args.seed)
 
     kwargs = {
         "rootdir": '/root/main/dataset/nuscenes',
