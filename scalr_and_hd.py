@@ -233,7 +233,7 @@ class HD_Model:
 
         print("\nTrain First\n")
 
-        for it, batch in tqdm(enumerate(self.train_loader), desc="1st Training"):
+        for it, batch in tqdm(enumerate(self.train_loader), desc="Training"):
            
             samples_hv, labels = self.sample_to_encode(it, batch)
             #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
@@ -246,7 +246,7 @@ class HD_Model:
         for e in tqdm(range(epochs), desc="Epoch"):
             count = 0
 
-            for it, batch in tqdm(enumerate(self.train_loader), desc="1st Training"):
+            for it, batch in tqdm(enumerate(self.train_loader), desc=f"Retraining epoch {e}"):
                 
                 samples_hv, labels = self.sample_to_encode(it, batch)
                 sim = self.model(samples_hv, dot=True)
@@ -291,7 +291,7 @@ class HD_Model:
         final_pred = torch.empty((num_vox), device=self.device)
         
         start_idx = 0
-        for it, batch in tqdm(enumerate(self.train_loader), desc="1st Training"):
+        for it, batch in tqdm(enumerate(self.train_loader), desc="Validation:"):
             
             samples_hv, labels = self.sample_to_encode(it, batch)
             
@@ -418,8 +418,15 @@ if __name__ == "__main__":
         id="retraining_hd_simple_complete",
     )
 
+    print("Initial Training")
     hd_model.train()
+
+    print("Testing")
     hd_model.test_hd()
+
+    print("Retraining")
     hd_model.retrain(epochs=10)
+    
+    print("Testing")
     hd_model.test_hd()
 
