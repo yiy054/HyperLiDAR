@@ -215,6 +215,18 @@ class HD_Model:
 
         print("Finished loading data loaders")
     
+    def sample_to_encode(self, it, batch):
+        features, labels, soa_result = self.feature_extractor.forward_model(it, batch, self.stop)
+        features = torch.transpose(features, 0, 1).to(torch.float32).to(self.device)
+        labels = labels.to(torch.int64).to(self.device)
+
+        features = self.normalize(features) # Z1 score seems to work
+
+        # HD training
+        samples_hv = self.encode(features)
+
+        return samples_hv, labels
+    
     def train(self):
 
         """ Initial training pass """
@@ -223,14 +235,7 @@ class HD_Model:
 
         for it, batch in tqdm(enumerate(self.train_loader), desc="1st Training"):
            
-            features, labels, soa_result = self.feature_extractor.forward_model(it, batch, self.stop)
-            features = torch.transpose(features, 0, 1).to(torch.float32).to(self.device)
-            labels = labels.to(torch.int64).to(self.device)
-
-            features = self.normalize(features) # Z1 score seems to work
-
-            # HD training
-            samples_hv = self.encode(features)
+            samples_hv, labels = self.sample_to_encode(it, batch)
             #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
             self.model.add(samples_hv, labels)
 
@@ -243,16 +248,10 @@ class HD_Model:
 
             for it, batch in tqdm(enumerate(self.train_loader), desc="1st Training"):
                 
-                features, labels, soa_result = self.feature_extractor.forward_model(it, batch, self.stop)
-                features = torch.transpose(features, 0, 1).to(self.device)
-                labels = labels.to(torch.int64).to(self.device)
-
-                features = self.normalize(features) # Z1 score seems to work
-
-                #for vox in range(len(first_sample)):
-                samples_hv = self.encode(features)
+                samples_hv, labels = self.sample_to_encode(it, batch)
                 sim = self.model(samples_hv, dot=True)
-                pred_hd = sim.argmax(1).data
+                #pred_hd = sim.argmax(1).data
+                pred_hd = torch.argmax(sim, axis=1)
 
                 is_wrong = labels != pred_hd
 
@@ -293,20 +292,16 @@ class HD_Model:
         
         start_idx = 0
         for it, batch in tqdm(enumerate(self.train_loader), desc="1st Training"):
-
-            features, labels, soa_result = self.feature_extractor.forward_model(it, batch, self.stop)
+            
+            samples_hv, labels = self.sample_to_encode(it, batch)
+            
             shape_sample = labels.shape[0]
-            features = torch.transpose(features, 0, 1).to(self.device)
-            labels = labels.to(torch.int64).to(self.device)
-
             
             final_labels[start_idx:start_idx+shape_sample] = labels
-
-            features = self.normalize(features) # Z1 score seems to work
-
-            # HD inference
-            samples_hv = self.encode(features)
-            pred_hd = self.model(samples_hv, dot=True).argmax(1).data
+            #pred_hd = self.model(samples_hv, dot=True).argmax(1).data
+            sim = self.model(samples_hv, dot=True)
+            #pred_hd = sim.argmax(1).data
+            pred_hd = torch.argmax(sim, axis=1)
             final_pred[start_idx:start_idx+shape_sample] = pred_hd
 
             start_idx += shape_sample
