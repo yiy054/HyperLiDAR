@@ -299,7 +299,7 @@ class HD_Model:
             
             shape_sample = labels.shape[0]
 
-            print("Shape sample: " shape_sample)
+            print("Shape sample: ", shape_sample)
             print("Start idx ", start_idx)
             print("Actual array: ", final_labels[start_idx:start_idx+shape_sample].shape)
             
