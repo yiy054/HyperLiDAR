@@ -224,7 +224,7 @@ class HD_Model:
         for it, batch in tqdm(enumerate(self.train_loader), desc="1st Training"):
            
             features, labels, soa_result = self.feature_extractor.forward_model(it, batch, self.stop)
-            features = torch.transpose(features, 0, 1).to(self.device)
+            features = torch.transpose(features, 0, 1).to(torch.float32).to(self.device)
             labels = labels.to(torch.int64).to(self.device)
 
             features = self.normalize(features) # Z1 score seems to work
