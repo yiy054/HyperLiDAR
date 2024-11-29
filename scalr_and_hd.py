@@ -298,6 +298,10 @@ class HD_Model:
             print(labels.shape)
             
             shape_sample = labels.shape[0]
+
+            print("Shape sample: " shape_sample)
+            print("Start idx ", start_idx)
+            print("Actual array: ", final_labels[start_idx:start_idx+shape_sample].shape)
             
             final_labels[start_idx:start_idx+shape_sample] = labels
             #pred_hd = self.model(samples_hv, dot=True).argmax(1).data
