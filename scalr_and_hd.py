@@ -173,7 +173,7 @@ class HD_Model:
         self.model = model.to(device)
         self.device = device
         self.feature_extractor = Feature_Extractor(nb_class = num_classes)
-        self.modelfeature_extractor.load_pretrained(path_pretrained)
+        self.feature_extractor.load_pretrained(path_pretrained)
         self.stop = stop
         self.num_classes = num_classes
 
