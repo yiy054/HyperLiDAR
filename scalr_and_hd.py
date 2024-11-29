@@ -291,7 +291,7 @@ class HD_Model:
         final_pred = torch.empty((num_vox), device=self.device)
         
         start_idx = 0
-        for it, batch in tqdm(enumerate(self.train_loader), desc="Validation:"):
+        for it, batch in tqdm(enumerate(loader), desc="Validation:"):
             
             samples_hv, labels = self.sample_to_encode(it, batch)
             print(samples_hv.shape)
