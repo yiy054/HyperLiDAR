@@ -212,6 +212,7 @@ class HD_Model:
             labels = batch["labels_orig"]
             where = labels != 255
             self.num_vox_val += labels[where].shape[0]
+            print(labels[where].shape)
 
         print("Finished loading data loaders")
     
@@ -281,6 +282,7 @@ class HD_Model:
         if loader == 'val':
             loader = self.val_loader
             num_vox = self.num_vox_val
+            print(num_vox)
         else:
             loader = self.train_loader
             num_vox = self.num_vox_train
@@ -301,7 +303,8 @@ class HD_Model:
 
             print("Shape sample: ", shape_sample)
             print("Start idx ", start_idx)
-            print("Actual array: ", final_labels[start_idx:start_idx+shape_sample].shape)
+            print("Actual array: ", final_labels.shape)
+            print("Edges of array: ", start_idx, start_idx+shape_sample)
             
             final_labels[start_idx:start_idx+shape_sample] = labels
             #pred_hd = self.model(samples_hv, dot=True).argmax(1).data
