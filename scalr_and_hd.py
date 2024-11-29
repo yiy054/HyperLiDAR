@@ -294,6 +294,8 @@ class HD_Model:
         for it, batch in tqdm(enumerate(self.train_loader), desc="Validation:"):
             
             samples_hv, labels = self.sample_to_encode(it, batch)
+            print(samples_hv.shape)
+            print(labels.shape)
             
             shape_sample = labels.shape[0]
             
@@ -418,8 +420,8 @@ if __name__ == "__main__":
         id="retraining_hd_simple_complete",
     )
 
-    print("Initial Training")
-    hd_model.train()
+    #print("Initial Training")
+    #hd_model.train()
 
     print("Testing")
     hd_model.test_hd()
