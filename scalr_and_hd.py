@@ -211,8 +211,10 @@ class HD_Model:
         for batch in self.val_loader:
             labels = batch["labels_orig"]
             where = labels != 255
+            torch.cuda.synchronize(device=self.device)
             self.num_vox_val += labels[where].shape[0]
 
+        print("self.num_vox_val: ", self.num_vox_val)
         print("Finished loading data loaders")
     
     def sample_to_encode(self, it, batch):
