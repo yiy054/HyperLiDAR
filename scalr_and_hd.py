@@ -183,7 +183,7 @@ class HD_Model:
         model = Centroid(out_dim, num_classes)
         self.model = model.to(device=device, non_blocking=True)
         self.device = device
-        self.feature_extractor = Feature_Extractor(nb_class = num_classes)
+        self.feature_extractor = Feature_Extractor(nb_class = num_classes, device=self.device)
         self.feature_extractor.load_pretrained(path_pretrained)
         self.stop = stop
         self.num_classes = num_classes
