@@ -128,12 +128,12 @@ class Feature_Extractor:
                     where = labels != 255
         else:
             with torch.no_grad():
-                    out = self.model(*net_inputs, stop)
-                    encode, tokens, out = out[0], out[1], out[2]
-                    pred_label = out.max(1)[1]
+                out = self.model(*net_inputs, stop)
+                encode, tokens, out = out[0], out[1], out[2]
+                pred_label = out.max(1)[1]
 
-                    # Only return samples that are not noise
-                    where = labels != 255
+                # Only return samples that are not noise
+                where = labels != 255
         
         return tokens[0,:,where], labels[where], pred_label[0, where]
 
@@ -210,6 +210,7 @@ class HD_Model:
 
         for batch in self.val_loader:
             labels = batch["labels_orig"]
+            labels = labels.cuda(0, non_blocking=True)
             where = labels != 255
             torch.cuda.synchronize(device=self.device)
             self.num_vox_val += labels[where].shape[0]
