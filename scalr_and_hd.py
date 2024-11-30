@@ -213,6 +213,7 @@ class HD_Model:
             where = labels != 255
             torch.cuda.synchronize(device=self.device)
             self.num_vox_val += labels[where].shape[0]
+            print("self.num_vox_val: ", self.num_vox_val)
 
         print("self.num_vox_val: ", self.num_vox_val)
         print("Finished loading data loaders")
