@@ -214,7 +214,7 @@ class HD_Model:
             self.num_vox_val += labels[where].shape[0]
             print(labels[where].shape[0])
         
-        print("Last: ", print(labels[where].shape[0]))
+        #print("Last: ", print(labels[where].shape[0]))
 
         print("Finished loading data loaders")
     
