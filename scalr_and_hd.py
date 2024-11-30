@@ -298,14 +298,15 @@ class HD_Model:
         for it, batch in tqdm(enumerate(loader), desc="Validation:"):
             
             samples_hv, labels = self.sample_to_encode(it, batch)
+            torch.cuda.synchronize(device=self.device)
             
             shape_sample = labels.shape[0]
 
             #pred_hd = self.model(samples_hv, dot=True).argmax(1).data
             sim = self.model(samples_hv, dot=True)
+            torch.cuda.synchronize(device=self.device)
             #pred_hd = sim.argmax(1).data
             pred_hd = torch.argmax(sim, axis=1)
-
             torch.cuda.synchronize(device=self.device)
 
             print("Labels: ", labels.shape[0])
