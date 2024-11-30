@@ -425,6 +425,7 @@ if __name__ == "__main__":
             pin_memory=True,
             drop_last=True,
             collate_fn=Collate(),
+            persistent_workers=False,
         )
 
     val_loader = torch.utils.data.DataLoader(
@@ -433,6 +434,7 @@ if __name__ == "__main__":
             pin_memory=True,
             drop_last=True,
             collate_fn=Collate(),
+            persistent_workers=False,
         )
 
     hd_model = HD_Model(FEAT_SIZE, DIMENSIONS, num_classes, path_pretrained, device=device)
