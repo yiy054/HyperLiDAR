@@ -212,6 +212,7 @@ class Collate:
     def __init__(self, num_points=None, device=torch.device('cpu')):
         self.num_points = num_points
         assert num_points is None or num_points > 0
+        self.device=device
 
     def __call__(self, list_data):
 
