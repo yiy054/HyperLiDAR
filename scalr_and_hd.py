@@ -296,6 +296,8 @@ class HD_Model:
         miou = MulticlassJaccardIndex(num_classes=self.num_classes, average=None).to(self.device)
         final_labels = torch.empty((num_vox), device=self.device)
         final_pred = torch.empty((num_vox), device=self.device)
+
+        print("Final labels: ", num_vox)
         
         start_idx = 0
         for it, batch in tqdm(enumerate(loader), desc="Validation:"):
@@ -310,6 +312,10 @@ class HD_Model:
             pred_hd = torch.argmax(sim, axis=1)
 
             torch.cuda.synchronize(device=self.device)
+
+            print("Labels: ", labels.shape[0])
+            print(start_idx, start_idx+shape_sample)
+            print(shape_sample)
 
             final_labels[start_idx:start_idx+shape_sample] = labels
             final_pred[start_idx:start_idx+shape_sample] = pred_hd
