@@ -102,7 +102,6 @@ class Feature_Extractor:
     def forward_model(self, it, batch, stop):
         feat = batch["feat"]
         labels = batch["labels_orig"]
-        print(torch.bincount(labels)[255])
         cell_ind = batch["cell_ind"]
         occupied_cell = batch["occupied_cells"]
         neighbors_emb = batch["neighbors_emb"]
@@ -127,10 +126,8 @@ class Feature_Extractor:
 
                     # Only return samples that are not noise
                     torch.cuda.synchronize(device=self.device)
-                    print(torch.bincount(labels)[255])
                     where = labels != 255
                     torch.cuda.synchronize(device=self.device)
-                    print(sum(where))
         else:
             with torch.no_grad():
                 out = self.model(*net_inputs, stop)
@@ -217,17 +214,13 @@ class HD_Model:
 
         for batch in self.val_loader:
             labels = batch["labels_orig"]
-            print(torch.bincount(labels)[255])
             labels = labels.cuda(0, non_blocking=True)
             torch.cuda.synchronize(device=self.device)
-            print(torch.bincount(labels)[255])
             where = labels != 255
-            print(sum(where))
             torch.cuda.synchronize(device=self.device)
             self.num_vox_val += labels[where].shape[0]
             print("self.num_vox_val: ", self.num_vox_val)
-
-        print("self.num_vox_val: ", self.num_vox_val)
+            
         print("Finished loading data loaders")
     
     def sample_to_encode(self, it, batch):
