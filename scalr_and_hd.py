@@ -95,7 +95,7 @@ class Feature_Extractor:
 
         if self.device_string != 'cpu':
             torch.cuda.set_device(self.device_string) # cuda:0
-            self.model = self.model.cuda(self.device_string) # cuda:0
+            self.model = self.model.cuda(self.device_string, non_blocking=True) # cuda:0
 
         self.model.eval()
 
@@ -139,7 +139,7 @@ class Feature_Extractor:
 
     def test(self, loader, total_voxels):        
         # Metric
-        miou = MulticlassJaccardIndex(num_classes=self.num_classes, average=None).to(self.device)
+        miou = MulticlassJaccardIndex(num_classes=self.num_classes, average=None).to(self.device, non_blocking=True)
         final_labels = torch.empty((total_voxels), device=self.device)
         final_pred = torch.empty((total_voxels), device=self.device)
         
@@ -147,8 +147,8 @@ class Feature_Extractor:
         for it, batch in tqdm(enumerate(loader), desc="1st Training"):
             features, labels, soa_result = self.feature_extractor.forward_model(it, batch, self.stop)
             shape_sample = labels.shape[0]
-            labels = labels.to(torch.int64).to(self.device)
-            soa_result = soa_result.to(self.device)
+            labels = labels.to(dtype = torch.int64, device = self.device, non_blocking=True)
+            soa_result = soa_result.to(device=self.device, non_blocking=True)
             final_labels[start_idx:start_idx+shape_sample] = labels
 
             pred = soa_result.max(1)[1]
@@ -176,10 +176,10 @@ class HD_Model:
                  device=torch.device("cpu")):
 
         encode = Encoder(out_dim, in_dim)
-        self.encode = encode.to(device)
+        self.encode = encode.to(device=device, non_blocking=True)
 
         model = Centroid(out_dim, num_classes)
-        self.model = model.to(device)
+        self.model = model.to(device=device, non_blocking=True)
         self.device = device
         self.feature_extractor = Feature_Extractor(nb_class = num_classes)
         self.feature_extractor.load_pretrained(path_pretrained)
@@ -293,7 +293,7 @@ class HD_Model:
             num_vox = self.num_vox_train
         
         # Metric
-        miou = MulticlassJaccardIndex(num_classes=self.num_classes, average=None).to(self.device)
+        miou = MulticlassJaccardIndex(num_classes=self.num_classes, average=None).to(self.device, non_blocking=True)
         final_labels = torch.empty((num_vox), dtype=torch.int64, device=self.device)
         final_pred = torch.empty((num_vox), dtype=torch.int64, device=self.device)
 
