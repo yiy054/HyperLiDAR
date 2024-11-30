@@ -95,7 +95,7 @@ class Feature_Extractor:
 
         if self.device_string != 'cpu':
             torch.cuda.set_device(self.device_string) # cuda:0
-            self.model = self.model.cuda(self.device_string, non_blocking=True) # cuda:0
+            self.model = self.model.cuda(self.device_string) # cuda:0
 
         self.model.eval()
 
