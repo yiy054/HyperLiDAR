@@ -227,7 +227,7 @@ class Collate:
         #print("List of data", torch.bincount(list_of_data[1][0])[255])
         torch.cuda.synchronize(device=self.device)
         feat, label_orig, cell_ind, neighbors_emb, upsample, filename = list_of_data
-        print("Label_orig", torch.bincount(label_orig[0])[255])
+        print("Label_orig", np.bincount(label_orig[0])[255])
         torch.cuda.synchronize(device=self.device)
 
         # Zero-pad point clouds
