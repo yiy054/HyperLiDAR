@@ -145,7 +145,6 @@ class NuScenesSemSeg(PCDataset):
 
         # Label 0 should be ignored
         labels = labels - 1
-        print(f"Sum of -1 {index}: ", sum(labels == -1))
         labels[labels == -1] = 255
 
         return pc, labels, pc_load[2]
