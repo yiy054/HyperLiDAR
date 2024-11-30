@@ -223,6 +223,7 @@ class HD_Model:
     
     def sample_to_encode(self, it, batch):
         features, labels, soa_result = self.feature_extractor.forward_model(it, batch, self.stop)
+        print(labels.shape[0])
         features = torch.transpose(features, 0, 1).to(dtype=torch.float32, device = self.device, non_blocking=True)
         labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
 
