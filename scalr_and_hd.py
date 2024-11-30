@@ -125,6 +125,8 @@ class Feature_Extractor:
                     pred_label = out.max(1)[1]
 
                     # Only return samples that are not noise
+                    torch.cuda.synchronize(device=self.device)
+                    print(torch.bincount(labels[255]))
                     where = labels != 255
                     torch.cuda.synchronize(device=self.device)
                     print(sum(where))
@@ -215,6 +217,8 @@ class HD_Model:
         for batch in self.val_loader:
             labels = batch["labels_orig"]
             labels = labels.cuda(0, non_blocking=True)
+            torch.cuda.synchronize(device=self.device)
+            print(torch.bincount(labels[255]))
             where = labels != 255
             print(sum(where))
             torch.cuda.synchronize(device=self.device)
