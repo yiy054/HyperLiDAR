@@ -212,7 +212,6 @@ class HD_Model:
             labels = batch["labels_orig"]
             labels = labels.cuda(0, non_blocking=True)
             where = labels != 255
-            torch.cuda.synchronize(device=self.device)
             self.num_vox_val += labels[where].shape[0]
             print("self.num_vox_val: ", self.num_vox_val)
 
@@ -221,8 +220,8 @@ class HD_Model:
     
     def sample_to_encode(self, it, batch):
         features, labels, soa_result = self.feature_extractor.forward_model(it, batch, self.stop)
-        features = torch.transpose(features, 0, 1).to(torch.float32).to(self.device)
-        labels = labels.to(torch.int64).to(self.device)
+        features = torch.transpose(features, 0, 1).to(dtype=torch.float32, device = self.device, non_blocking=True)
+        labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
 
         features = self.normalize(features) # Z1 score seems to work
 
