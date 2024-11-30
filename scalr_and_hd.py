@@ -212,9 +212,6 @@ class HD_Model:
             labels = batch["labels_orig"]
             where = labels != 255
             self.num_vox_val += labels[where].shape[0]
-            #print(labels[where].shape[0])
-        
-        #print("Last: ", print(labels[where].shape[0]))
 
         print("Finished loading data loaders")
     
@@ -296,8 +293,6 @@ class HD_Model:
         miou = MulticlassJaccardIndex(num_classes=self.num_classes, average=None).to(self.device)
         final_labels = torch.empty((num_vox), device=self.device)
         final_pred = torch.empty((num_vox), device=self.device)
-
-        print("Final labels: ", num_vox)
         
         start_idx = 0
         for it, batch in tqdm(enumerate(loader), desc="Validation:"):
@@ -314,8 +309,8 @@ class HD_Model:
             torch.cuda.synchronize(device=self.device)
 
             print("Labels: ", labels.shape[0])
-            print(start_idx, start_idx+shape_sample)
-            print(shape_sample)
+            #print(start_idx, start_idx+shape_sample)
+            #print(shape_sample)
 
             final_labels[start_idx:start_idx+shape_sample] = labels
             final_pred[start_idx:start_idx+shape_sample] = pred_hd
