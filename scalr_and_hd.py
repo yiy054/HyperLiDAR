@@ -212,7 +212,7 @@ class HD_Model:
             labels = batch["labels_orig"]
             where = labels != 255
             self.num_vox_val += labels[where].shape[0]
-            print(labels[where].shape[0])
+            #print(labels[where].shape[0])
         
         #print("Last: ", print(labels[where].shape[0]))
 
