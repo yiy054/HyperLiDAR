@@ -212,7 +212,6 @@ class HD_Model:
             labels = batch["labels_orig"]
             where = labels != 255
             self.num_vox_val += labels[where].shape[0]
-            print(labels[where].shape)
 
         print("Finished loading data loaders")
     
@@ -286,7 +285,6 @@ class HD_Model:
         if loader == 'val':
             loader = self.val_loader
             num_vox = self.num_vox_val
-            print(num_vox)
         else:
             loader = self.train_loader
             num_vox = self.num_vox_train
