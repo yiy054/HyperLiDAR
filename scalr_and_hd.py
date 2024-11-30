@@ -220,7 +220,7 @@ class HD_Model:
             torch.cuda.synchronize(device=self.device)
             self.num_vox_val += labels[where].shape[0]
             print("self.num_vox_val: ", self.num_vox_val)
-            
+
         print("Finished loading data loaders")
     
     def sample_to_encode(self, it, batch):
@@ -299,8 +299,8 @@ class HD_Model:
         
         # Metric
         miou = MulticlassJaccardIndex(num_classes=self.num_classes, average=None).to(self.device, non_blocking=True)
-        final_labels = torch.empty((num_vox), dtype=torch.int64, device=self.device)
-        final_pred = torch.empty((num_vox), dtype=torch.int64, device=self.device)
+        final_labels = torch.empty((num_vox+1000), dtype=torch.int64, device=self.device)
+        final_pred = torch.empty((num_vox+1000), dtype=torch.int64, device=self.device)
 
         print("Final_Pred shape: ", num_vox)
         
@@ -329,7 +329,8 @@ class HD_Model:
             start_idx += shape_sample
             print(start_idx)
 
-
+        final_labels = final_labels[:start_idx]
+        final_pred = final_pred[:start_idx]
 
         print("================================")
 

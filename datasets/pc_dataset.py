@@ -183,7 +183,7 @@ class PCDataset(Dataset):
             filename,
         )
 
-        print("Out", torch.bincount(out[1][0])[255])
+        print("Out", np.bincount(out[1])[255])
 
         return out
 
