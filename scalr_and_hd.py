@@ -102,6 +102,7 @@ class Feature_Extractor:
     def forward_model(self, it, batch, stop):
         feat = batch["feat"]
         labels = batch["labels_orig"]
+        print(labels.shape[0])
         cell_ind = batch["cell_ind"]
         occupied_cell = batch["occupied_cells"]
         neighbors_emb = batch["neighbors_emb"]
@@ -126,6 +127,7 @@ class Feature_Extractor:
 
                     # Only return samples that are not noise
                     where = labels != 255
+                    print(sum(where))
         else:
             with torch.no_grad():
                 out = self.model(*net_inputs, stop)
@@ -223,7 +225,6 @@ class HD_Model:
     
     def sample_to_encode(self, it, batch):
         features, labels, soa_result = self.feature_extractor.forward_model(it, batch, self.stop)
-        print(labels.shape[0])
         features = torch.transpose(features, 0, 1).to(dtype=torch.float32, device = self.device, non_blocking=True)
         labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
 
