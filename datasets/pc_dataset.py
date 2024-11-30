@@ -143,7 +143,7 @@ class PCDataset(Dataset):
 
         # Voxelization
         pc, labels = self.downsample(pc_orig, labels_orig)
-        print("Voxelization", torch.bincount(labels[0])[255])
+        print("Voxelization", torch.bincount(labels)[255])
 
         # Augment data
         if self.train_augmentations is not None:
@@ -151,7 +151,7 @@ class PCDataset(Dataset):
 
         # Crop to fov
         pc, labels = self.crop_to_fov(pc, labels)
-        print("Crop", torch.bincount(labels[0])[255])
+        print("Crop", torch.bincount(labels)[255])
 
         # For each point, get index of corresponding 2D cells on projected grid
         cell_ind = self.get_occupied_2d_cells(pc)
