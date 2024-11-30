@@ -244,7 +244,8 @@ class Collate:
         ).long()  # B x nb_2d_cells x Nmax
         occupied_cells = torch.from_numpy(np.vstack(occupied_cells)).float()  # B x Nmax
         torch.cuda.synchronize(device=self.device)
-        print(label_orig.shape)
+        print(len(label_orig))
+
         labels_orig = torch.from_numpy(np.hstack(label_orig))
         print("Labels_orig", torch.bincount(labels_orig)[255])
         torch.cuda.synchronize(device=self.device)
@@ -260,5 +261,7 @@ class Collate:
             "occupied_cells": occupied_cells,
             "filename": filename,
         }
+
+        torch.cuda.synchronize(device=self.device)
 
         return out
