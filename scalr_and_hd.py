@@ -135,6 +135,8 @@ class Feature_Extractor:
                 # Only return samples that are not noise
                 where = labels != 255
         
+        torch.cuda.synchronize(device=self.device)
+        
         return tokens[0,:,where], labels[where], pred_label[0, where]
 
     def test(self, loader, total_voxels):        
@@ -212,6 +214,7 @@ class HD_Model:
             labels = batch["labels_orig"]
             labels = labels.cuda(0, non_blocking=True)
             where = labels != 255
+            torch.cuda.synchronize(device=self.device)
             self.num_vox_val += labels[where].shape[0]
             print("self.num_vox_val: ", self.num_vox_val)
 
