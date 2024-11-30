@@ -291,8 +291,8 @@ class HD_Model:
         
         # Metric
         miou = MulticlassJaccardIndex(num_classes=self.num_classes, average=None).to(self.device)
-        final_labels = torch.empty((num_vox), device=self.device)
-        final_pred = torch.empty((num_vox), device=self.device)
+        final_labels = torch.empty((num_vox), dtype=torch.int64, device=self.device)
+        final_pred = torch.empty((num_vox), dtype=torch.int64, device=self.device)
         
         start_idx = 0
         for it, batch in tqdm(enumerate(loader), desc="Validation:"):
