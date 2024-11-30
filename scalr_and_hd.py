@@ -424,7 +424,7 @@ if __name__ == "__main__":
             batch_size=1,
             pin_memory=True,
             drop_last=True,
-            collate_fn=Collate(),
+            collate_fn=Collate(device=device),
             persistent_workers=False,
         )
 
@@ -433,7 +433,7 @@ if __name__ == "__main__":
             batch_size=1,
             pin_memory=True,
             drop_last=True,
-            collate_fn=Collate(),
+            collate_fn=Collate(device=device),
             persistent_workers=False,
         )
 
