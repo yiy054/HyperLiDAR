@@ -207,7 +207,10 @@ class HD_Model:
 
         for batch in self.train_loader:
             labels = batch["labels_orig"]
+            labels = labels.cuda(0, non_blocking=True)
+            torch.cuda.synchronize(device=self.device)
             where = labels != 255
+            torch.cuda.synchronize(device=self.device)
             self.num_vox_train += labels[where].shape[0]
 
         for batch in self.val_loader:
