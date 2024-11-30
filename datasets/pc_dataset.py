@@ -213,13 +213,17 @@ class Collate:
         self.num_points = num_points
         assert num_points is None or num_points > 0
         self.device=device
+        torch.cuda.synchronize(device=self.device)
 
     def __call__(self, list_data):
 
         # Extract all data
+        torch.cuda.synchronize(device=self.device)
         list_of_data = (list(data) for data in zip(*list_data))
+        print("List of data", torch.bincount(list_of_data[1][0])[255])
         torch.cuda.synchronize(device=self.device)
         feat, label_orig, cell_ind, neighbors_emb, upsample, filename = list_of_data
+        print("Label_orig", torch.bincount(label_orig[0])[255])
         torch.cuda.synchronize(device=self.device)
 
         # Zero-pad point clouds
@@ -244,7 +248,7 @@ class Collate:
         ).long()  # B x nb_2d_cells x Nmax
         occupied_cells = torch.from_numpy(np.vstack(occupied_cells)).float()  # B x Nmax
         torch.cuda.synchronize(device=self.device)
-        print(len(label_orig))
+        
 
         labels_orig = torch.from_numpy(np.hstack(label_orig))
         print("Labels_orig", torch.bincount(labels_orig)[255])
