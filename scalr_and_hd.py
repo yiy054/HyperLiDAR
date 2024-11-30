@@ -309,7 +309,7 @@ class HD_Model:
             pred_hd = torch.argmax(sim, axis=1)
             torch.cuda.synchronize(device=self.device)
 
-            print("Labels: ", labels.shape[0])
+            #print("Labels: ", labels.shape[0])
             #print(start_idx, start_idx+shape_sample)
             #print(shape_sample)
 
