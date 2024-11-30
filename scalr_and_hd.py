@@ -136,8 +136,6 @@ class Feature_Extractor:
 
                 # Only return samples that are not noise
                 where = labels != 255
-
-        print(labels[where].shape)
         
         return tokens[0,:,where], labels[where], pred_label[0, where]
 
@@ -219,7 +217,6 @@ class HD_Model:
             where = labels != 255
             torch.cuda.synchronize(device=self.device)
             self.num_vox_val += labels[where].shape[0]
-            print("self.num_vox_val: ", self.num_vox_val)
 
         print("Finished loading data loaders")
     
@@ -301,8 +298,6 @@ class HD_Model:
         miou = MulticlassJaccardIndex(num_classes=self.num_classes, average=None).to(self.device, non_blocking=True)
         final_labels = torch.empty((num_vox+1000), dtype=torch.int64, device=self.device)
         final_pred = torch.empty((num_vox+1000), dtype=torch.int64, device=self.device)
-
-        print("Final_Pred shape: ", num_vox)
         
         start_idx = 0
         for it, batch in tqdm(enumerate(loader), desc="Validation:"):
@@ -327,7 +322,6 @@ class HD_Model:
             final_pred[start_idx:start_idx+shape_sample] = pred_hd
 
             start_idx += shape_sample
-            print(start_idx)
 
         final_labels = final_labels[:start_idx]
         final_pred = final_pred[:start_idx]
@@ -446,8 +440,8 @@ if __name__ == "__main__":
         id="retraining_hd_simple_complete",
     )
 
-    #print("Initial Training")
-    #hd_model.train()
+    print("Initial Training")
+    hd_model.train()
 
     print("Testing")
     hd_model.test_hd()

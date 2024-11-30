@@ -143,7 +143,6 @@ class PCDataset(Dataset):
 
         # Voxelization
         pc, labels = self.downsample(pc_orig, labels_orig)
-        print("Voxelization", np.bincount(labels)[255])
 
         # Augment data
         if self.train_augmentations is not None:
@@ -151,7 +150,6 @@ class PCDataset(Dataset):
 
         # Crop to fov
         pc, labels = self.crop_to_fov(pc, labels)
-        print("Crop", np.bincount(labels)[255])
 
         # For each point, get index of corresponding 2D cells on projected grid
         cell_ind = self.get_occupied_2d_cells(pc)
@@ -182,8 +180,6 @@ class PCDataset(Dataset):
             # Filename of original point cloud
             filename,
         )
-
-        print("Out", np.bincount(out[1])[255])
 
         return out
 
@@ -224,10 +220,8 @@ class Collate:
         # Extract all data
         torch.cuda.synchronize(device=self.device)
         list_of_data = (list(data) for data in zip(*list_data))
-        #print("List of data", torch.bincount(list_of_data[1][0])[255])
         torch.cuda.synchronize(device=self.device)
         feat, label_orig, cell_ind, neighbors_emb, upsample, filename = list_of_data
-        print("Label_orig", np.bincount(label_orig[0])[255])
         torch.cuda.synchronize(device=self.device)
 
         # Zero-pad point clouds
@@ -255,7 +249,6 @@ class Collate:
         
 
         labels_orig = torch.from_numpy(np.hstack(label_orig))
-        print("Labels_orig", torch.bincount(labels_orig)[255])
         torch.cuda.synchronize(device=self.device)
         upsample = [torch.from_numpy(u) for u in upsample]
 
