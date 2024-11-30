@@ -240,6 +240,8 @@ class HD_Model:
             #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
             self.model.add(samples_hv, labels)
 
+            torch.cuda.synchronize(device=self.device)
+
     def retrain(self, epochs):
         
         """ Retrain with misclassified samples (also substract)"""
@@ -270,6 +272,8 @@ class HD_Model:
                 self.model.weight.index_add_(0, labels, samples_hv)
                 self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1.0)
 
+                torch.cuda.synchronize(device=self.device)
+
             #print(f"Misclassified for {it}: ", count)
 
             # If you want to test for each sample
@@ -296,24 +300,22 @@ class HD_Model:
         for it, batch in tqdm(enumerate(loader), desc="Validation:"):
             
             samples_hv, labels = self.sample_to_encode(it, batch)
-            print(samples_hv.shape)
-            print(labels.shape)
             
             shape_sample = labels.shape[0]
 
-            print("Shape sample: ", shape_sample)
-            print("Start idx ", start_idx)
-            print("Actual array: ", final_labels.shape)
-            print("Edges of array: ", start_idx, start_idx+shape_sample)
-            
-            final_labels[start_idx:start_idx+shape_sample] = labels
             #pred_hd = self.model(samples_hv, dot=True).argmax(1).data
             sim = self.model(samples_hv, dot=True)
             #pred_hd = sim.argmax(1).data
             pred_hd = torch.argmax(sim, axis=1)
+
+            torch.cuda.synchronize(device=self.device)
+
+            final_labels[start_idx:start_idx+shape_sample] = labels
             final_pred[start_idx:start_idx+shape_sample] = pred_hd
 
             start_idx += shape_sample
+
+
 
         print("================================")
 
