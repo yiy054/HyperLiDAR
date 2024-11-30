@@ -102,7 +102,7 @@ class Feature_Extractor:
     def forward_model(self, it, batch, stop):
         feat = batch["feat"]
         labels = batch["labels_orig"]
-        print(labels.shape[0])
+        print("Labels no where: ", labels.shape)
         cell_ind = batch["cell_ind"]
         occupied_cell = batch["occupied_cells"]
         neighbors_emb = batch["neighbors_emb"]
@@ -138,6 +138,7 @@ class Feature_Extractor:
                 where = labels != 255
         
         torch.cuda.synchronize(device=self.device)
+        print(labels[where].shape)
         
         return tokens[0,:,where], labels[where], pred_label[0, where]
 
@@ -214,6 +215,7 @@ class HD_Model:
 
         for batch in self.val_loader:
             labels = batch["labels_orig"]
+            print("Labels no where: ", labels.shape)
             labels = labels.cuda(0, non_blocking=True)
             where = labels != 255
             torch.cuda.synchronize(device=self.device)
