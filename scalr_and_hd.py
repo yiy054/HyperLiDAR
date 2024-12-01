@@ -158,6 +158,9 @@ class Feature_Extractor:
 
             start_idx += shape_sample
 
+        final_labels = final_labels[:start_idx]
+        final_pred = final_pred[:start_idx]
+
         print("================================")
 
         print('Pred FE', final_pred, "\tShape: ", final_pred.shape)
@@ -443,6 +446,10 @@ if __name__ == "__main__":
         id="retraining_hd_simple_complete_2",
     )
 
+    ####### HD Pipeline ##########
+
+    """
+
     print("Initial Training")
     hd_model.train()
 
@@ -455,3 +462,7 @@ if __name__ == "__main__":
     print("Testing")
     hd_model.test_hd()
 
+    """
+    print("SoA results")
+
+    hd_model.feature_extractor.test(hd_model.val_loader, hd_model.num_vox_val+1000)
