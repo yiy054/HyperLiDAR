@@ -146,8 +146,8 @@ class Feature_Extractor:
         final_pred = torch.empty((total_voxels), device=self.device)
         
         start_idx = 0
-        for it, batch in tqdm(enumerate(loader), desc="1st Training"):
-            features, labels, soa_result = self.feature_extractor.forward_model(it, batch, self.stop)
+        for it, batch in tqdm(enumerate(loader), desc="SoA testing"):
+            features, labels, soa_result = self.forward_model(it, batch, self.stop)
             shape_sample = labels.shape[0]
             labels = labels.to(dtype = torch.int64, device = self.device, non_blocking=True)
             soa_result = soa_result.to(device=self.device, non_blocking=True)
