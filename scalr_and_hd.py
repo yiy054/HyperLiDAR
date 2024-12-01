@@ -153,8 +153,7 @@ class Feature_Extractor:
             soa_result = soa_result.to(device=self.device, non_blocking=True)
             final_labels[start_idx:start_idx+shape_sample] = labels
 
-            pred = soa_result.max(1)[1]
-            final_pred[start_idx:start_idx+shape_sample] = pred
+            final_pred[start_idx:start_idx+shape_sample] = soa_result
 
             start_idx += shape_sample
 
