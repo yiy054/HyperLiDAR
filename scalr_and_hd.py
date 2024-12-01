@@ -443,7 +443,7 @@ if __name__ == "__main__":
             "hd_dim": 10000,
             "training_samples":404,
         },
-        id="retraining_hd_simple_complete_2",
+        id="SoA_results",
     )
 
     ####### HD Pipeline ##########
