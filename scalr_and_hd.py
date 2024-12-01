@@ -139,7 +139,7 @@ class Feature_Extractor:
         
         return tokens[0,:,where], labels[where], pred_label[0, where]
 
-    def test(self, loader, total_voxels):        
+    def test(self, loader, total_voxels, stop):        
         # Metric
         miou = MulticlassJaccardIndex(num_classes=self.num_classes, average=None).to(self.device, non_blocking=True)
         final_labels = torch.empty((total_voxels), device=self.device)
@@ -147,7 +147,7 @@ class Feature_Extractor:
         
         start_idx = 0
         for it, batch in tqdm(enumerate(loader), desc="SoA testing"):
-            features, labels, soa_result = self.forward_model(it, batch, self.stop)
+            features, labels, soa_result = self.forward_model(it, batch, stop)
             shape_sample = labels.shape[0]
             labels = labels.to(dtype = torch.int64, device = self.device, non_blocking=True)
             soa_result = soa_result.to(device=self.device, non_blocking=True)
@@ -465,4 +465,4 @@ if __name__ == "__main__":
     """
     print("SoA results")
 
-    hd_model.feature_extractor.test(hd_model.val_loader, hd_model.num_vox_val+1000)
+    hd_model.feature_extractor.test(hd_model.val_loader, hd_model.num_vox_val+1000, 48)
