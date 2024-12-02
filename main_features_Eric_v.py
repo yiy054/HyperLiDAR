@@ -129,12 +129,12 @@ class HD_Model:
                 #weight_for_class_i = first_label.shape[0] / (( samples_per_class * num_classes) + 1e-6)
                 
                 ##### Inverse weights ####
-                inverse_weights = float(self.num_classes) / (samples_per_class + 1.0)
+                inverse_weights = 1.0 / (samples_per_class + 1.0)
     
                 # Normalize the weights to sum to 1
                 normalized_weights = inverse_weights / torch.sum(inverse_weights)
 
-                
+
 
                 #for vox in range(len(first_sample)):
                 samples_hv = self.encode(first_sample)
