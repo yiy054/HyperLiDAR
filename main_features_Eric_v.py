@@ -207,9 +207,9 @@ class HD_Model:
         print(f'accuracy: {accuracy}')
         print(f'avg acc: {avg_acc}')
 
-        #log_data = {f"Training class_{i}_IoU": c for i, c in enumerate(accuracy)}
-        #log_data["Retraining epoch"] = avg_acc
-        #wandb.log(log_data)
+        log_data = {f"Training class_{i}_IoU": c for i, c in enumerate(accuracy)}
+        log_data["Retraining epoch"] = avg_acc
+        wandb.log(log_data)
 
         #cm = confusion_matrix(pred_hd, first_label, labels=torch.Tensor(range(0,15)))
         #print("Confusion matrix \n")
@@ -258,7 +258,7 @@ if __name__ == "__main__":
 
     wandb.login(key="9487c04b8eff0c16cac4e785f2b57c3a475767d3")
 
-    """run = wandb.init(
+    run = wandb.init(
         # Set the project where this run will be logged
         project="scalr_hd",
         # Track hyperparameters and run metadata
@@ -267,8 +267,8 @@ if __name__ == "__main__":
             "hd_dim": 10000,
             "training_samples": 10,
         },
-        id="retraining_hd_simple2",
-    )"""
+        id="lr_imbalance_hd_simple1",
+    )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Using {} device".format(device))
