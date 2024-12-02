@@ -32,6 +32,7 @@ class HD_Model:
         model = Centroid(out_dim, num_classes)
         self.model = model.to(device)
         self.device = device
+        self.num_classes = num_classes
 
     def normalize(self, samples):
 
@@ -65,6 +66,11 @@ class HD_Model:
             #        print(f"Sample {i}: Voxel {vox}")
                 
             # HD training
+
+            # Weights of each class
+            weight_for_class_i = first_label.shape[0] / ((torch.bincount(first_label) * num_classes) + 1e-6)
+            print(weight_for_class_i)
+
             samples_hv = self.encode(first_sample)
             #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
             self.model.add(samples_hv, first_label)
