@@ -123,7 +123,7 @@ class HD_Model:
                     if samples_per_class[c] > 0:
                         #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
                         here = first_label == c
-                        self.model.weight.index_add_(0, first_label[here], samples_hv[here], lr=weight_for_class_i[c])
+                        self.model.weight.index_add_(0, first_label[here], samples_hv[here], alpha=weight_for_class_i[c])
                         self.model.weight.index_add_(0, pred_hd[here], samples_hv[here], alpha=-1*weight_for_class_i[c])
 
                 #print(f"Misclassified for {i}: ", count)
