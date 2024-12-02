@@ -71,7 +71,7 @@ class HD_Model:
 
             # Weights of each class
             
-            samples_per_class = torch.bincount(first_label)
+            #samples_per_class = torch.bincount(first_label)
             #samples_dif_0 = samples_per_class[samples_per_class != 0]
             #classes_available = samples_dif_0.shape[0]
             #weight_for_class_i = first_label.shape[0] / ( samples_dif_0 * classes_available)
