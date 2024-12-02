@@ -72,12 +72,12 @@ class HD_Model:
             # Weights of each class
             
             samples_per_class = torch.bincount(first_label)
-            #samples_dif_0 = samples_per_class[samples_per_class != 0]
-            #classes_available = samples_dif_0.shape[0]
-            #weight_for_class_i = first_label.shape[0] / ( samples_dif_0 * classes_available)
+            samples_dif_0 = samples_per_class[samples_per_class != 0]
+            classes_available = samples_dif_0.shape[0]
+            weight_for_class_i = first_label.shape[0] / ( samples_dif_0 * classes_available)
             #print(weight_for_class_i.shape)
             #print(weight_for_class_i)
-            #weight_for_class_i = nn.functional.normalize(weight_for_class_i)
+            weight_for_class_i = nn.functional.normalize(weight_for_class_i)
 
             #print("Labels")
             #print(samples_per_class)
@@ -86,28 +86,28 @@ class HD_Model:
 
             ### Class Imbalance
 
-            #for c in range(self.num_classes):
-            #    if samples_per_class[c] > 0:
-            #        #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
-            #        here = first_label == c
-            #        self.model.add(samples_hv[here], first_label[here], lr=weight_for_class_i[c])
+            for c in range(self.num_classes):
+                if samples_per_class[c] > 0:
+                    #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
+                    here = first_label == c
+                    self.model.add(samples_hv[here], first_label[here], lr=weight_for_class_i[c])
             
             #### Original ####
             #self.model.add(samples_hv, first_label)
 
             #### Normalize over inverse of the count #######
 
-            inverse_weights = 1.0 / (samples_per_class + 1.0)
+            #inverse_weights = 1.0 / (samples_per_class + 1.0)
     
             # Normalize the weights to sum to 1
-            normalized_weights = inverse_weights / torch.sum(inverse_weights)
+            #normalized_weights = inverse_weights / torch.sum(inverse_weights)
             #print(normalized_weights)
 
-            for c in range(self.num_classes):
-                if samples_per_class[c] > 0:
-                    #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
-                    here = first_label == c
-                    self.model.add(samples_hv[here], first_label[here], lr=normalized_weights[c])
+            #for c in range(self.num_classes):
+            #    if samples_per_class[c] > 0:
+            #        #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
+            #        here = first_label == c
+            #        self.model.add(samples_hv[here], first_label[here], lr=normalized_weights[c])
 
 
     def retrain(self, features, labels, num_voxels):
@@ -207,9 +207,9 @@ class HD_Model:
         print(f'accuracy: {accuracy}')
         print(f'avg acc: {avg_acc}')
 
-        log_data = {f"Training class_{i}_IoU": c for i, c in enumerate(accuracy)}
-        log_data["Retraining epoch"] = avg_acc
-        wandb.log(log_data)
+        #log_data = {f"Training class_{i}_IoU": c for i, c in enumerate(accuracy)}
+        #log_data["Retraining epoch"] = avg_acc
+        #wandb.log(log_data)
 
         #cm = confusion_matrix(pred_hd, first_label, labels=torch.Tensor(range(0,15)))
         #print("Confusion matrix \n")
@@ -258,7 +258,7 @@ if __name__ == "__main__":
 
     wandb.login(key="9487c04b8eff0c16cac4e785f2b57c3a475767d3")
 
-    run = wandb.init(
+    """run = wandb.init(
         # Set the project where this run will be logged
         project="scalr_hd",
         # Track hyperparameters and run metadata
@@ -268,7 +268,7 @@ if __name__ == "__main__":
             "training_samples": 10,
         },
         id="lr_imbalance_hd_simple1",
-    )
+    )"""
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Using {} device".format(device))
