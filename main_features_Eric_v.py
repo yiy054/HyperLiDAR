@@ -103,6 +103,12 @@ class HD_Model:
             normalized_weights = inverse_weights / torch.sum(inverse_weights)
             print(normalized_weights)
 
+            for c in range(self.num_classes):
+                if samples_per_class[c] > 0:
+                    #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
+                    here = first_label == c
+                    self.model.add(samples_hv[here], first_label[here], lr=normalized_weights[c])
+
 
     def retrain(self, features, labels, num_voxels):
         
@@ -118,7 +124,17 @@ class HD_Model:
                 first_sample = self.normalize(first_sample) # Z1 score seems to work
 
                 samples_per_class = torch.bincount(first_label)
-                weight_for_class_i = first_label.shape[0] / (( samples_per_class * num_classes) + 1e-6)
+                
+                ##### Like loss for NN #########
+                #weight_for_class_i = first_label.shape[0] / (( samples_per_class * num_classes) + 1e-6)
+                
+                ##### Inverse weights ####
+                inverse_weights = float(self.num_classes) / (samples_per_class + 1.0)
+    
+                # Normalize the weights to sum to 1
+                normalized_weights = inverse_weights / torch.sum(inverse_weights)
+
+                
 
                 #for vox in range(len(first_sample)):
                 samples_hv = self.encode(first_sample)
@@ -142,8 +158,8 @@ class HD_Model:
                     if samples_per_class[c] > 0:
                         #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
                         here = first_label == c
-                        self.model.weight.index_add_(0, first_label[here], samples_hv[here], alpha=weight_for_class_i[c])
-                        self.model.weight.index_add_(0, pred_hd[here], samples_hv[here], alpha=-1*weight_for_class_i[c])
+                        self.model.weight.index_add_(0, first_label[here], samples_hv[here], alpha=normalized_weights[c])
+                        self.model.weight.index_add_(0, pred_hd[here], samples_hv[here], alpha=-1*normalized_weights[c])
 
                 #print(f"Misclassified for {i}: ", count)
 
