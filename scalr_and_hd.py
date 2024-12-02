@@ -248,7 +248,7 @@ class HD_Model:
            
             samples_hv, labels = self.sample_to_encode(it, batch)
             #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
-            if self.kwargs['args']['add_lr']:
+            if self.kwargs['args'].add_lr:
                 samples_per_class = torch.bincount(labels)
                 inverse_weights = 1.0 / (samples_per_class + 1.0)
     
@@ -448,7 +448,7 @@ if __name__ == "__main__":
             persistent_workers=False,
         )
 
-    hd_model = HD_Model(FEAT_SIZE, DIMENSIONS, num_classes, path_pretrained, device=device, args = args)
+    hd_model = HD_Model(FEAT_SIZE, DIMENSIONS, num_classes, path_pretrained, device=device, args=args)
     hd_model.set_loaders(train_loader=train_loader, val_loader=val_loader)
 
     run = wandb.init(
