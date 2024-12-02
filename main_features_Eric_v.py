@@ -100,7 +100,7 @@ class HD_Model:
             inverse_weights = 1.0 / (samples_per_class + 1.0)
     
             # Normalize the weights to sum to 1
-            normalized_weights = inverse_weights / np.sum(inverse_weights)
+            normalized_weights = inverse_weights / torch.sum(inverse_weights)
             print(normalized_weights)
 
 
