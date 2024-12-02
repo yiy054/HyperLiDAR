@@ -249,7 +249,7 @@ class HD_Model:
             samples_hv, labels = self.sample_to_encode(it, batch)
             #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
             if self.kwargs['args'].add_lr:
-                samples_per_class = torch.bincount(labels)
+                samples_per_class = torch.bincount(labels, minlength=self.num_classes)
                 inverse_weights = 1.0 / (samples_per_class + 1.0)
     
                 # Normalize the weights to sum to 1
