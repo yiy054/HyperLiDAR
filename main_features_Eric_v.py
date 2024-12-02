@@ -76,7 +76,7 @@ class HD_Model:
             print(classes_available)
             print(samples_per_class)
             print(first_label.shape[0])
-            weight_for_class_i = first_label.shape[0] / (( samples_per_class * self.num_classes) + 1e-10)
+            weight_for_class_i = first_label.shape[0] / ( samples_per_class[classes_available] * classes_available)
             weight_for_class_i = nn.functional.normalize(weight_for_class_i)
 
             #print("Labels")
