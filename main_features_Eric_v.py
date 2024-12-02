@@ -74,13 +74,10 @@ class HD_Model:
             samples_per_class = torch.bincount(first_label)
             samples_dif_0 = samples_per_class[samples_per_class != 0]
             classes_available = samples_dif_0.shape[0]
-            print(classes_available)
-            print(samples_per_class)
-            print(first_label.shape[0])
             weight_for_class_i = first_label.shape[0] / ( samples_dif_0 * classes_available)
-            print(weight_for_class_i.shape)
-            print(weight_for_class_i)
-            weight_for_class_i = nn.functional.normalize(weight_for_class_i)
+            #print(weight_for_class_i.shape)
+            #print(weight_for_class_i)
+            #weight_for_class_i = nn.functional.normalize(weight_for_class_i)
 
             #print("Labels")
             #print(samples_per_class)
