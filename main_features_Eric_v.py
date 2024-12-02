@@ -162,9 +162,9 @@ class HD_Model:
         print(f'accuracy: {accuracy}')
         print(f'avg acc: {avg_acc}')
 
-        log_data = {f"Training class_{i}_IoU": c for i, c in enumerate(accuracy)}
-        log_data["Retraining epoch"] = avg_acc
-        wandb.log(log_data)
+        #log_data = {f"Training class_{i}_IoU": c for i, c in enumerate(accuracy)}
+        #log_data["Retraining epoch"] = avg_acc
+        #wandb.log(log_data)
 
         #cm = confusion_matrix(pred_hd, first_label, labels=torch.Tensor(range(0,15)))
         #print("Confusion matrix \n")
