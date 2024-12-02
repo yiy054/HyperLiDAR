@@ -74,10 +74,10 @@ class HD_Model:
             samples_per_class = torch.bincount(first_label)
             weight_for_class_i = first_label.shape[0] / (( samples_per_class * num_classes) + 1e-6)
 
-            print("Labels")
-            print(samples_per_class)
-            print("Weights")
-            print(weight_for_class_i)
+            #print("Labels")
+            #print(samples_per_class)
+            #print("Weights")
+            #print(weight_for_class_i)
 
             for c in range(self.num_classes):
                 if samples_per_class[c] > 0:
@@ -98,6 +98,9 @@ class HD_Model:
 
                 first_sample = self.normalize(first_sample) # Z1 score seems to work
 
+                samples_per_class = torch.bincount(first_label)
+                weight_for_class_i = first_label.shape[0] / (( samples_per_class * num_classes) + 1e-6)
+
                 #for vox in range(len(first_sample)):
                 samples_hv = self.encode(first_sample)
                 sim = self.model(samples_hv, dot=True)
@@ -114,12 +117,16 @@ class HD_Model:
                 first_label = first_label[is_wrong]
                 pred_hd = pred_hd[is_wrong]
 
-                count = first_label.shape[0]
+                #count = first_label.shape[0]
 
-                self.model.weight.index_add_(0, first_label, samples_hv)
-                self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1.0)
+                for c in range(self.num_classes):
+                    if samples_per_class[c] > 0:
+                        #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
+                        here = first_label == c
+                        self.model.weight.index_add_(0, first_label[here], samples_hv[here], lr=weight_for_class_i[c])
+                        self.model.weight.index_add_(0, pred_hd[here], samples_hv[here], alpha=-1*weight_for_class_i[c])
 
-                print(f"Misclassified for {i}: ", count)
+                #print(f"Misclassified for {i}: ", count)
 
             # If you want to test for each sample
             self.test_hd(features, labels, num_voxels)
@@ -245,5 +252,5 @@ if __name__ == "__main__":
 
     model.train(features, labels, num_voxels)
     model.test_hd(features, labels, num_voxels)
-    #model.retrain(features, labels, num_voxels)
-    #model.test_hd(features, labels, num_voxels)
+    model.retrain(features, labels, num_voxels)
+    model.test_hd(features, labels, num_voxels)
