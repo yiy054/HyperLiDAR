@@ -69,6 +69,10 @@ class HD_Model:
 
             # Weights of each class
             weight_for_class_i = first_label.shape[0] / ((torch.bincount(first_label) * num_classes) + 1e-6)
+
+            print("Labels")
+            print(torch.bincount(first_label))
+            print("Weights")
             print(weight_for_class_i)
 
             samples_hv = self.encode(first_sample)
@@ -228,8 +232,8 @@ if __name__ == "__main__":
     labels = np.load('/root/main/ScaLR/debug/SoA_labels.npy')
     num_voxels = np.load('/root/main/ScaLR/debug/num_voxels.npy')
 
-    print("SOA results\n")
-    test_soa(arrays, labels, num_voxels, device)
+    #print("SOA results\n")
+    #test_soa(arrays, labels, num_voxels, device)
 
     model = HD_Model(INPUT_DIM, HD_DIM, num_classes, device)
 
