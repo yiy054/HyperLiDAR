@@ -69,22 +69,12 @@ class HD_Model:
 
             samples_hv = self.encode(first_sample)
 
-            # Weights of each class
-            
-            samples_per_class = torch.bincount(first_label)
+            ### Class Imbalance
+
+            """samples_per_class = torch.bincount(first_label)
             samples_dif_0 = samples_per_class[samples_per_class != 0]
             classes_available = samples_dif_0.shape[0]
             weight_for_class_i = first_label.shape[0] / ( samples_dif_0 * classes_available)
-            #print(weight_for_class_i.shape)
-            #print(weight_for_class_i)
-            #weight_for_class_i = nn.functional.normalize(weight_for_class_i)
-
-            #print("Labels")
-            #print(samples_per_class)
-            #print("Weights")
-            #print(weight_for_class_i)
-
-            ### Class Imbalance
 
             c = 0
             for real_c in range(self.num_classes):
@@ -92,24 +82,25 @@ class HD_Model:
                     #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
                     here = first_label == real_c
                     self.model.add(samples_hv[here], first_label[here], lr=weight_for_class_i[c])
-                    c += 1
+                    c += 1"""
             
             #### Original ####
             #self.model.add(samples_hv, first_label)
 
             #### Normalize over inverse of the count #######
 
-            #inverse_weights = 1.0 / (samples_per_class + 1.0)
+            samples_per_class = torch.bincount(first_label)
+            inverse_weights = 1.0 / (samples_per_class + 1.0)
     
             # Normalize the weights to sum to 1
-            #normalized_weights = inverse_weights / torch.sum(inverse_weights)
+            normalized_weights = inverse_weights / torch.sum(inverse_weights)
             #print(normalized_weights)
 
-            #for c in range(self.num_classes):
-            #    if samples_per_class[c] > 0:
-            #        #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
-            #        here = first_label == c
-            #        self.model.add(samples_hv[here], first_label[here], lr=normalized_weights[c])
+            for c in range(self.num_classes):
+                if samples_per_class[c] > 0:
+                    #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
+                    here = first_label == c
+                    self.model.add(samples_hv[here], first_label[here], lr=normalized_weights[c])
 
 
     def retrain(self, features, labels, num_voxels):
@@ -128,7 +119,7 @@ class HD_Model:
                 samples_per_class = torch.bincount(first_label)
                 
                 ##### Like loss for NN #########
-                #weight_for_class_i = first_label.shape[0] / (( samples_per_class * num_classes) + 1e-6)
+                weight_for_class_i = first_label.shape[0] / (( samples_per_class * self.num_classes) + 1e-6)
                 
                 ##### Inverse weights ####
                 #inverse_weights = 1.0 / (samples_per_class + 1.0)
@@ -154,19 +145,19 @@ class HD_Model:
 
                 #count = first_label.shape[0]
 
-                #for c in range(self.num_classes):
-                #    if samples_per_class[c] > 0:
-                #        #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
-                #        here = first_label == c
-                #        self.model.weight.index_add_(0, first_label[here], samples_hv[here], alpha=inverse_weights[c])
-                #        self.model.weight.index_add_(0, pred_hd[here], samples_hv[here], alpha=-1*inverse_weights[c])
+                for c in range(self.num_classes):
+                    if samples_per_class[c] > 0:
+                        #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
+                        here = first_label == c
+                        self.model.weight.index_add_(0, first_label[here], samples_hv[here], alpha=weight_for_class_i[c])
+                        self.model.weight.index_add_(0, pred_hd[here], samples_hv[here], alpha=-1*weight_for_class_i[c])
 
                 #print(f"Misclassified for {i}: ", count)
 
                 ## Original ###
 
-                self.model.weight.index_add_(0, first_label, samples_hv)
-                self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1)
+                #self.model.weight.index_add_(0, first_label, samples_hv)
+                #self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1)
 
             # If you want to test for each sample
             self.test_hd(features, labels, num_voxels)
