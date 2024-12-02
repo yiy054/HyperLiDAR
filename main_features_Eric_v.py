@@ -72,9 +72,9 @@ class HD_Model:
             # Weights of each class
             
             samples_per_class = torch.bincount(first_label)
-            samples_dif_0 = samples_per_class[samples_per_class != 0]
-            classes_available = samples_dif_0.shape[0]
-            weight_for_class_i = first_label.shape[0] / ( samples_dif_0 * classes_available)
+            #samples_dif_0 = samples_per_class[samples_per_class != 0]
+            #classes_available = samples_dif_0.shape[0]
+            #weight_for_class_i = first_label.shape[0] / ( samples_dif_0 * classes_available)
             #print(weight_for_class_i.shape)
             #print(weight_for_class_i)
             #weight_for_class_i = nn.functional.normalize(weight_for_class_i)
@@ -86,14 +86,22 @@ class HD_Model:
 
             ### Class Imbalance
 
-            for c in range(self.num_classes):
-                if samples_per_class[c] > 0:
-                    #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
-                    here = first_label == c
-                    self.model.add(samples_hv[here], first_label[here], lr=weight_for_class_i[c])
+            #for c in range(self.num_classes):
+            #    if samples_per_class[c] > 0:
+            #        #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
+            #        here = first_label == c
+            #        self.model.add(samples_hv[here], first_label[here], lr=weight_for_class_i[c])
             
             #### Original ####
             #self.model.add(samples_hv, first_label)
+
+            #### Normalize over inverse of the count #######
+
+            inverse_weights = 1.0 / (samples_per_class + 1.0)
+    
+            # Normalize the weights to sum to 1
+            normalized_weights = inverse_weights / np.sum(inverse_weights)
+            print(normalized_weights)
 
 
     def retrain(self, features, labels, num_voxels):
