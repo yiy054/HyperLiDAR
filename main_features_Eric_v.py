@@ -67,17 +67,23 @@ class HD_Model:
                 
             # HD training
 
+            samples_hv = self.encode(first_sample)
+
             # Weights of each class
-            weight_for_class_i = first_label.shape[0] / ((torch.bincount(first_label) * num_classes) + 1e-6)
+            
+            samples_per_class = torch.bincount(first_label)
+            weight_for_class_i = first_label.shape[0] / (( samples_per_class * num_classes) + 1e-6)
 
             print("Labels")
-            print(torch.bincount(first_label))
+            print(samples_per_class)
             print("Weights")
             print(weight_for_class_i)
 
-            samples_hv = self.encode(first_sample)
-            #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
-            self.model.add(samples_hv, first_label)
+            for c in range(self.num_classes):
+                if samples_per_class[c] > 0:
+                    #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
+                    here = first_label == c
+                    self.model.add(samples_hv[here], first_label[here], lr=weight_for_class_i[c])
 
     def retrain(self, features, labels, num_voxels):
         
@@ -207,7 +213,7 @@ if __name__ == "__main__":
 
     wandb.login(key="9487c04b8eff0c16cac4e785f2b57c3a475767d3")
 
-    run = wandb.init(
+    """run = wandb.init(
         # Set the project where this run will be logged
         project="scalr_hd",
         # Track hyperparameters and run metadata
@@ -217,7 +223,7 @@ if __name__ == "__main__":
             "training_samples": 10,
         },
         id="retraining_hd_simple2",
-    )
+    )"""
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Using {} device".format(device))
@@ -239,5 +245,5 @@ if __name__ == "__main__":
 
     model.train(features, labels, num_voxels)
     model.test_hd(features, labels, num_voxels)
-    model.retrain(features, labels, num_voxels)
-    model.test_hd(features, labels, num_voxels)
+    #model.retrain(features, labels, num_voxels)
+    #model.test_hd(features, labels, num_voxels)
