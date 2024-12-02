@@ -90,7 +90,8 @@ class HD_Model:
             #### Normalize over inverse of the count #######
 
             samples_per_class = torch.bincount(first_label)
-            inverse_weights = 1.0 / (samples_per_class + 1.0)
+            inverse_weights = 1.0 / (samples_per_class + 5.0)
+            inverse_weights[samples_per_class == 0] = 0.0
     
             # Normalize the weights to sum to 1
             normalized_weights = inverse_weights / torch.sum(inverse_weights)
