@@ -177,7 +177,7 @@ class Feature_Extractor:
 
 class HD_Model:
     def __init__(self, in_dim, out_dim, num_classes, path_pretrained, stop=48, 
-                 device=torch.device("cpu")):
+                 device=torch.device("cpu"), **kwargs):
 
         encode = Encoder(out_dim, in_dim)
         self.encode = encode.to(device=device, non_blocking=True)
@@ -189,6 +189,7 @@ class HD_Model:
         self.feature_extractor.load_pretrained(path_pretrained)
         self.stop = stop
         self.num_classes = num_classes
+        self.kwargs = kwargs
 
     def normalize(self, samples):
 
@@ -247,7 +248,21 @@ class HD_Model:
            
             samples_hv, labels = self.sample_to_encode(it, batch)
             #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
-            self.model.add(samples_hv, labels)
+            if self.kwargs.add_lr:
+                samples_per_class = torch.bincount(labels)
+                inverse_weights = 1.0 / (samples_per_class + 1.0)
+    
+                # Normalize the weights to sum to 1
+                normalized_weights = inverse_weights / torch.sum(inverse_weights)
+                #print(normalized_weights)
+
+                for c in range(self.num_classes):
+                    if samples_per_class[c] > 0:
+                        #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
+                        here = labels == c
+                        self.model.add(samples_hv[here], labels[here], lr=normalized_weights[c])
+            else:
+                self.model.add(samples_hv, labels)
 
             torch.cuda.synchronize(device=self.device)
 
@@ -359,6 +374,9 @@ def parse_arguments():
     parser.add_argument(
             "--seed", default=None, type=int, help="Seed for initializing training"
         )
+    parser.add_argument(
+            "--add_lr", action="store_true", default=False, help='Add lr to help class imbalance'
+        )
     #parser.add_argument('-val', '--val', action="store_true", default=False, help='Train with validation for each scan')
     args = parser.parse_args()
     return args
@@ -430,7 +448,7 @@ if __name__ == "__main__":
             persistent_workers=False,
         )
 
-    hd_model = HD_Model(FEAT_SIZE, DIMENSIONS, num_classes, path_pretrained, device=device)
+    hd_model = HD_Model(FEAT_SIZE, DIMENSIONS, num_classes, path_pretrained, device=device, kwargs = args)
     hd_model.set_loaders(train_loader=train_loader, val_loader=val_loader)
 
     run = wandb.init(
@@ -442,12 +460,11 @@ if __name__ == "__main__":
             "hd_dim": 10000,
             "training_samples":404,
         },
-        id="SoA_results",
+        id="lr_imbalance_complete",
     )
 
-    ####### HD Pipeline ##########
 
-    """
+    ####### HD Pipeline ##########
 
     print("Initial Training")
     hd_model.train()
@@ -461,7 +478,9 @@ if __name__ == "__main__":
     print("Testing")
     hd_model.test_hd()
 
-    """
-    print("SoA results")
+    
 
-    hd_model.feature_extractor.test(hd_model.val_loader, hd_model.num_vox_val+1000, 48)
+    ####### SOA results ##########
+    #print("SoA results")
+
+    #hd_model.feature_extractor.test(hd_model.val_loader, hd_model.num_vox_val+1000, 48)

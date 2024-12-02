@@ -119,7 +119,7 @@ class HD_Model:
                 samples_per_class = torch.bincount(first_label)
                 
                 ##### Like loss for NN #########
-                weight_for_class_i = first_label.shape[0] / (( samples_per_class * self.num_classes) + 1e-6)
+                #weight_for_class_i = first_label.shape[0] / (( samples_per_class * num_classes) + 1e-6)
                 
                 ##### Inverse weights ####
                 #inverse_weights = 1.0 / (samples_per_class + 1.0)
@@ -145,19 +145,21 @@ class HD_Model:
 
                 #count = first_label.shape[0]
 
+                """
                 for c in range(self.num_classes):
                     if samples_per_class[c] > 0:
                         #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
                         here = first_label == c
                         self.model.weight.index_add_(0, first_label[here], samples_hv[here], alpha=weight_for_class_i[c])
                         self.model.weight.index_add_(0, pred_hd[here], samples_hv[here], alpha=-1*weight_for_class_i[c])
-
+                """
+                        
                 #print(f"Misclassified for {i}: ", count)
 
                 ## Original ###
 
-                #self.model.weight.index_add_(0, first_label, samples_hv)
-                #self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1)
+                self.model.weight.index_add_(0, first_label, samples_hv)
+                self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1)
 
             # If you want to test for each sample
             self.test_hd(features, labels, num_voxels)
