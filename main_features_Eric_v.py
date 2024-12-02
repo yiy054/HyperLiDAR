@@ -72,18 +72,29 @@ class HD_Model:
             # Weights of each class
             
             samples_per_class = torch.bincount(first_label)
-            weight_for_class_i = first_label.shape[0] / (( samples_per_class * num_classes) + 1e-6)
+            classes_available = samples_per_class[samples_per_class != 0].shape[0]
+            print(classes_available)
+            print(samples_per_class)
+            print(first_label.shape[0])
+            weight_for_class_i = first_label.shape[0] / (( samples_per_class * self.num_classes) + 1e-10)
+            weight_for_class_i = nn.normalize(weight_for_class_i)
 
             #print("Labels")
             #print(samples_per_class)
             #print("Weights")
             #print(weight_for_class_i)
 
+            ### Class Imbalance
+
             for c in range(self.num_classes):
                 if samples_per_class[c] > 0:
                     #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
                     here = first_label == c
                     self.model.add(samples_hv[here], first_label[here], lr=weight_for_class_i[c])
+            
+            #### Original ####
+            #self.model.add(samples_hv, first_label)
+
 
     def retrain(self, features, labels, num_voxels):
         
