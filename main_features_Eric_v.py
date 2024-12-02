@@ -86,11 +86,13 @@ class HD_Model:
 
             ### Class Imbalance
 
-            for c in range(self.num_classes):
-                if samples_per_class[c] > 0:
+            c = 0
+            for real_c in range(self.num_classes):
+                if samples_per_class[real_c] > 0:
                     #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
-                    here = first_label == c
+                    here = first_label == real_c
                     self.model.add(samples_hv[here], first_label[here], lr=weight_for_class_i[c])
+                    c += 1
             
             #### Original ####
             #self.model.add(samples_hv, first_label)
