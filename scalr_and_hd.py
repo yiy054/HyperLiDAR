@@ -461,7 +461,7 @@ if __name__ == "__main__":
             "hd_dim": 10000,
             "training_samples":404,
         },
-        id=f"early_exit_complete_{args.layers}",
+        id=f"early_exit_complete_{args.layers}_lr_{args.add_lr}",
     )
 
 
