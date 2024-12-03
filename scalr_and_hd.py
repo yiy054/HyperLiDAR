@@ -37,7 +37,7 @@ class Encoder(nn.Module):
 class Feature_Extractor:
     def __init__(self, input_channels=5, feat_channels=768, depth=48, 
                  grid_shape=[[256, 256], [256, 32], [256, 32]], nb_class=16, layer_norm=True, 
-                 device=torch.device("cpu")):
+                 device=torch.device("cpu"), early_exit = 48):
         self.model = Segmenter(
             input_channels=input_channels,
             feat_channels=feat_channels,
@@ -74,6 +74,7 @@ class Feature_Extractor:
         self.device = device
         self.device_string = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.num_classes = nb_class
+        self.early_exit = early_exit
     
     def load_pretrained(self, path):
         # Load pretrained model
@@ -99,7 +100,7 @@ class Feature_Extractor:
 
         self.model.eval()
 
-    def forward_model(self, it, batch, stop):
+    def forward_model(self, it, batch):
         feat = batch["feat"]
         labels = batch["labels_orig"]
         cell_ind = batch["cell_ind"]
@@ -120,7 +121,7 @@ class Feature_Extractor:
             with torch.autocast("cuda", enabled=True):
                 # Logits
                 with torch.no_grad():
-                    out = self.model(*net_inputs, stop)
+                    out = self.model(*net_inputs, self.early_exit)
                     encode, tokens, out = out[0], out[1], out[2]
                     pred_label = out.max(1)[1]
 
@@ -130,7 +131,7 @@ class Feature_Extractor:
                     torch.cuda.synchronize(device=self.device)
         else:
             with torch.no_grad():
-                out = self.model(*net_inputs, stop)
+                out = self.model(*net_inputs, self.early_exit)
                 encode, tokens, out = out[0], out[1], out[2]
                 pred_label = out.max(1)[1]
 
@@ -139,7 +140,7 @@ class Feature_Extractor:
         
         return tokens[0,:,where], labels[where], pred_label[0, where]
 
-    def test(self, loader, total_voxels, stop):        
+    def test(self, loader, total_voxels):        
         # Metric
         miou = MulticlassJaccardIndex(num_classes=self.num_classes, average=None).to(self.device, non_blocking=True)
         final_labels = torch.empty((total_voxels), device=self.device)
@@ -147,7 +148,7 @@ class Feature_Extractor:
         
         start_idx = 0
         for it, batch in tqdm(enumerate(loader), desc="SoA testing"):
-            features, labels, soa_result = self.forward_model(it, batch, stop)
+            features, labels, soa_result = self.forward_model(it, batch, self.early_exit)
             shape_sample = labels.shape[0]
             labels = labels.to(dtype = torch.int64, device = self.device, non_blocking=True)
             soa_result = soa_result.to(device=self.device, non_blocking=True)
@@ -176,7 +177,7 @@ class Feature_Extractor:
         print("================================")
 
 class HD_Model:
-    def __init__(self, in_dim, out_dim, num_classes, path_pretrained, stop=48, 
+    def __init__(self, in_dim, out_dim, num_classes, path_pretrained, 
                  device=torch.device("cpu"), **kwargs):
 
         encode = Encoder(out_dim, in_dim)
@@ -185,9 +186,9 @@ class HD_Model:
         model = Centroid(out_dim, num_classes)
         self.model = model.to(device=device, non_blocking=True)
         self.device = device
-        self.feature_extractor = Feature_Extractor(nb_class = num_classes, device=self.device)
+        self.feature_extractor = Feature_Extractor(nb_class = num_classes, device=self.device, early_exit=kwargs['args'].layers)
         self.feature_extractor.load_pretrained(path_pretrained)
-        self.stop = stop
+        self.stop = kwargs['args'].layers
         self.num_classes = num_classes
         self.kwargs = kwargs
 
@@ -227,7 +228,7 @@ class HD_Model:
         print("Finished loading data loaders")
     
     def sample_to_encode(self, it, batch):
-        features, labels, soa_result = self.feature_extractor.forward_model(it, batch, self.stop)
+        features, labels, soa_result = self.feature_extractor.forward_model(it, batch)
         features = torch.transpose(features, 0, 1).to(dtype=torch.float32, device = self.device, non_blocking=True)
         labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
 
