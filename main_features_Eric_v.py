@@ -85,23 +85,26 @@ class HD_Model:
                     c += 1"""
             
             #### Original ####
-            #self.model.add(samples_hv, first_label)
+            self.model.add(samples_hv, first_label)
 
             #### Normalize over inverse of the count #######
 
-            samples_per_class = torch.bincount(first_label)
-            inverse_weights = 1.0 / (samples_per_class + 1.0)
-            inverse_weights[samples_per_class == 0] = 0.0
+            #samples_per_class = torch.bincount(first_label)
+            #inverse_weights = 1.0 / (samples_per_class + 1.0)
+            #inverse_weights[samples_per_class == 0] = 0.0
     
             # Normalize the weights to sum to 1
-            normalized_weights = inverse_weights / torch.sum(inverse_weights)
+            #normalized_weights = inverse_weights / torch.sum(inverse_weights)
             #print(normalized_weights)
 
-            for c in range(self.num_classes):
-                if samples_per_class[c] > 0:
-                    #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
-                    here = first_label == c
-                    self.model.add(samples_hv[here], first_label[here], lr=normalized_weights[c])
+            #for c in range(self.num_classes):
+            #    if samples_per_class[c] > 0:
+            #        #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
+            #        here = first_label == c
+            #        self.model.add(samples_hv[here], first_label[here], lr=normalized_weights[c])
+
+        # Trying normalizing at the end instead of intermediate
+        nn.functional.normalize(self.model.weight, p=2.0, dim = 1)
 
 
     def retrain(self, features, labels, num_voxels):
