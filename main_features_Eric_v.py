@@ -190,10 +190,10 @@ class HD_Model:
                 ##### Try with int 16 #####
                 zeros = torch.zeros(self.num_classes, self.hd_dim, dtype=torch.int32).to(self.device)
                 temp_1 = zeros.index_add_(0, first_label, samples_hv)
-                print("Min: ", torch.min(temp_1), "\nMax: ", torch.max(temp_1))
+                print("Min temp1: ", torch.min(temp_1), "\nMax temp1: ", torch.max(temp_1))
                 temp_1 = temp_1.to(torch.int16)
                 temp_2 = zeros.index_add_(0, pred_hd, samples_hv, alpha=-1)
-                print("Min: ", torch.min(temp_2), "\nMax: ", torch.max(temp_2))
+                print("Min temp2: ", torch.min(temp_2), "\nMax temp2: ", torch.max(temp_2))
                 temp_2 = temp_2.to(torch.int16)
                 # Add the 16 bit integer
                 self.model.weight = nn.Parameter(self.model.weight + temp_1, requires_grad=False) # Addition
@@ -202,7 +202,7 @@ class HD_Model:
             # If you want to test for each sample
             #print(self.model.weight) # Int it is I think...
             #self.model.weight = nn.Parameter(torch.clamp(self.model.weight, min=-128, max=127).to(torch.int8), requires_grad=False)
-            print("Min: ", torch.min(self.model.weight), "\nMax: ", torch.max(self.model.weight))
+            print("Min model: ", torch.min(self.model.weight), "\nMax model: ", torch.max(self.model.weight))
             print(self.model.weight)
             self.test_hd(features, labels, num_voxels)
 
