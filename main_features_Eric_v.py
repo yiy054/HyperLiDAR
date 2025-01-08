@@ -20,7 +20,7 @@ class Encoder(nn.Module):
 
     def forward(self, x):
         sample_hv = self.projection(x)
-        return torchhd.hard_quantize(sample_hv).int()
+        return torchhd.hard_quantize(sample_hv).to(torch.int32)
 
 
 class HD_Model:
@@ -85,7 +85,7 @@ class HD_Model:
 
         for i in tqdm(range(len(features)), desc="1st Training:"):
             first_sample = torch.Tensor(features[i][:int(num_voxels[i])]).to(self.device)
-            first_label = torch.Tensor(labels[i][:int(num_voxels[i])]).to(torch.int64).to(self.device)
+            first_label = torch.Tensor(labels[i][:int(num_voxels[i])]).to(torch.int32).to(self.device)
 
             first_sample = self.normalize(first_sample) # Z1 score seems to work
 
@@ -97,7 +97,7 @@ class HD_Model:
                 
             # HD training
 
-            samples_hv = self.encode(first_sample)
+            samples_hv = self.encode(first_sample).to(torch.int32)
 
             ### Class Imbalance
 
@@ -130,7 +130,7 @@ class HD_Model:
 
             for i in range(len(features)):
                 first_sample = torch.Tensor(features[i][:int(num_voxels[i])]).to(self.device)
-                first_label = torch.Tensor(labels[i][:int(num_voxels[i])]).to(torch.int64).to(self.device)
+                first_label = torch.Tensor(labels[i][:int(num_voxels[i])]).to(torch.int32).to(self.device)
 
                 first_sample = self.normalize(first_sample) # Z1 score seems to work
 
