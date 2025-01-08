@@ -105,6 +105,7 @@ class HD_Model:
 
         # Trying normalizing at the end instead of intermediate
         print("Weights dim", self.model.weight.shape)
+        nn.functional.normalize(self.model.weight, p=2.0, dim = 1)
         nn.functional.normalize(self.model.weight, p=2.0, dim = 0)
 
     def retrain(self, features, labels, num_voxels):
