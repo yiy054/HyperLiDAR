@@ -33,6 +33,7 @@ class HD_Model:
         self.model = model.to(device)
         self.device = device
         self.num_classes = num_classes
+        self.hd_dim = out_dim
 
     def normalize(self, samples):
 
@@ -115,7 +116,12 @@ class HD_Model:
                     c += 1"""
             
             #### Original ####
+            zeros = torch.zeros(self.num_classes, self.hd_dim)
+            temp = zeros.index_add_(0, first_label, samples_hv)
+            print(temp)
             self.model.add(samples_hv, first_label)
+            print(self.model.weight)
+            x = input("Enter")
 
         # Normalizing works way better :)
         #self.model.normalize() # Min Max
@@ -175,8 +181,7 @@ class HD_Model:
                 #print(f"Misclassified for {i}: ", count)
 
                 ## Original ###
-
-                self.model.weight = nn.Parameter(self.model.weight.to(torch.int32), requires_grad=False)
+                #self.model.weight = nn.Parameter(self.model.weight.to(torch.int32), requires_grad=False)
                 self.model.weight.index_add_(0, first_label, samples_hv)
                 self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1)
 
