@@ -150,7 +150,8 @@ class HD_Model:
                 self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1)
 
             # If you want to test for each sample
-            print(self.model.weight) # Int I think...
+            print(self.model.weight) # Int it is I think...
+            print("Min: ", torch.min(self.model.weight), "\nMax: ", torch.max(self.model.weight))
             #self.model.weight = nn.Parameter(torchhd.normalize(self.model.weight), requires_grad=False)
             #print(self.model.weight)
             self.test_hd(features, labels, num_voxels)
