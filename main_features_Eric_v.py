@@ -44,6 +44,36 @@ class HD_Model:
         samples = (samples - mean) / (std + 1e-8)
 
         return samples
+    
+    def quantize_integer_to_nbit(tensor, n_bits):
+        """
+        Quantizes an integer tensor to a specified n-bit range.
+        
+        Args:
+            tensor (torch.Tensor): The input tensor of integers.
+            n_bits (int): The number of bits to represent the quantized range.
+
+        Returns:
+            torch.Tensor: The quantized tensor with values in the n-bit range.
+        """
+        # Define the target range based on n_bits
+        target_min = -(2 ** (n_bits - 1))       # Minimum value for signed n-bit
+        target_max = (2 ** (n_bits - 1)) - 1   # Maximum value for signed n-bit
+
+        # Determine the source range from the input tensor
+        source_min = -10000 #torch.min(tensor).item()
+        source_max = 10000 #torch.max(tensor).item()
+
+        # Step 1: Calculate scale factor
+        scale = (source_max - source_min) / (target_max - target_min)
+
+        # Step 2: Rescale and shift
+        rescaled = (tensor - source_min) / scale + target_min
+
+        # Step 3: Round to nearest integer and clip to target range
+        quantized = torch.clamp(torch.round(rescaled), target_min, target_max)
+
+        return quantized.int()  # Return as integer tensor
 
     def train(self, features, labels, num_voxels):
 
@@ -88,8 +118,8 @@ class HD_Model:
             self.model.add(samples_hv, first_label)
 
         # Normalizing works way better :)
-        self.model.normalize()
-        self.model.weight = nn.Parameter(torchhd.normalize(self.model.weight), requires_grad=False)
+        self.model.normalize() # Min Max
+        self.model.weight = nn.Parameter(torchhd.normalize(self.model.weight), requires_grad=False) # Binary
 
     def retrain(self, features, labels, num_voxels):
         
@@ -152,7 +182,7 @@ class HD_Model:
             # If you want to test for each sample
             print(self.model.weight) # Int it is I think...
             print("Min: ", torch.min(self.model.weight), "\nMax: ", torch.max(self.model.weight))
-            #self.model.weight = nn.Parameter(torchhd.normalize(self.model.weight), requires_grad=False)
+            self.model.weight = nn.Parameter(self.quantize_integer_to_nbit(self.model.weight, 14), requires_grad=False)
             #print(self.model.weight)
             self.test_hd(features, labels, num_voxels)
 
