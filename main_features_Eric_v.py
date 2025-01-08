@@ -87,32 +87,8 @@ class HD_Model:
             #### Original ####
             self.model.add(samples_hv, first_label)
 
-            #### Normalize over inverse of the count #######
-
-            #samples_per_class = torch.bincount(first_label)
-            #inverse_weights = 1.0 / (samples_per_class + 1.0)
-            #inverse_weights[samples_per_class == 0] = 0.0
-    
-            # Normalize the weights to sum to 1
-            #normalized_weights = inverse_weights / torch.sum(inverse_weights)
-            #print(normalized_weights)
-
-            #for c in range(self.num_classes):
-            #    if samples_per_class[c] > 0:
-            #        #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
-            #        here = first_label == c
-            #        self.model.add(samples_hv[here], first_label[here], lr=normalized_weights[c])
-
-        # Trying normalizing at the end instead of intermediate
-        print("Weights dim", self.model.weight.shape)
-        print(self.model.weight)
-        #self.model.weight = nn.functional.normalize(self.model.weight, p=2.0, dim = 1)
-        #print(self.model.weight)
-        #self.model.weight = nn.functional.normalize(self.model.weight, p=2.0, dim = 0)
+        # Normalizing works way better :)
         self.model.normalize()
-        print(self.model.weight)
-
-        x = input("Enter")
 
     def retrain(self, features, labels, num_voxels):
         
@@ -171,6 +147,9 @@ class HD_Model:
 
                 self.model.weight.index_add_(0, first_label, samples_hv)
                 self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1)
+
+            # Normalize?
+            self.model.normalize()
 
             # If you want to test for each sample
             self.test_hd(features, labels, num_voxels)
