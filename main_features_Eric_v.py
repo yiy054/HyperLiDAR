@@ -89,7 +89,7 @@ class HD_Model:
 
         # Normalizing works way better :)
         self.model.normalize()
-        self.model.weight = torch.nn.Parameter(torchhd.normalize(self.model.weight))
+        self.model.weight = nn.Parameter(torchhd.normalize(self.model.weight))
 
     def retrain(self, features, labels, num_voxels):
         
