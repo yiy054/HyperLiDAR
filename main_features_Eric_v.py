@@ -117,7 +117,7 @@ class HD_Model:
 
                 #for vox in range(len(first_sample)):
                 samples_hv = self.encode(first_sample)
-                sim = self.model(samples_hv, dot=True)
+                sim = self.model(samples_hv, dot=False)
                 pred_hd = sim.argmax(1).data
 
                 is_wrong = first_label != pred_hd
@@ -175,7 +175,7 @@ class HD_Model:
 
             # HD inference
             samples_hv = self.encode(first_sample)
-            pred_hd = self.model(samples_hv, dot=True).argmax(1).data
+            pred_hd = self.model(samples_hv, dot=False).argmax(1).data
             final_pred[start_idx:start_idx+shape_sample] = pred_hd
 
             start_idx += shape_sample
