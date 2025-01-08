@@ -29,7 +29,7 @@ class HD_Model:
         encode = Encoder(out_dim, in_dim)
         self.encode = encode.to(device)
 
-        model = Centroid(out_dim, num_classes)
+        model = Centroid(out_dim, num_classes, dtype=torch.int32)
         self.model = model.to(device)
         self.device = device
         self.num_classes = num_classes
