@@ -109,7 +109,7 @@ class HD_Model:
         #self.model.weight = nn.functional.normalize(self.model.weight, p=2.0, dim = 1)
         #print(self.model.weight)
         #self.model.weight = nn.functional.normalize(self.model.weight, p=2.0, dim = 0)
-        model.normalize()
+        self.model.normalize()
         print(self.model.weight)
 
         x = input("Enter")
