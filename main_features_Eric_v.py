@@ -116,10 +116,10 @@ class HD_Model:
                     c += 1"""
             
             #### Original ####
-            zeros = torch.zeros(self.num_classes, self.hd_dim, dtype=torch.int32).to(self.device)
-            temp = zeros.index_add_(0, first_label, samples_hv)
-            print("Min: ", torch.min(temp), "\nMax: ", torch.max(temp))
-            temp = temp.to(torch.int16)
+            temp = torch.zeros(self.num_classes, self.hd_dim, dtype=torch.int32).to(self.device)
+            temp.index_add_(0, first_label, samples_hv).to(torch.int16)
+            #print("Min: ", torch.min(temp), "\nMax: ", torch.max(temp))
+            #temp = temp
             # Add the 16 bit integer
             self.model.weight = nn.Parameter(self.model.weight + temp, requires_grad=False) # Addition
             #self.model.add(samples_hv, first_label)
@@ -188,14 +188,12 @@ class HD_Model:
                 #self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1)
 
                 ##### Try with int 16 #####
-                zeros = torch.zeros(self.num_classes, self.hd_dim, dtype=torch.int32).to(self.device)
-                temp_1 = zeros.index_add_(0, first_label, samples_hv)
+                temp_1 = torch.zeros(self.num_classes, self.hd_dim, dtype=torch.int32).to(self.device)
+                temp_1.index_add_(0, first_label, samples_hv).to(torch.int16)
                 print("Min temp1: ", torch.min(temp_1), "\nMax temp1: ", torch.max(temp_1))
-                temp_1 = temp_1.to(torch.int16)
-                print("Zeros: ", zeros)
-                temp_2 = zeros.index_add_(0, pred_hd, samples_hv, alpha=-1)
+                temp_2 = torch.zeros(self.num_classes, self.hd_dim, dtype=torch.int32).to(self.device)
+                temp_2.index_add_(0, pred_hd, samples_hv, alpha=-1).to(torch.int16)
                 print("Min temp2: ", torch.min(temp_2), "\nMax temp2: ", torch.max(temp_2))
-                temp_2 = temp_2.to(torch.int16)
                 # Add the 16 bit integer
                 self.model.weight = nn.Parameter(self.model.weight + temp_1, requires_grad=False) # Addition
                 self.model.weight = nn.Parameter(self.model.weight + temp_2, requires_grad=False) # Addition
