@@ -104,7 +104,7 @@ class HD_Model:
 
                 first_sample = self.normalize(first_sample) # Z1 score seems to work
 
-                samples_per_class = torch.bincount(first_label)
+                #samples_per_class = torch.bincount(first_label)
                 
                 ##### Like loss for NN #########
                 #weight_for_class_i = first_label.shape[0] / (( samples_per_class * num_classes) + 1e-6)
@@ -117,7 +117,7 @@ class HD_Model:
 
                 #for vox in range(len(first_sample)):
                 samples_hv = self.encode(first_sample)
-                sim = self.model(samples_hv, dot=True)
+                sim = self.model(samples_hv, dot=False)
                 pred_hd = sim.argmax(1).data
 
                 is_wrong = first_label != pred_hd
@@ -149,7 +149,6 @@ class HD_Model:
                 self.model.weight.index_add_(0, first_label, samples_hv)
                 self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1)
 
-            self.model.weight = nn.Parameter(torchhd.normalize(self.model.weight), requires_grad=False)
             # If you want to test for each sample
             self.test_hd(features, labels, num_voxels)
 
