@@ -117,7 +117,7 @@ class HD_Model:
 
                 #for vox in range(len(first_sample)):
                 samples_hv = self.encode(first_sample)
-                sim = self.model(samples_hv, dot=False)
+                sim = self.model(samples_hv, dot=True)
                 pred_hd = sim.argmax(1).data
 
                 is_wrong = first_label != pred_hd
@@ -150,6 +150,7 @@ class HD_Model:
                 self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1)
 
             # If you want to test for each sample
+            self.model.weight = nn.Parameter(torchhd.normalize(self.model.weight), requires_grad=False)
             self.test_hd(features, labels, num_voxels)
 
     def test_hd(self, features, labels, num_voxels, epoch=0):
@@ -175,7 +176,7 @@ class HD_Model:
 
             # HD inference
             samples_hv = self.encode(first_sample)
-            pred_hd = self.model(samples_hv, dot=False).argmax(1).data
+            pred_hd = self.model(samples_hv, dot=True).argmax(1).data
             final_pred[start_idx:start_idx+shape_sample] = pred_hd
 
             start_idx += shape_sample
