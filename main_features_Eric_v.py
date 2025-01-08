@@ -116,7 +116,7 @@ class HD_Model:
                     c += 1"""
             
             #### Original ####
-            zeros = torch.zeros(self.num_classes, self.hd_dim).to(self.device)
+            zeros = torch.zeros(self.num_classes, self.hd_dim, dtype=torch.int32).to(self.device)
             temp = zeros.index_add_(0, first_label, samples_hv)
             print(temp)
             self.model.add(samples_hv, first_label)
