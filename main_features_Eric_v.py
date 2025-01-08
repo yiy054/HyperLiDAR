@@ -192,6 +192,7 @@ class HD_Model:
                 temp_1 = zeros.index_add_(0, first_label, samples_hv)
                 print("Min temp1: ", torch.min(temp_1), "\nMax temp1: ", torch.max(temp_1))
                 temp_1 = temp_1.to(torch.int16)
+                print("Zeros: ", zeros)
                 temp_2 = zeros.index_add_(0, pred_hd, samples_hv, alpha=-1)
                 print("Min temp2: ", torch.min(temp_2), "\nMax temp2: ", torch.max(temp_2))
                 temp_2 = temp_2.to(torch.int16)
