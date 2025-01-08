@@ -20,7 +20,7 @@ class Encoder(nn.Module):
 
     def forward(self, x):
         sample_hv = self.projection(x)
-        return torchhd.hard_quantize(sample_hv)
+        return torchhd.hard_quantize(sample_hv).int()
 
 
 class HD_Model:
