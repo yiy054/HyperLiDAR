@@ -119,7 +119,7 @@ class HD_Model:
             zeros = torch.zeros(self.num_classes, self.hd_dim, dtype=torch.int32).to(self.device)
             temp = zeros.index_add_(0, first_label, samples_hv)
             #print("Min: ", torch.min(temp), "\nMax: ", torch.max(temp))
-            temp = temp.to(int16)
+            temp = temp.to(torch.int16)
             # Add the 16 bit integer
             self.model.weight = nn.Parameter(self.model.weight + temp, requires_grad=False) # Addition
             #self.model.add(samples_hv, first_label)
@@ -192,10 +192,10 @@ class HD_Model:
                 zeros = torch.zeros(self.num_classes, self.hd_dim, dtype=torch.int32).to(self.device)
                 temp_1 = zeros.index_add_(0, first_label, samples_hv)
                 #print("Min: ", torch.min(temp), "\nMax: ", torch.max(temp))
-                temp_1 = temp_1.to(int16)
+                temp_1 = temp_1.to(torch.int16)
                 temp_2 = zeros.index_add_(0, pred_hd, samples_hv, alpha=-1)
                 #print("Min: ", torch.min(temp), "\nMax: ", torch.max(temp))
-                temp_2 = temp_2.to(int16)
+                temp_2 = temp_2.to(torch.int16)
                 # Add the 16 bit integer
                 self.model.weight = nn.Parameter(self.model.weight + temp_1, requires_grad=False) # Addition
                 self.model.weight = nn.Parameter(self.model.weight + temp_2, requires_grad=False) # Addition
