@@ -104,8 +104,9 @@ class HD_Model:
             #        self.model.add(samples_hv[here], first_label[here], lr=normalized_weights[c])
 
         # Trying normalizing at the end instead of intermediate
+        print("Weights dim", self.model.weight.shape)
         nn.functional.normalize(self.model.weight, p=2.0, dim = 1)
-
+        x = input("Enter")
 
     def retrain(self, features, labels, num_voxels):
         
