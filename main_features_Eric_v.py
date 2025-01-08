@@ -149,6 +149,7 @@ class HD_Model:
                 self.model.weight.index_add_(0, first_label, samples_hv)
                 self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1)
 
+            self.model.weight = nn.Parameter(torchhd.normalize(self.model.weight), requires_grad=False)
             # If you want to test for each sample
             self.test_hd(features, labels, num_voxels)
 
