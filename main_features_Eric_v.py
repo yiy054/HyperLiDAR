@@ -118,7 +118,7 @@ class HD_Model:
             #### Original ####
             zeros = torch.zeros(self.num_classes, self.hd_dim, dtype=torch.int32).to(self.device)
             temp = zeros.index_add_(0, first_label, samples_hv)
-            #print("Min: ", torch.min(temp), "\nMax: ", torch.max(temp))
+            print("Min: ", torch.min(temp), "\nMax: ", torch.max(temp))
             temp = temp.to(torch.int16)
             # Add the 16 bit integer
             self.model.weight = nn.Parameter(self.model.weight + temp, requires_grad=False) # Addition
@@ -184,17 +184,16 @@ class HD_Model:
                 #print(f"Misclassified for {i}: ", count)
 
                 ## Original ###
-                #self.model.weight = nn.Parameter(self.model.weight.to(torch.int32), requires_grad=False)
                 #self.model.weight.index_add_(0, first_label, samples_hv)
                 #self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1)
 
                 ##### Try with int 16 #####
                 zeros = torch.zeros(self.num_classes, self.hd_dim, dtype=torch.int32).to(self.device)
                 temp_1 = zeros.index_add_(0, first_label, samples_hv)
-                #print("Min: ", torch.min(temp), "\nMax: ", torch.max(temp))
+                print("Min: ", torch.min(temp_1), "\nMax: ", torch.max(temp_1))
                 temp_1 = temp_1.to(torch.int16)
                 temp_2 = zeros.index_add_(0, pred_hd, samples_hv, alpha=-1)
-                #print("Min: ", torch.min(temp), "\nMax: ", torch.max(temp))
+                print("Min: ", torch.min(temp_2), "\nMax: ", torch.max(temp_2))
                 temp_2 = temp_2.to(torch.int16)
                 # Add the 16 bit integer
                 self.model.weight = nn.Parameter(self.model.weight + temp_1, requires_grad=False) # Addition
@@ -203,7 +202,7 @@ class HD_Model:
             # If you want to test for each sample
             #print(self.model.weight) # Int it is I think...
             #self.model.weight = nn.Parameter(torch.clamp(self.model.weight, min=-128, max=127).to(torch.int8), requires_grad=False)
-            #print("Min: ", torch.min(self.model.weight), "\nMax: ", torch.max(self.model.weight))
+            print("Min: ", torch.min(self.model.weight), "\nMax: ", torch.max(self.model.weight))
             print(self.model.weight)
             self.test_hd(features, labels, num_voxels)
 
