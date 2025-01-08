@@ -183,7 +183,7 @@ class HD_Model:
             # If you want to test for each sample
             print(self.model.weight) # Int it is I think...
             print("Min: ", torch.min(self.model.weight), "\nMax: ", torch.max(self.model.weight))
-            self.model.weight = nn.Parameter(self.model.weight.to(torch.int16), requires_grad=False)
+            self.model.weight = nn.Parameter(self.model.weight.to(torch.int8), requires_grad=False)
             #print(self.model.weight)
             self.test_hd(features, labels, num_voxels)
 
