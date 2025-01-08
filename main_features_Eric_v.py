@@ -118,7 +118,7 @@ class HD_Model:
             self.model.add(samples_hv, first_label)
 
         # Normalizing works way better :)
-        self.model.normalize() # Min Max
+        #self.model.normalize() # Min Max
         self.model.weight = nn.Parameter(torchhd.normalize(self.model.weight), requires_grad=False) # Binary
 
     def retrain(self, features, labels, num_voxels):
