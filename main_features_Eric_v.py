@@ -118,7 +118,7 @@ class HD_Model:
             #### Original ####
             zeros = torch.zeros(self.num_classes, self.hd_dim, dtype=torch.int32).to(self.device)
             temp = zeros.index_add_(0, first_label, samples_hv)
-            print(temp)
+            print("Min: ", torch.min(temp), "\nMax: ", torch.max(temp))
             self.model.add(samples_hv, first_label)
             print(self.model.weight)
             x = input("Enter")
