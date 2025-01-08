@@ -45,7 +45,7 @@ class HD_Model:
 
         return samples
     
-    def quantize_integer_to_nbit(tensor, n_bits):
+    def quantize_integer_to_nbit(self, tensor, n_bits):
         """
         Quantizes an integer tensor to a specified n-bit range.
         
