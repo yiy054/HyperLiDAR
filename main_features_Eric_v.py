@@ -17,6 +17,7 @@ class Encoder(nn.Module):
         super(Encoder, self).__init__()
         self.flatten = torch.nn.Flatten()
         self.projection = embeddings.Projection(size, hd_dim)
+        self.projection.weight = nn.Parameter(torchhd.normalize(self.projection.weight), requires_grad=False) # Binary
 
     def forward(self, x):
         sample_hv = self.projection(x)
