@@ -29,6 +29,7 @@ class Encoder(nn.Module):
         super(Encoder, self).__init__()
         self.flatten = torch.nn.Flatten()
         self.projection = embeddings.Projection(size, hd_dim)
+        self.projection.weight = nn.Parameter(torchhd.normalize(self.projection.weight), requires_grad=False) # Binary
 
     def forward(self, x):
         sample_hv = self.projection(x)
@@ -264,7 +265,8 @@ class HD_Model:
                         self.model.add(samples_hv[here], labels[here], lr=normalized_weights[c])
             else:
                 self.model.add(samples_hv, labels)
-
+            
+            self.model.weight = nn.Parameter(torchhd.normalize(self.model.weight), requires_grad=False) # Binary
             torch.cuda.synchronize(device=self.device)
 
     def retrain(self, epochs):
@@ -272,7 +274,7 @@ class HD_Model:
         """ Retrain with misclassified samples (also substract)"""
         
         for e in tqdm(range(epochs), desc="Epoch"):
-            count = 0
+            #count = 0
 
             for it, batch in tqdm(enumerate(self.train_loader), desc=f"Retraining epoch {e}"):
                 
@@ -292,7 +294,7 @@ class HD_Model:
                 labels = labels[is_wrong]
                 pred_hd = pred_hd[is_wrong]
 
-                count = labels.shape[0]
+                #count = labels.shape[0]
 
                 self.model.weight.index_add_(0, labels, samples_hv)
                 self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1.0)
