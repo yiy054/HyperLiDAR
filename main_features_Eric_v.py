@@ -29,7 +29,7 @@ class HD_Model:
         encode = Encoder(out_dim, in_dim)
         self.encode = encode.to(device)
 
-        model = Centroid(out_dim, num_classes, dtype=torch.int16)
+        model = Centroid(out_dim, num_classes, dtype=torch.int32)
         self.model = model.to(device)
         self.device = device
         self.num_classes = num_classes
@@ -116,13 +116,13 @@ class HD_Model:
                     c += 1"""
             
             #### Original ####
-            temp = torch.zeros(self.num_classes, self.hd_dim, dtype=torch.int32).to(self.device)
-            temp.index_add_(0, first_label, samples_hv).to(torch.int16)
+            #temp = torch.zeros(self.num_classes, self.hd_dim, dtype=torch.int32).to(self.device)
+            #temp.index_add_(0, first_label, samples_hv)
             #print("Min: ", torch.min(temp), "\nMax: ", torch.max(temp))
             #temp = temp
             # Add the 16 bit integer
-            self.model.weight = nn.Parameter(self.model.weight + temp, requires_grad=False) # Addition
-            #self.model.add(samples_hv, first_label)
+            #self.model.weight = nn.Parameter(self.model.weight + temp, requires_grad=False) # Addition
+            self.model.add(samples_hv, first_label)
             #print(self.model.weight)
             #x = input("Enter")
 
@@ -184,25 +184,23 @@ class HD_Model:
                 #print(f"Misclassified for {i}: ", count)
 
                 ## Original ###
-                #self.model.weight.index_add_(0, first_label, samples_hv)
-                #self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1)
+                self.model.weight.index_add_(0, first_label, samples_hv)
+                self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1)
 
                 ##### Try with int 16 #####
-                temp_1 = torch.zeros(self.num_classes, self.hd_dim, dtype=torch.int32).to(self.device)
-                temp_1.index_add_(0, first_label, samples_hv).to(torch.int16)
-                print("Min temp1: ", torch.min(temp_1), "\nMax temp1: ", torch.max(temp_1))
-                temp_2 = torch.zeros(self.num_classes, self.hd_dim, dtype=torch.int32).to(self.device)
-                temp_2.index_add_(0, pred_hd, samples_hv, alpha=-1).to(torch.int16)
-                print("Min temp2: ", torch.min(temp_2), "\nMax temp2: ", torch.max(temp_2))
+                #temp_1 = torch.zeros(self.num_classes, self.hd_dim, dtype=torch.int32).to(self.device)
+                #temp_1.index_add_(0, first_label, samples_hv).to(torch.int16)
+                #temp_2 = torch.zeros(self.num_classes, self.hd_dim, dtype=torch.int32).to(self.device)
+                #temp_2.index_add_(0, pred_hd, samples_hv, alpha=-1).to(torch.int16)
                 # Add the 16 bit integer
-                self.model.weight = nn.Parameter(self.model.weight + temp_1, requires_grad=False) # Addition
-                self.model.weight = nn.Parameter(self.model.weight + temp_2, requires_grad=False) # Addition
+                #self.model.weight = nn.Parameter(self.model.weight + temp_1, requires_grad=False) # Addition
+                #self.model.weight = nn.Parameter(self.model.weight + temp_2, requires_grad=False) # Addition
 
             # If you want to test for each sample
             #print(self.model.weight) # Int it is I think...
             #self.model.weight = nn.Parameter(torch.clamp(self.model.weight, min=-128, max=127).to(torch.int8), requires_grad=False)
-            print("Min model: ", torch.min(self.model.weight), "\nMax model: ", torch.max(self.model.weight))
-            print(self.model.weight)
+            #print("Min model: ", torch.min(self.model.weight), "\nMax model: ", torch.max(self.model.weight))
+            #print(self.model.weight)
             self.test_hd(features, labels, num_voxels)
 
     def test_hd(self, features, labels, num_voxels, epoch=0):
