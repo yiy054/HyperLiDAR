@@ -380,6 +380,12 @@ def parse_arguments():
     parser.add_argument(
             "--add_lr", action="store_true", default=False, help='Add lr to help class imbalance'
         )
+    parser.add_argument(
+            "--dataset", choices=['nuscenes', 'semantickitti', 'tls'], default='nuscenes', help='Which dataset to train and test on?'
+        )
+    
+    # HD arguments
+    parser.add_argument('--dim', type=int, help='Dimensionality of Hypervectors', default=10000)
     #parser.add_argument('-val', '--val', action="store_true", default=False, help='Train with validation for each scan')
     args = parser.parse_args()
     return args
@@ -396,7 +402,7 @@ if __name__ == "__main__":
         torch.cuda.manual_seed(args.seed)
         os.environ["PYTHONHASHSEED"] = str(args.seed)
 
-    DIMENSIONS = 10000
+    DIMENSIONS = args.dim
     FEAT_SIZE = 768
     NUM_LEVELS = 8000
     BATCH_SIZE = 1  # for GPUs with enough memory we can process multiple images at ones
@@ -409,8 +415,17 @@ if __name__ == "__main__":
     print("Using {} device".format(device))
     device_string = "cuda:0" if torch.cuda.is_available() else "cpu"
 
+    # Modify the path for each of the folders
+
+    if args.dataset == 'nuscenes':
+        path = '/root/main/dataset/nuscenes'
+    elif args.dataset == 'semantickitti':
+        path = '/root/main/dataset/semantickitti'
+    elif args.dataset == 'tls':
+        path = '/root/main/dataset/tls'
+
     kwargs = {
-        "rootdir": '/root/main/dataset/nuscenes',
+        "rootdir": path,
         "input_feat": ["intensity", "xyz", "radius"],
         "voxel_size": 0.1,
         "num_neighbors": 16,
@@ -420,7 +435,7 @@ if __name__ == "__main__":
     }
 
     # Get datatset
-    DATASET = LIST_DATASETS.get("nuscenes")
+    DATASET = LIST_DATASETS.get(args.dataset)
 
     # Train dataset
     dataset = DATASET(
@@ -463,7 +478,7 @@ if __name__ == "__main__":
             "hd_dim": 10000,
             "training_samples":404,
         },
-        id=f"early_exit_complete_{args.layers}_norm",
+        id=f"early_exit_complete_{args.layers}_norm_dim_{DIMENSIONS}",
     )
 
 
