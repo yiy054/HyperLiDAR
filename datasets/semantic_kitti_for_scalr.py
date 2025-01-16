@@ -156,6 +156,7 @@ class SemanticKITTIDistill(ImPcDataset):
                     )
                 )
             )
+        print("Im_idx: ", self.im_idx)
         self.im_idx = np.sort(self.im_idx)
         assert len(self.im_idx) == 19130
 
