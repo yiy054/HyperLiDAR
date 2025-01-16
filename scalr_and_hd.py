@@ -104,7 +104,6 @@ class Feature_Extractor:
 
     def forward_model(self, it, batch):
         feat = batch["feat"]
-        print(feat.shape)
         labels = batch["labels_orig"]
         cell_ind = batch["cell_ind"]
         occupied_cell = batch["occupied_cells"]
