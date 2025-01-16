@@ -385,7 +385,7 @@ def parse_arguments():
             "--dataset", choices=['nuscenes', 'semantic_kitti', 'tls'], default='nuscenes', help='Which dataset to train and test on?'
         )
     parser.add_argument("--wandb_run", action="store_true", default=False, help='Pass values to WandDB')
-    parser.add_argument("--device", type=str, choices=['gpu', 'cpu'], default='gpu', help='Which device to use for training')
+    parser.add_argument("--device", choices=['gpu', 'cpu'], default='gpu', help='Which device to use for training')
 
     # HD arguments
     parser.add_argument('--dim', type=int, help='Dimensionality of Hypervectors', default=10000)
@@ -416,7 +416,7 @@ if __name__ == "__main__":
 
     device = torch.device("cuda" if (torch.cuda.is_available() and args.device == 'gpu') else "cpu")
     print("Using {} device".format(device))
-    device_string = "cuda:0" if torch.cuda.is_available() else "cpu"
+    device_string = "cuda:0" if (torch.cuda.is_available() and args.device == 'gpu') else "cpu"
 
     # Modify the path for each of the folders
 
