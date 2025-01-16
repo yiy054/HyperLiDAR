@@ -132,10 +132,6 @@ class Feature_Extractor:
                     #torch.cuda.synchronize(device=self.device)
                     where = labels != 255
                     #torch.cuda.synchronize(device=self.device)
-
-                    print("tokens: ", tokens.shape)
-                    print("labels: ", labels.shape)
-                    print("pred_label: ", pred_label.shape)
         else:
             with torch.no_grad():
                 out = self.model(*net_inputs, self.early_exit)
