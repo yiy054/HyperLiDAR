@@ -383,7 +383,8 @@ def parse_arguments():
     parser.add_argument(
             "--dataset", choices=['nuscenes', 'semantic_kitti', 'tls'], default='nuscenes', help='Which dataset to train and test on?'
         )
-    
+    parser.add_argument("--wandb_run", action="store_true", default=False, help='Pass values to WandDB')
+
     # HD arguments
     parser.add_argument('--dim', type=int, help='Dimensionality of Hypervectors', default=10000)
     #parser.add_argument('-val', '--val', action="store_true", default=False, help='Train with validation for each scan')
@@ -500,18 +501,18 @@ if __name__ == "__main__":
     hd_model = HD_Model(FEAT_SIZE, DIMENSIONS, num_classes, path_pretrained, device=device, args=args)
     hd_model.set_loaders(train_loader=train_loader, val_loader=val_loader)
 
-    run = wandb.init(
-        # Set the project where this run will be logged
-        project="scalr_hd",
-        # Track hyperparameters and run metadata
-        config={
-            "encoding": "Random Projection",
-            "hd_dim": DIMENSIONS,
-            "training_samples":404,
-        },
-        id=f"{args.dataset}_training_layers_{args.layers}_norm_dim_{DIMENSIONS}",
-    )
-
+    if args.wandb_run:
+        run = wandb.init(
+            # Set the project where this run will be logged
+            project="scalr_hd",
+            # Track hyperparameters and run metadata
+            config={
+                "encoding": "Random Projection",
+                "hd_dim": DIMENSIONS,
+                "training_samples":404,
+            },
+            id=f"{args.dataset}_training_layers_{args.layers}_norm_dim_{DIMENSIONS}",
+        )
 
     ####### HD Pipeline ##########
 
