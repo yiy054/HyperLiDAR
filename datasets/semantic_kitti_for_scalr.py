@@ -58,7 +58,7 @@ class SemanticKITTISemSeg(PCDataset):
         self.std_int = STD_INT
 
         # Config file and class mapping
-        current_folder = os.path.dirname(os.path.realpath(__file__))
+        current_folder = os.path.dirname('/home/HyperLiDAR/datasets/')
         with open(os.path.join(current_folder, "semantic-kitti.yaml")) as stream:
             semkittiyaml = yaml.safe_load(stream)
         self.mapper = np.vectorize(semkittiyaml["learning_map"].__getitem__)
