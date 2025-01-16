@@ -410,7 +410,6 @@ if __name__ == "__main__":
     FEAT_SIZE = 768
     NUM_LEVELS = 8000
     BATCH_SIZE = 1  # for GPUs with enough memory we can process multiple images at ones
-    num_classes = 16
     path_pretrained = '/root/main/ScaLR/saved_models/ckpt_last_scalr.pth'
 
     wandb.login(key="9487c04b8eff0c16cac4e785f2b57c3a475767d3")
@@ -456,6 +455,8 @@ if __name__ == "__main__":
         dataset_val = copy.deepcopy(dataset)
         dataset_train.init_training()
         dataset_val.init_val()
+
+        num_classes = 16
     
     elif args.dataset == 'semantic_kitti':
 
@@ -479,6 +480,8 @@ if __name__ == "__main__":
             phase="val",
             **kwargs,
         )
+
+        num_classes = 19
     
     else:
         raise Exception("Dataset Not identified")
