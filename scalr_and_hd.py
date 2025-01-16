@@ -529,7 +529,7 @@ if __name__ == "__main__":
     hd_model.test_hd()
 
     print("Retraining")
-    hd_model.retrain(epochs=1)
+    hd_model.retrain(epochs=10)
     
     print("Testing")
     hd_model.test_hd()
