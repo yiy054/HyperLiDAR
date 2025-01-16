@@ -148,8 +148,7 @@ class SemanticKITTIDistill(ImPcDataset):
             self.im_idx.extend(
                 glob(
                     os.path.join(
-                        self.rootdir,
-                        "dataset",
+                        '/root/main/dataset/semantickitti',
                         "sequences",
                         str(i_folder).zfill(2),
                         "velodyne",
