@@ -133,6 +133,10 @@ class Feature_Extractor:
                     #torch.cuda.synchronize(device=self.device)
                     where = labels != 255
                     #torch.cuda.synchronize(device=self.device)
+
+                    print("tokens: ", tokens.shape)
+                    print("labels: ", labels.shape)
+                    print("pred_label: ", pred_label.shape)
         else:
             with torch.no_grad():
                 out = self.model(*net_inputs, self.early_exit)
@@ -141,10 +145,6 @@ class Feature_Extractor:
 
                 # Only return samples that are not noise
                 where = labels != 255
-
-                print("tokens: ", tokens.shape)
-                print("labels: ", labels.shape)
-                print("pred_label: ", pred_label.shape)
         
         return tokens[0,:,where], labels[where], pred_label[0, where]
 
