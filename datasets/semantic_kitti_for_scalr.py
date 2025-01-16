@@ -99,7 +99,7 @@ class SemanticKITTISemSeg(PCDataset):
         else:
             print("Using original split")
             print("Array: ", len(self.im_idx))
-            self.im_idx = self.im_idx[:10]
+            self.im_idx = self.im_idx[:10] # Remove to add all the samples
             self.im_idx = np.sort(self.im_idx)
 
     def __len__(self):
