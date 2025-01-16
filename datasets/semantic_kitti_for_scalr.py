@@ -121,7 +121,7 @@ class SemanticKITTISemSeg(PCDataset):
         labels = labels[:, 0] - 1
         labels[labels == -1] = 255
 
-        print("labels: ", labels.shape)
+        print("labels load: ", labels.shape)
 
         return pc, labels, self.im_idx[index]
 

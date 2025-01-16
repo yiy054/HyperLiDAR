@@ -80,7 +80,7 @@ class PCDataset(Dataset):
 
         # Train time augmentations
         if train_augmentations is not None:
-            assert self.phase in ["train", "trainval"]
+            assert self.phase in ["train", "val"]
         self.train_augmentations = train_augmentations
 
     def get_occupied_2d_cells(self, pc):
@@ -160,7 +160,7 @@ class PCDataset(Dataset):
         dist, neighbors_emb = kdtree.query(pc[:, :3], k=self.num_neighbors + 1)
 
         # Nearest neighbor interpolation to undo cropping & voxelisation at validation time
-        if self.phase in ["train", "trainval"]:
+        if self.phase in ["train", "val"]:
             upsample = np.arange(pc.shape[0])
         else:
             _, upsample = kdtree.query(pc_orig[:, :3], k=1)
@@ -170,7 +170,7 @@ class PCDataset(Dataset):
             # Point features
             pc[:, 3:].T[None],
             # Point labels of original entire point cloud
-            labels if self.phase in ["train", "trainval"] else labels_orig,
+            labels if self.phase in ["train", "val"] else labels_orig,
             # Projection 2D -> 3D: index of 2D cells for each point
             cell_ind[None],
             # Neighborhood for point embedding layer, which provides tokens to waffleiron backbone
