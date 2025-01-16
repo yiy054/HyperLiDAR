@@ -414,7 +414,7 @@ if __name__ == "__main__":
 
     wandb.login(key="9487c04b8eff0c16cac4e785f2b57c3a475767d3")
 
-    device = torch.device("cuda" if torch.cuda.is_available() and args.device == 'gpu' else "cpu")
+    device = torch.device("cuda" if (torch.cuda.is_available() and args.device == 'gpu') else "cpu")
     print("Using {} device".format(device))
     device_string = "cuda:0" if torch.cuda.is_available() else "cpu"
 
