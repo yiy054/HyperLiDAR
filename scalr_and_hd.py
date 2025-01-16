@@ -213,17 +213,17 @@ class HD_Model:
         for batch in tqdm(self.train_loader, desc="Training batch: "):
             labels = batch["labels_orig"]
             labels = labels.cuda(0, non_blocking=True)
-            torch.cuda.synchronize(device=self.device)
+            #torch.cuda.synchronize(device=self.device)
             where = labels != 255
-            torch.cuda.synchronize(device=self.device)
+            #torch.cuda.synchronize(device=self.device)
             self.num_vox_train += labels[where].shape[0]
 
         for batch in tqdm(self.val_loader, desc="Validation batch: "):
             labels = batch["labels_orig"]
             labels = labels.cuda(0, non_blocking=True)
-            torch.cuda.synchronize(device=self.device)
+            #torch.cuda.synchronize(device=self.device)
             where = labels != 255
-            torch.cuda.synchronize(device=self.device)
+            #torch.cuda.synchronize(device=self.device)
             self.num_vox_val += labels[where].shape[0]
 
         print("Finished loading data loaders")
