@@ -210,7 +210,7 @@ class HD_Model:
         self.num_vox_train = 0
         self.num_vox_val = 0
 
-        for batch in self.train_loader:
+        for batch in tqdm(self.train_loader, desc="Training batch: "):
             labels = batch["labels_orig"]
             labels = labels.cuda(0, non_blocking=True)
             torch.cuda.synchronize(device=self.device)
@@ -218,7 +218,7 @@ class HD_Model:
             torch.cuda.synchronize(device=self.device)
             self.num_vox_train += labels[where].shape[0]
 
-        for batch in self.val_loader:
+        for batch in tqdm(self.val_loader, desc="Validation batch: "):
             labels = batch["labels_orig"]
             labels = labels.cuda(0, non_blocking=True)
             torch.cuda.synchronize(device=self.device)
