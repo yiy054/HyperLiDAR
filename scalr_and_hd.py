@@ -482,9 +482,6 @@ if __name__ == "__main__":
     else:
         raise Exception("Dataset Not identified")
     
-    print("Device: ", device)
-    print("Device: ", torch.device(device))
-    
     train_loader = torch.utils.data.DataLoader(
         dataset_train,
         batch_size=1,

@@ -213,7 +213,7 @@ class Collate:
         self.num_points = num_points
         assert num_points is None or num_points > 0
         self.device=device
-        if device != 'cpu':
+        if device != torch.device('cpu'):
             torch.cuda.synchronize(device=self.device)
 
     def __call__(self, list_data):
