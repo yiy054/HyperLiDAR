@@ -424,47 +424,78 @@ if __name__ == "__main__":
     elif args.dataset == 'tls':
         path = '/root/main/dataset/tls'
 
-    kwargs = {
-        "rootdir": path,
-        "input_feat": ["intensity", "xyz", "radius"],
-        "voxel_size": 0.1,
-        "num_neighbors": 16,
-        "dim_proj": [2, 1, 0],
-        "grids_shape": [[256, 256], [256, 32], [256, 32]],
-        "fov_xyz": [[-64, -64, -8], [64, 64, 8]], # Check here
-    }
 
     # Get datatset
     DATASET = LIST_DATASETS.get(args.dataset)
+    
+    ##### Process dataset #######
 
-    # Train dataset
-    dataset = DATASET(
-        phase="train",
-        **kwargs,
-    )
-    #print(dataset.voxel_size)
-    dataset_train = copy.deepcopy(dataset)
-    dataset_val = copy.deepcopy(dataset)
-    dataset_train.init_training()
-    dataset_val.init_val()
+    if args.dataset == 'nuscenes':
 
-    train_loader = torch.utils.data.DataLoader(
-            dataset_train,
-            batch_size=1,
-            pin_memory=True,
-            drop_last=True,
-            collate_fn=Collate(device=device),
-            persistent_workers=False,
+        kwargs = {
+            "rootdir": path,
+            "input_feat": ["intensity", "xyz", "radius"],
+            "voxel_size": 0.1,
+            "num_neighbors": 16,
+            "dim_proj": [2, 1, 0],
+            "grids_shape": [[256, 256], [256, 32], [256, 32]],
+            "fov_xyz": [[-64, -64, -8], [64, 64, 8]], # Check here
+        }
+
+        # Train dataset
+        dataset = DATASET(
+            phase="train",
+            **kwargs,
         )
+
+        dataset_train = copy.deepcopy(dataset)
+        dataset_val = copy.deepcopy(dataset)
+        dataset_train.init_training()
+        dataset_val.init_val()
+    
+    elif args.dataset == 'semantic_kitti':
+
+        kwargs = {
+            "rootdir": path,
+            "input_feat": ["intensity", "xyz", "radius"],
+            "voxel_size": 0.1,
+            "num_neighbors": 16,
+            "dim_proj": [2, 1, 0],
+            "grids_shape": [[256, 256], [256, 32], [256, 32]],
+            "fov_xyz": [[-64, -64, -8], [64, 64, 8]], # Check here
+        }
+        
+        dataset_train = DATASET(
+            phase="train",
+            **kwargs,
+        )
+
+        # Validation dataset
+        dataset_val = DATASET(
+            phase="val",
+            **kwargs,
+        )
+    
+    else:
+        raise Exception("Dataset Not identified")
+    
+    train_loader = torch.utils.data.DataLoader(
+        dataset_train,
+        batch_size=1,
+        pin_memory=True,
+        drop_last=True,
+        collate_fn=Collate(device=device),
+        persistent_workers=False,
+    )
 
     val_loader = torch.utils.data.DataLoader(
-            dataset_val,
-            batch_size=1,
-            pin_memory=True,
-            drop_last=True,
-            collate_fn=Collate(device=device),
-            persistent_workers=False,
-        )
+        dataset_val,
+        batch_size=1,
+        pin_memory=True,
+        drop_last=True,
+        collate_fn=Collate(device=device),
+        persistent_workers=False,
+    )
 
     hd_model = HD_Model(FEAT_SIZE, DIMENSIONS, num_classes, path_pretrained, device=device, args=args)
     hd_model.set_loaders(train_loader=train_loader, val_loader=val_loader)
@@ -475,10 +506,10 @@ if __name__ == "__main__":
         # Track hyperparameters and run metadata
         config={
             "encoding": "Random Projection",
-            "hd_dim": 10000,
+            "hd_dim": DIMENSIONS,
             "training_samples":404,
         },
-        id=f"early_exit_complete_{args.layers}_norm_dim_{DIMENSIONS}",
+        id=f"{args.dataset}_training_layers_{args.layers}_norm_dim_{DIMENSIONS}",
     )
 
 
@@ -496,7 +527,6 @@ if __name__ == "__main__":
     print("Testing")
     hd_model.test_hd()
 
-    
 
     ####### SOA results ##########
     #print("SoA results")
