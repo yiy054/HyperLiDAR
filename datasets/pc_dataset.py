@@ -213,17 +213,20 @@ class Collate:
         self.num_points = num_points
         assert num_points is None or num_points > 0
         self.device=device
-        if device != torch.device('cpu'):
-            torch.cuda.synchronize(device=self.device)
+        #if device != torch.device('cpu'):
+        #    torch.cuda.synchronize(device=self.device)
 
     def __call__(self, list_data):
 
         # Extract all data
-        torch.cuda.synchronize(device=self.device)
+        #if self.device != torch.device('cpu'):
+        #    torch.cuda.synchronize(device=self.device)
         list_of_data = (list(data) for data in zip(*list_data))
-        torch.cuda.synchronize(device=self.device)
+        #if self.device != torch.device('cpu'):
+        #    torch.cuda.synchronize(device=self.device)
         feat, label_orig, cell_ind, neighbors_emb, upsample, filename = list_of_data
-        torch.cuda.synchronize(device=self.device)
+        #if self.device != torch.device('cpu'):
+        #    torch.cuda.synchronize(device=self.device)
 
         # Zero-pad point clouds
         Nmax = np.max([f.shape[-1] for f in feat])
@@ -246,11 +249,12 @@ class Collate:
             np.vstack(cell_ind)
         ).long()  # B x nb_2d_cells x Nmax
         occupied_cells = torch.from_numpy(np.vstack(occupied_cells)).float()  # B x Nmax
-        torch.cuda.synchronize(device=self.device)
+        
+        #torch.cuda.synchronize(device=self.device)
         
 
         labels_orig = torch.from_numpy(np.hstack(label_orig))
-        torch.cuda.synchronize(device=self.device)
+        #torch.cuda.synchronize(device=self.device)
         upsample = [torch.from_numpy(u) for u in upsample]
 
         # Prepare output variables
@@ -264,6 +268,6 @@ class Collate:
             "filename": filename,
         }
 
-        torch.cuda.synchronize(device=self.device)
+        #torch.cuda.synchronize(device=self.device)
 
         return out
