@@ -81,8 +81,7 @@ class SemanticKITTISemSeg(PCDataset):
             self.im_idx.extend(
                 glob(
                     os.path.join(
-                        self.rootdir,
-                        "dataset",
+                        '/root/main/dataset/semantickitti',
                         "sequences",
                         str(i_folder).zfill(2),
                         "velodyne",
@@ -99,6 +98,7 @@ class SemanticKITTISemSeg(PCDataset):
             self.im_idx = sorted(self.im_idx)[::skip_ratio]
         else:
             print("Using original split")
+            print("Im_idx: ", self.im_idx)
             self.im_idx = np.sort(self.im_idx)
 
     def __len__(self):
