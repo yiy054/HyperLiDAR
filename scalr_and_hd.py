@@ -49,8 +49,6 @@ class Feature_Extractor:
             layer_norm=layer_norm,
         )
 
-        print("Classes: ", nb_class)
-
         classif = torch.nn.Conv1d(
             feat_channels, 16, 1 # So it fits 16 = nb_class but classifier is not used
         )
@@ -108,7 +106,6 @@ class Feature_Extractor:
         feat = batch["feat"]
         print(feat.shape)
         labels = batch["labels_orig"]
-        print(labels.shape)
         cell_ind = batch["cell_ind"]
         occupied_cell = batch["occupied_cells"]
         neighbors_emb = batch["neighbors_emb"]
