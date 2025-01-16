@@ -38,7 +38,7 @@ class Encoder(nn.Module):
 class Feature_Extractor:
     def __init__(self, input_channels=5, feat_channels=768, depth=48, 
                  grid_shape=[[256, 256], [256, 32], [256, 32]], nb_class=16, layer_norm=True, 
-                 device=torch.device("cpu"), early_exit = 48):
+                 device=torch.device("cpu"), early_exit = 48, **kwargs):
         self.model = Segmenter(
             input_channels=input_channels,
             feat_channels=feat_channels,
@@ -73,9 +73,10 @@ class Feature_Extractor:
 
         optim = get_optimizer(self.model.parameters())
         self.device = device
-        self.device_string = "cuda:0" if torch.cuda.is_available() else "cpu"
+        self.device_string = "cuda:0" if (torch.cuda.is_available() and kwargs['args'].device == 'gpu') else "cpu"
         self.num_classes = nb_class
         self.early_exit = early_exit
+        self.kwargs = kwargs
     
     def load_pretrained(self, path):
         # Load pretrained model
@@ -187,7 +188,7 @@ class HD_Model:
         model = Centroid(out_dim, num_classes)
         self.model = model.to(device=device, non_blocking=True)
         self.device = device
-        self.feature_extractor = Feature_Extractor(nb_class = num_classes, device=self.device, early_exit=kwargs['args'].layers)
+        self.feature_extractor = Feature_Extractor(nb_class = num_classes, device=self.device, early_exit=kwargs['args'].layers, args=kwargs['args'])
         self.feature_extractor.load_pretrained(path_pretrained)
         self.stop = kwargs['args'].layers
         self.num_classes = num_classes
