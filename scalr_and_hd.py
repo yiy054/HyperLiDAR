@@ -49,6 +49,8 @@ class Feature_Extractor:
             layer_norm=layer_norm,
         )
 
+        print("Classes: ", nb_class)
+
         classif = torch.nn.Conv1d(
             feat_channels, nb_class, 1
         )
