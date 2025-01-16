@@ -52,7 +52,7 @@ class Feature_Extractor:
         print("Classes: ", nb_class)
 
         classif = torch.nn.Conv1d(
-            feat_channels, nb_class, 1
+            feat_channels, 16, 1 # So it fits 16 = nb_class but classifier is not used
         )
         torch.nn.init.constant_(classif.bias, 0)
         torch.nn.init.constant_(classif.weight, 0)
