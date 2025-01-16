@@ -98,9 +98,10 @@ class SemanticKITTISemSeg(PCDataset):
             self.im_idx = sorted(self.im_idx)[::skip_ratio]
         else:
             print("Using original split")
-            print("Array: ", len(self.im_idx))
+            #self.im_idx = np.sort(self.im_idx)
+            self.scramble = np.random.permutation(len(self.im_idx))
+            self.im_idx = [self.im_idx[self.scramble[i]] for i in self.scramble]
             self.im_idx = self.im_idx[:100] # Remove to add all the samples
-            self.im_idx = np.sort(self.im_idx)
 
     def __len__(self):
         return len(self.im_idx)
