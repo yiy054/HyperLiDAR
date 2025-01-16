@@ -381,7 +381,7 @@ def parse_arguments():
             "--add_lr", action="store_true", default=False, help='Add lr to help class imbalance'
         )
     parser.add_argument(
-            "--dataset", choices=['nuscenes', 'semantickitti', 'tls'], default='nuscenes', help='Which dataset to train and test on?'
+            "--dataset", choices=['nuscenes', 'semantic_kitti', 'tls'], default='nuscenes', help='Which dataset to train and test on?'
         )
     
     # HD arguments
@@ -419,7 +419,7 @@ if __name__ == "__main__":
 
     if args.dataset == 'nuscenes':
         path = '/root/main/dataset/nuscenes'
-    elif args.dataset == 'semantickitti':
+    elif args.dataset == 'semantic_kitti':
         path = '/root/main/dataset/semantickitti'
     elif args.dataset == 'tls':
         path = '/root/main/dataset/tls'
