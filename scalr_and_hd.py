@@ -213,7 +213,8 @@ class HD_Model:
 
         for batch in tqdm(self.train_loader, desc="Training batch: "):
             labels = batch["labels_orig"]
-            labels = labels.cuda(0, non_blocking=True)
+            if self.device == torch.device("gpu:0"):
+                labels = labels.cuda(0, non_blocking=True)
             #torch.cuda.synchronize(device=self.device)
             where = labels != 255
             #torch.cuda.synchronize(device=self.device)
@@ -221,7 +222,8 @@ class HD_Model:
 
         for batch in tqdm(self.val_loader, desc="Validation batch: "):
             labels = batch["labels_orig"]
-            labels = labels.cuda(0, non_blocking=True)
+            if self.device == torch.device("gpu:0"):
+                labels = labels.cuda(0, non_blocking=True)
             #torch.cuda.synchronize(device=self.device)
             where = labels != 255
             #torch.cuda.synchronize(device=self.device)
