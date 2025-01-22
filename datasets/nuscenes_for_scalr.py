@@ -107,7 +107,7 @@ class NuScenesSemSeg(PCDataset):
             token = base['data']['LIDAR_TOP']
             array.append([sample, lidarseg, token])
         self.list_frames = array
-        self.phase = "trainval"
+        self.phase = "val"
     
     def init_test(self):
         array = []
