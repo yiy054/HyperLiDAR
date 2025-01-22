@@ -270,7 +270,8 @@ class HD_Model:
                 self.model.add(samples_hv, labels)
             
             self.model.weight = nn.Parameter(torchhd.normalize(self.model.weight), requires_grad=False) # Binary
-            torch.cuda.synchronize(device=self.device)
+            if self.device == torch.device("cuda:0"):
+                torch.cuda.synchronize(device=self.device)
 
     def retrain(self, epochs):
         
