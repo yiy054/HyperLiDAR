@@ -322,7 +322,7 @@ if __name__ == "__main__":
     num_voxels_test = torch.load('/root/main/ScaLR/debug/semantic_kitti/voxels_test_semkitti.pt', weights_only="False")
 
     print("SOA results\n")
-    test_soa(arrays, labels, num_voxels, device)
+    test_soa(arrays_test, labels_test, num_voxels_test, device)
 
     model = HD_Model(INPUT_DIM, HD_DIM, num_classes, device)
 
