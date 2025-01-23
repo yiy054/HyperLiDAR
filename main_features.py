@@ -13,8 +13,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Using {} device".format(device))
 
 INPUT_DIM = 768
-HD_DIM = 20000
-num_classes = 16
+HD_DIM = 10000
+num_classes = 19
 
 class Encoder(nn.Module):
     def __init__(self, hd_dim, size):
@@ -38,15 +38,13 @@ model = Centroid(HD_DIM, num_classes)
 model = model.to(device)
 
 # Metric
-miou = MulticlassJaccardIndex(num_classes=16, average=None).to(device)
+miou = MulticlassJaccardIndex(num_classes=19, average=None).to(device)
 
 #arrays = np.load('SoA_results.npy')
-features = np.load('/home/outputs/SoA_features.npy')
-labels = np.load('/home/outputs/SoA_labels.npy')
-num_voxels = np.load('/home/outputs/num_voxels.npy')
+features = torch.load('/root/main/ScaLR/debug/semantic_kitti/feat_train_semkitti.pt')
+labels = torch.load('/root/main/ScaLR/debug/semantic_kitti/labels_train_semkitti.pt')
+num_voxels = torch.load('/root/main/ScaLR/debug/semantic_kitti/voxels_train_semkitti.pt')
 #print(arrays)
-
-num_samples = len(features)
 
 def normalize(samples, min_val=None, max_val=None):
     # normalize # 0 -> 768 # 1 -> 16487
@@ -93,7 +91,7 @@ for i in range(num_samples):
             max_val[f] = max_here[f]
 '''
 
-CLASS_NAME = [
+"""CLASS_NAME = [
         "barrier",
         "bicycle",
         "bus",
@@ -110,42 +108,68 @@ CLASS_NAME = [
         "terrain",
         "manmade",
         "vegetation",
-    ]
+    ]""" # Nuscenes
+
+CLASS_NAME = [
+        "car",  # 0
+        "bicycle",  # 1
+        "motorcycle",  # 2
+        "truck",  # 3
+        "other-vehicle",  # 4
+        "person",  # 5
+        "bicyclist",  # 6
+        "motorcyclist",  # 7
+        "road",  # 8
+        "parking",  # 9
+        "sidewalk",  # 10
+        "other-ground",  # 11
+        "building",  # 12
+        "fence",  # 13
+        "vegetation",  # 14
+        "trunk",  # 15
+        "terrain",  # 16
+        "pole",  # 17
+        "traffic-sign",  # 18
+    ] # Semantic - kitti
+
+
 
 #####################################################
 # Training and Inference
 #####################################################
 
-for i in range(num_samples):
-    # compute the accuracy of the one sample
-    first_sample = torch.Tensor(features[i][:int(num_voxels[i])]).to(device)
-    first_label = torch.Tensor(labels[i][:int(num_voxels[i])]).to(torch.int64).to(device)
+def train(features, labels, num_voxels, device):
+    num_samples = len(features)
+    for i in range(num_samples):
+        # compute the accuracy of the one sample
+        first_sample = torch.Tensor(features[i][:int(num_voxels[i])]).to(device)
+        first_label = torch.Tensor(labels[i][:int(num_voxels[i])]).to(torch.int64).to(device)
 
-    #pred_ts = torch.Tensor(np.argmax(first_sample, axis=1)).to(device)
-    #label_ts = torch.Tensor(first_label).to(torch.int32).to(device)
+        #pred_ts = torch.Tensor(np.argmax(first_sample, axis=1)).to(device)
+        #label_ts = torch.Tensor(first_label).to(torch.int32).to(device)
 
-    first_sample = normalize(first_sample) # min_val, max_val
+        first_sample = normalize(first_sample) # min_val, max_val
 
-    # HD training
-    samples_hv = encode(first_sample)
-    model.add_online(samples_hv, first_label, lr=0.00001)
+        # HD training
+        samples_hv = encode(first_sample)
+        model.add_online(samples_hv, first_label, lr=0.00001)
 
-    # HD prediction
-    #pred_hd = model(samples_hv, dot=True).argmax(1).data
+        # HD prediction
+        #pred_hd = model(samples_hv, dot=True).argmax(1).data
 
-    #print('pred_ts', pred_ts)
-    #print('pred_hd', pred_hd)
-    #print('label', first_label)
-    #accuracy = miou(pred_hd, first_label)
-    #avg_acc = torch.mean(accuracy)
-    #print(f'accuracy of sample {i}: {accuracy}')
-    #print(f'avg acc of sample {i}: {avg_acc}')
+        #print('pred_ts', pred_ts)
+        #print('pred_hd', pred_hd)
+        #print('label', first_label)
+        #accuracy = miou(pred_hd, first_label)
+        #avg_acc = torch.mean(accuracy)
+        #print(f'accuracy of sample {i}: {accuracy}')
+        #print(f'avg acc of sample {i}: {avg_acc}')
 
 
 #####################################################
 # Pure inference
 #####################################################
-for i in range(num_samples):
+for i in range(101):
     # compute the accuracy of the one sample
     first_sample = torch.Tensor(features[i][:int(num_voxels[i])]).to(device)
     first_label = torch.Tensor(labels[i][:int(num_voxels[i])]).to(torch.int32).to(device)

@@ -50,7 +50,7 @@ class Feature_Extractor:
         )
 
         classif = torch.nn.Conv1d(
-            feat_channels, 16, 1 # So it fits 16 = nb_class but classifier is not used
+            feat_channels, nb_class, 1 # So it fits 16 = nb_class but classifier is not used
         )
         torch.nn.init.constant_(classif.bias, 0)
         torch.nn.init.constant_(classif.weight, 0)
@@ -82,7 +82,7 @@ class Feature_Extractor:
         # Load pretrained model
         path_to_ckpt = path
         checkpoint = torch.load(path_to_ckpt,
-            map_location=device_string)
+            map_location=self.device_string)
         state_dict = checkpoint["net"]  # Adjust key as needed
         new_state_dict = OrderedDict()
 
@@ -108,7 +108,7 @@ class Feature_Extractor:
         cell_ind = batch["cell_ind"]
         occupied_cell = batch["occupied_cells"]
         neighbors_emb = batch["neighbors_emb"]
-        if device_string != 'cpu':
+        if self.device_string != 'cpu':
             feat = feat.cuda(0, non_blocking=True)
             labels = labels.cuda(0, non_blocking=True)
             batch["upsample"] = [
@@ -119,7 +119,7 @@ class Feature_Extractor:
             neighbors_emb = neighbors_emb.cuda(0, non_blocking=True)
         net_inputs = (feat, cell_ind, occupied_cell, neighbors_emb)
 
-        if device_string != 'cpu':
+        if self.device_string != 'cpu':
             with torch.autocast("cuda", enabled=True):
                 # Logits
                 with torch.no_grad():
@@ -150,7 +150,7 @@ class Feature_Extractor:
         
         start_idx = 0
         for it, batch in tqdm(enumerate(loader), desc="SoA testing"):
-            features, labels, soa_result = self.forward_model(it, batch, self.early_exit)
+            features, labels, soa_result = self.forward_model(it, batch)
             shape_sample = labels.shape[0]
             labels = labels.to(dtype = torch.int64, device = self.device, non_blocking=True)
             soa_result = soa_result.to(device=self.device, non_blocking=True)
@@ -413,7 +413,6 @@ if __name__ == "__main__":
     FEAT_SIZE = 768
     NUM_LEVELS = 8000
     BATCH_SIZE = 1  # for GPUs with enough memory we can process multiple images at ones
-    path_pretrained = '/root/main/ScaLR/saved_models/ckpt_last_scalr.pth'
 
     wandb.login(key="9487c04b8eff0c16cac4e785f2b57c3a475767d3")
 
@@ -460,6 +459,8 @@ if __name__ == "__main__":
         dataset_val.init_val()
 
         num_classes = 16
+
+        path_pretrained = '/root/main/ScaLR/saved_models/ckpt_last_scalr.pth'
     
     elif args.dataset == 'semantic_kitti':
 
@@ -485,6 +486,8 @@ if __name__ == "__main__":
         )
 
         num_classes = 19
+
+        path_pretrained = '/root/main/ScaLR/saved_models/ckpt_last_kitti.pth'
     
     else:
         raise Exception("Dataset Not identified")
