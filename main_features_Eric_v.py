@@ -316,6 +316,10 @@ if __name__ == "__main__":
     features = torch.load('/root/main/ScaLR/debug/semantic_kitti/feat_train_semkitti.pt', weights_only="False")
     labels = torch.load('/root/main/ScaLR/debug/semantic_kitti/labels_train_semkitti.pt', weights_only="False")
     num_voxels = torch.load('/root/main/ScaLR/debug/semantic_kitti/voxels_train_semkitti.pt', weights_only="False")
+    arrays_test = torch.load('/root/main/ScaLR/debug/semantic_kitti/soa_test_semkitti.pt', weights_only="False")
+    features_test = torch.load('/root/main/ScaLR/debug/semantic_kitti/feat_test_semkitti.pt', weights_only="False")
+    labels_test = torch.load('/root/main/ScaLR/debug/semantic_kitti/labels_test_semkitti.pt', weights_only="False")
+    num_voxels_test = torch.load('/root/main/ScaLR/debug/semantic_kitti/voxels_test_semkitti.pt', weights_only="False")
 
     print("SOA results\n")
     test_soa(arrays, labels, num_voxels, device)
@@ -323,6 +327,6 @@ if __name__ == "__main__":
     model = HD_Model(INPUT_DIM, HD_DIM, num_classes, device)
 
     model.train(features, labels, num_voxels)
-    model.test_hd(features, labels, num_voxels)
+    model.test_hd(features_test, labels_test, num_voxels_test)
     model.retrain(features, labels, num_voxels)
-    model.test_hd(features, labels, num_voxels)
+    model.test_hd(features_test, labels_test, num_voxels_test)
