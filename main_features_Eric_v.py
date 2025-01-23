@@ -264,7 +264,7 @@ def test_soa(results, labels, num_voxels, device):
         first_label = labels[i][:shape_sample].to(torch.int64)
         final_labels[start_idx:start_idx+shape_sample] = first_label
 
-        pred = first_sample.max(1)[1]
+        pred = first_sample#.max(1)[1]
         final_pred[start_idx:start_idx+shape_sample] = pred
 
         start_idx += shape_sample
@@ -309,10 +309,10 @@ if __name__ == "__main__":
     num_classes = 19
 
     # Loading the data
-    arrays = torch.load('/root/main/ScaLR/debug/semantic_kitti/soa_train_semkitti.pt')
-    features = torch.load('/root/main/ScaLR/debug/semantic_kitti/feat_train_semkitti.pt')
-    labels = torch.load('/root/main/ScaLR/debug/semantic_kitti/labels_train_semkitti.pt')
-    num_voxels = torch.load('/root/main/ScaLR/debug/semantic_kitti/voxels_train_semkitti.pt')
+    arrays = torch.load('/root/main/ScaLR/debug/semantic_kitti/soa_train_semkitti.pt', weights_only="False")
+    features = torch.load('/root/main/ScaLR/debug/semantic_kitti/feat_train_semkitti.pt', weights_only="False")
+    labels = torch.load('/root/main/ScaLR/debug/semantic_kitti/labels_train_semkitti.pt', weights_only="False")
+    num_voxels = torch.load('/root/main/ScaLR/debug/semantic_kitti/voxels_train_semkitti.pt', weights_only="False")
 
     print("SOA results\n")
     test_soa(arrays, labels, num_voxels, device)
