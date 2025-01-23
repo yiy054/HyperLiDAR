@@ -35,7 +35,6 @@ class HD_Model:
         self.device = device
         self.num_classes = num_classes
         self.hd_dim = out_dim
-        self.batch_size = 10000
 
     def normalize(self, samples):
 
@@ -48,16 +47,6 @@ class HD_Model:
         print("Std: ", std)
 
         samples = (samples - mean) / (std + 1e-8)
-
-        """Min-max normalization"""
-
-        # Compute the minimum and maximum of the tensor
-        #min_val = samples.min()
-        #max_val = samples.max()
-
-        # Perform Min-Max normalization
-        #normalized_tensor = (samples - min_val) / (max_val - min_val)
-        #samples = normalized_tensor * (max_range - min_range) + min_range
 
         return samples
     
@@ -100,18 +89,43 @@ class HD_Model:
         print("\nTrain First\n")
 
         for i in tqdm(range(len(features)), desc="1st Training:"):
-            first_sample = features[i][:,:int(num_voxels[i])].to(self.device)
-            first_sample = torch.transpose(first_sample, 0, 1)
-            first_label = labels[i][:int(num_voxels[i])].to(torch.int32).to(self.device)
+            first_sample = torch.Tensor(features[i][:int(num_voxels[i])]).to(self.device)
+            first_label = torch.Tensor(labels[i][:int(num_voxels[i])]).to(torch.int32).to(self.device)
+
             first_sample = self.normalize(first_sample) # Z1 score seems to work
 
-            #for batch in range(0,num_voxels[i], self.batch_size): # [batch:batch+self.batch_size]
+            #for vox in range(len(first_sample)):
                 
-                # HD training
+            #    label = first_label[vox]
+            #    if vox % 5000 == 0:
+            #        print(f"Sample {i}: Voxel {vox}")
+                
+            # HD training
 
             samples_hv = self.encode(first_sample).to(torch.int32)
 
-                ### Class Imbalance
+            ### Class Imbalance
+
+            """samples_per_class = torch.bincount(first_label)
+            samples_dif_0 = samples_per_class[samples_per_class != 0]
+            classes_available = samples_dif_0.shape[0]
+            weight_for_class_i = first_label.shape[0] / ( samples_dif_0 * classes_available)
+
+            c = 0
+            for real_c in range(self.num_classes):
+                if samples_per_class[real_c] > 0:
+                    #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
+                    here = first_label == real_c
+                    self.model.add(samples_hv[here], first_label[here], lr=weight_for_class_i[c])
+                    c += 1"""
+            
+            #### Original ####
+            #temp = torch.zeros(self.num_classes, self.hd_dim, dtype=torch.int32).to(self.device)
+            #temp.index_add_(0, first_label, samples_hv)
+            #print("Min: ", torch.min(temp), "\nMax: ", torch.max(temp))
+            #temp = temp
+            # Add the 16 bit integer
+            #self.model.weight = nn.Parameter(self.model.weight + temp, requires_grad=False) # Addition
             self.model.add(samples_hv, first_label)
             #print(self.model.weight)
             #x = input("Enter")
@@ -120,7 +134,7 @@ class HD_Model:
         #self.model.normalize() # Min Max
         self.model.weight = nn.Parameter(torchhd.normalize(self.model.weight), requires_grad=False) # Binary
 
-    def retrain(self, features, labels, num_voxels, features_test, labels_test, num_voxel_test):
+    def retrain(self, features, labels, num_voxels):
         
         """ Retrain with misclassified samples (also substract)"""
         
@@ -128,14 +142,23 @@ class HD_Model:
             count = 0
 
             for i in range(len(features)):
-                first_sample = features[i][:,:int(num_voxels[i])].to(self.device)
-                first_sample = torch.transpose(first_sample, 0, 1)
-                first_label = labels[i][:int(num_voxels[i])].to(torch.int32).to(self.device)
-                first_sample = self.normalize(first_sample)
+                first_sample = torch.Tensor(features[i][:int(num_voxels[i])]).to(self.device)
+                first_label = torch.Tensor(labels[i][:int(num_voxels[i])]).to(torch.int32).to(self.device)
 
-                #for batch in range(0,num_voxels[i], self.batch_size):
+                first_sample = self.normalize(first_sample) # Z1 score seems to work
 
-                    #for vox in range(len(first_sample)):
+                #samples_per_class = torch.bincount(first_label)
+                
+                ##### Like loss for NN #########
+                #weight_for_class_i = first_label.shape[0] / (( samples_per_class * num_classes) + 1e-6)
+                
+                ##### Inverse weights ####
+                #inverse_weights = 1.0 / (samples_per_class + 1.0)
+    
+                # Normalize the weights to sum to 1
+                #normalized_weights = inverse_weights / torch.sum(inverse_weights)
+
+                #for vox in range(len(first_sample)):
                 samples_hv = self.encode(first_sample)
                 sim = self.model(samples_hv, dot=True)
                 pred_hd = sim.argmax(1).data
@@ -168,8 +191,21 @@ class HD_Model:
                 self.model.weight.index_add_(0, first_label, samples_hv)
                 self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1)
 
+                ##### Try with int 16 #####
+                #temp_1 = torch.zeros(self.num_classes, self.hd_dim, dtype=torch.int32).to(self.device)
+                #temp_1.index_add_(0, first_label, samples_hv).to(torch.int16)
+                #temp_2 = torch.zeros(self.num_classes, self.hd_dim, dtype=torch.int32).to(self.device)
+                #temp_2.index_add_(0, pred_hd, samples_hv, alpha=-1).to(torch.int16)
+                # Add the 16 bit integer
+                #self.model.weight = nn.Parameter(self.model.weight + temp_1, requires_grad=False) # Addition
+                #self.model.weight = nn.Parameter(self.model.weight + temp_2, requires_grad=False) # Addition
+
             # If you want to test for each sample
-            self.test_hd(features_test, labels_test, num_voxel_test)
+            #print(self.model.weight) # Int it is I think...
+            #self.model.weight = nn.Parameter(torch.clamp(self.model.weight, min=-128, max=127).to(torch.int8), requires_grad=False)
+            #print("Min model: ", torch.min(self.model.weight), "\nMax model: ", torch.max(self.model.weight))
+            #print(self.model.weight)
+            self.test_hd(features, labels, num_voxels)
 
     def test_hd(self, features, labels, num_voxels, epoch=0):
 
@@ -178,17 +214,16 @@ class HD_Model:
         assert len(features) == len(labels)
         
         # Metric
-        miou = MulticlassJaccardIndex(num_classes=19, average=None).to(self.device)
-        final_shape = int(torch.sum(num_voxels))
+        miou = MulticlassJaccardIndex(num_classes=16, average=None).to(self.device)
+        final_shape = int(np.sum(num_voxels))
         final_labels = torch.empty((final_shape), device=self.device)
         final_pred = torch.empty((final_shape), device=self.device)
         
         start_idx = 0
         for i in tqdm(range(len(features)), desc="Testing"):
             shape_sample = int(num_voxels[i])
-            first_sample = features[i][:,:shape_sample].to(self.device)
-            first_sample = torch.transpose(first_sample, 0, 1)
-            first_label = labels[i][:shape_sample].to(torch.int64)
+            first_sample = torch.Tensor(features[i][:shape_sample]).to(self.device)
+            first_label = torch.Tensor(labels[i][:shape_sample]).to(torch.int64)
             final_labels[start_idx:start_idx+shape_sample] = first_label
 
             first_sample = self.normalize(first_sample) # Z1 score seems to work
@@ -224,21 +259,19 @@ def test_soa(results, labels, num_voxels, device):
     assert len(results) == len(labels)
         
     # Metric
-    miou = MulticlassJaccardIndex(num_classes=19, average=None).to(device)
-    print(num_voxels)
-    final_shape = int(torch.sum(num_voxels))
-    print(final_shape)
+    miou = MulticlassJaccardIndex(num_classes=16, average=None).to(device)
+    final_shape = int(np.sum(num_voxels))
     final_labels = torch.empty((final_shape), device=device)
     final_pred = torch.empty((final_shape), device=device)
     
     start_idx = 0
     for i in tqdm(range(len(results)), desc="Testing SoA"):
         shape_sample = int(num_voxels[i])
-        first_sample = results[i][:shape_sample].to(device)
-        first_label = labels[i][:shape_sample].to(torch.int64)
+        first_sample = torch.Tensor(results[i][:shape_sample]).to(device)
+        first_label = torch.Tensor(labels[i][:shape_sample]).to(torch.int64)
         final_labels[start_idx:start_idx+shape_sample] = first_label
 
-        pred = first_sample#.max(1)[1]
+        pred = first_sample.max(1)[1]
         final_pred[start_idx:start_idx+shape_sample] = pred
 
         start_idx += shape_sample
@@ -261,7 +294,7 @@ def test_soa(results, labels, num_voxels, device):
 
 if __name__ == "__main__":
 
-    #wandb.login(key="9487c04b8eff0c16cac4e785f2b57c3a475767d3")
+    wandb.login(key="9487c04b8eff0c16cac4e785f2b57c3a475767d3")
 
     """run = wandb.init(
         # Set the project where this run will be logged
@@ -280,24 +313,20 @@ if __name__ == "__main__":
 
     INPUT_DIM = 768
     HD_DIM = 10000
-    num_classes = 19
+    num_classes = 16
 
     # Loading the data
-    arrays = torch.load('/root/main/ScaLR/debug/semantic_kitti/soa_train_semkitti.pt', weights_only="False")
-    features = torch.load('/root/main/ScaLR/debug/semantic_kitti/feat_train_semkitti.pt', weights_only="False")
-    labels = torch.load('/root/main/ScaLR/debug/semantic_kitti/labels_train_semkitti.pt', weights_only="False")
-    num_voxels = torch.load('/root/main/ScaLR/debug/semantic_kitti/voxels_train_semkitti.pt', weights_only="False")
-    arrays_test = torch.load('/root/main/ScaLR/debug/semantic_kitti/soa_test_semkitti.pt', weights_only="False")
-    features_test = torch.load('/root/main/ScaLR/debug/semantic_kitti/feat_test_semkitti.pt', weights_only="False")
-    labels_test = torch.load('/root/main/ScaLR/debug/semantic_kitti/labels_test_semkitti.pt', weights_only="False")
-    num_voxels_test = torch.load('/root/main/ScaLR/debug/semantic_kitti/voxels_test_semkitti.pt', weights_only="False")
+    arrays = np.load('/root/main/ScaLR/debug/SoA_results.npy')
+    features = np.load('/root/main/ScaLR/debug/SoA_features.npy')
+    labels = np.load('/root/main/ScaLR/debug/SoA_labels.npy')
+    num_voxels = np.load('/root/main/ScaLR/debug/num_voxels.npy')
 
-    print("SOA results\n")
-    test_soa(arrays_test, labels_test, num_voxels_test, device)
+    #print("SOA results\n")
+    #test_soa(arrays, labels, num_voxels, device)
 
     model = HD_Model(INPUT_DIM, HD_DIM, num_classes, device)
 
     model.train(features, labels, num_voxels)
-    model.test_hd(features_test, labels_test, num_voxels_test)
-    model.retrain(features, labels, num_voxels, features_test, labels_test, num_voxels_test)
-    model.test_hd(features_test, labels_test, num_voxels_test)
+    model.test_hd(features, labels, num_voxels)
+    model.retrain(features, labels, num_voxels)
+    model.test_hd(features, labels, num_voxels)
