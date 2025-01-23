@@ -109,7 +109,7 @@ class HD_Model:
                 samples_hv = self.encode(first_sample[batch:batch+self.batch_size]).to(torch.int32)
 
                 ### Class Imbalance
-                self.model.add(samples_hv, first_label)
+                self.model.add(samples_hv, first_label[batch:batch+self.batch_size])
             #print(self.model.weight)
             #x = input("Enter")
 
@@ -137,7 +137,7 @@ class HD_Model:
                     sim = self.model(samples_hv, dot=True)
                     pred_hd = sim.argmax(1).data
 
-                    is_wrong = first_label != pred_hd
+                    is_wrong = first_label[batch:batch+self.batch_size] != pred_hd
 
                     # cancel update if all predictions were correct
                     if is_wrong.sum().item() == 0:
@@ -145,7 +145,7 @@ class HD_Model:
 
                     # only update wrongly predicted inputs
                     samples_hv = samples_hv[is_wrong]
-                    first_label = first_label[is_wrong]
+                    first_label_sm = first_label[batch:batch+self.batch_size][is_wrong]
                     pred_hd = pred_hd[is_wrong]
 
                     #count = first_label.shape[0]
@@ -162,7 +162,7 @@ class HD_Model:
                     #print(f"Misclassified for {i}: ", count)
 
                     ## Original ###
-                    self.model.weight.index_add_(0, first_label, samples_hv)
+                    self.model.weight.index_add_(0, first_label_sm, samples_hv)
                     self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1)
 
             # If you want to test for each sample
