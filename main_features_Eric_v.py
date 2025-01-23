@@ -253,7 +253,7 @@ def test_soa(results, labels, num_voxels, device):
         
     # Metric
     miou = MulticlassJaccardIndex(num_classes=19, average=None).to(device)
-    final_shape = int(np.sum(num_voxels))
+    final_shape = int(torch.sum(num_voxels))
     final_labels = torch.empty((final_shape), device=device)
     final_pred = torch.empty((final_shape), device=device)
     
