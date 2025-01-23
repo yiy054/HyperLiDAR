@@ -35,6 +35,7 @@ class HD_Model:
         self.device = device
         self.num_classes = num_classes
         self.hd_dim = out_dim
+        self.batch_size = 10000
 
     def normalize(self, samples):
 
@@ -99,36 +100,16 @@ class HD_Model:
             first_sample = features[i][:,:int(num_voxels[i])].to(self.device)
             first_sample = torch.transpose(first_sample, 0, 1)
             first_label = labels[i][:int(num_voxels[i])].to(torch.int32).to(self.device)
-
             first_sample = self.normalize(first_sample) # Z1 score seems to work
+
+            for batch in range(0,num_voxels[i], self.batch_size):
                 
-            # HD training
+                # HD training
 
-            samples_hv = self.encode(first_sample).to(torch.int32)
+                samples_hv = self.encode(first_sample[batch:batch+self.batch_size]).to(torch.int32)
 
-            ### Class Imbalance
-
-            """samples_per_class = torch.bincount(first_label)
-            samples_dif_0 = samples_per_class[samples_per_class != 0]
-            classes_available = samples_dif_0.shape[0]
-            weight_for_class_i = first_label.shape[0] / ( samples_dif_0 * classes_available)
-
-            c = 0
-            for real_c in range(self.num_classes):
-                if samples_per_class[real_c] > 0:
-                    #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
-                    here = first_label == real_c
-                    self.model.add(samples_hv[here], first_label[here], lr=weight_for_class_i[c])
-                    c += 1"""
-            
-            #### Original ####
-            #temp = torch.zeros(self.num_classes, self.hd_dim, dtype=torch.int32).to(self.device)
-            #temp.index_add_(0, first_label, samples_hv)
-            #print("Min: ", torch.min(temp), "\nMax: ", torch.max(temp))
-            #temp = temp
-            # Add the 16 bit integer
-            #self.model.weight = nn.Parameter(self.model.weight + temp, requires_grad=False) # Addition
-            self.model.add(samples_hv, first_label)
+                ### Class Imbalance
+                self.model.add(samples_hv, first_label)
             #print(self.model.weight)
             #x = input("Enter")
 
@@ -147,67 +128,44 @@ class HD_Model:
                 first_sample = features[i][:,:int(num_voxels[i])].to(self.device)
                 first_sample = torch.transpose(first_sample, 0, 1)
                 first_label = labels[i][:int(num_voxels[i])].to(torch.int32).to(self.device)
+                first_sample = self.normalize(first_sample)
 
-                first_sample = self.normalize(first_sample) # Z1 score seems to work
+                for batch in range(0,num_voxels[i], self.batch_size):
 
-                #samples_per_class = torch.bincount(first_label)
-                
-                ##### Like loss for NN #########
-                #weight_for_class_i = first_label.shape[0] / (( samples_per_class * num_classes) + 1e-6)
-                
-                ##### Inverse weights ####
-                #inverse_weights = 1.0 / (samples_per_class + 1.0)
-    
-                # Normalize the weights to sum to 1
-                #normalized_weights = inverse_weights / torch.sum(inverse_weights)
+                    #for vox in range(len(first_sample)):
+                    samples_hv = self.encode(first_sample[batch:batch+self.batch_size])
+                    sim = self.model(samples_hv, dot=True)
+                    pred_hd = sim.argmax(1).data
 
-                #for vox in range(len(first_sample)):
-                samples_hv = self.encode(first_sample)
-                sim = self.model(samples_hv, dot=True)
-                pred_hd = sim.argmax(1).data
+                    is_wrong = first_label != pred_hd
 
-                is_wrong = first_label != pred_hd
+                    # cancel update if all predictions were correct
+                    if is_wrong.sum().item() == 0:
+                        continue
 
-                # cancel update if all predictions were correct
-                if is_wrong.sum().item() == 0:
-                    continue
+                    # only update wrongly predicted inputs
+                    samples_hv = samples_hv[is_wrong]
+                    first_label = first_label[is_wrong]
+                    pred_hd = pred_hd[is_wrong]
 
-                # only update wrongly predicted inputs
-                samples_hv = samples_hv[is_wrong]
-                first_label = first_label[is_wrong]
-                pred_hd = pred_hd[is_wrong]
+                    #count = first_label.shape[0]
 
-                #count = first_label.shape[0]
+                    """
+                    for c in range(self.num_classes):
+                        if samples_per_class[c] > 0:
+                            #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
+                            here = first_label == c
+                            self.model.weight.index_add_(0, first_label[here], samples_hv[here], alpha=weight_for_class_i[c])
+                            self.model.weight.index_add_(0, pred_hd[here], samples_hv[here], alpha=-1*weight_for_class_i[c])
+                    """
+                            
+                    #print(f"Misclassified for {i}: ", count)
 
-                """
-                for c in range(self.num_classes):
-                    if samples_per_class[c] > 0:
-                        #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
-                        here = first_label == c
-                        self.model.weight.index_add_(0, first_label[here], samples_hv[here], alpha=weight_for_class_i[c])
-                        self.model.weight.index_add_(0, pred_hd[here], samples_hv[here], alpha=-1*weight_for_class_i[c])
-                """
-                        
-                #print(f"Misclassified for {i}: ", count)
-
-                ## Original ###
-                self.model.weight.index_add_(0, first_label, samples_hv)
-                self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1)
-
-                ##### Try with int 16 #####
-                #temp_1 = torch.zeros(self.num_classes, self.hd_dim, dtype=torch.int32).to(self.device)
-                #temp_1.index_add_(0, first_label, samples_hv).to(torch.int16)
-                #temp_2 = torch.zeros(self.num_classes, self.hd_dim, dtype=torch.int32).to(self.device)
-                #temp_2.index_add_(0, pred_hd, samples_hv, alpha=-1).to(torch.int16)
-                # Add the 16 bit integer
-                #self.model.weight = nn.Parameter(self.model.weight + temp_1, requires_grad=False) # Addition
-                #self.model.weight = nn.Parameter(self.model.weight + temp_2, requires_grad=False) # Addition
+                    ## Original ###
+                    self.model.weight.index_add_(0, first_label, samples_hv)
+                    self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1)
 
             # If you want to test for each sample
-            #print(self.model.weight) # Int it is I think...
-            #self.model.weight = nn.Parameter(torch.clamp(self.model.weight, min=-128, max=127).to(torch.int8), requires_grad=False)
-            #print("Min model: ", torch.min(self.model.weight), "\nMax model: ", torch.max(self.model.weight))
-            #print(self.model.weight)
             self.test_hd(features_test, labels_test, num_voxel_test)
 
     def test_hd(self, features, labels, num_voxels, epoch=0):
