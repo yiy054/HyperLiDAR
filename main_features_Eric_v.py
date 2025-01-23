@@ -207,16 +207,17 @@ class HD_Model:
         assert len(features) == len(labels)
         
         # Metric
-        miou = MulticlassJaccardIndex(num_classes=16, average=None).to(self.device)
-        final_shape = int(np.sum(num_voxels))
+        miou = MulticlassJaccardIndex(num_classes=19, average=None).to(self.device)
+        final_shape = int(torch.sum(num_voxels))
         final_labels = torch.empty((final_shape), device=self.device)
         final_pred = torch.empty((final_shape), device=self.device)
         
         start_idx = 0
         for i in tqdm(range(len(features)), desc="Testing"):
             shape_sample = int(num_voxels[i])
-            first_sample = torch.Tensor(features[i][:shape_sample]).to(self.device)
-            first_label = torch.Tensor(labels[i][:shape_sample]).to(torch.int64)
+            first_sample = features[i][:,:shape_sample].to(self.device)
+            first_sample = torch.transpose(first_sample, 0, 1)
+            first_label = labels[i][:shape_sample].to(torch.int64)
             final_labels[start_idx:start_idx+shape_sample] = first_label
 
             first_sample = self.normalize(first_sample) # Z1 score seems to work
