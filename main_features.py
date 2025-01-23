@@ -172,9 +172,8 @@ def train(features, labels, num_voxels, device):
 for i in range(101):
     # compute the accuracy of the one sample
     first_sample = features[i][:,:int(num_voxels[i])].to(device)
-    print(first_sample.shape)
-
     first_label = labels[i][:int(num_voxels[i])].to(torch.int32).to(device)
+    first_sample = torch.transpose(first_sample, 0, 1)
 
     first_sample = normalize(first_sample) # min_val, max_val
 
