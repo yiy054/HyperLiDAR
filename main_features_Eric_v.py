@@ -126,7 +126,7 @@ class HD_Model:
         #self.model.normalize() # Min Max
         self.model.weight = nn.Parameter(torchhd.normalize(self.model.weight), requires_grad=False) # Binary
 
-    def retrain(self, features, labels, num_voxels):
+    def retrain(self, features, labels, num_voxels, features_test, labels_test, num_voxel_test):
         
         """ Retrain with misclassified samples (also substract)"""
         
@@ -198,7 +198,7 @@ class HD_Model:
             #self.model.weight = nn.Parameter(torch.clamp(self.model.weight, min=-128, max=127).to(torch.int8), requires_grad=False)
             #print("Min model: ", torch.min(self.model.weight), "\nMax model: ", torch.max(self.model.weight))
             #print(self.model.weight)
-            self.test_hd(features, labels, num_voxels)
+            self.test_hd(features_test, labels_test, num_voxel_test)
 
     def test_hd(self, features, labels, num_voxels, epoch=0):
 
@@ -328,5 +328,5 @@ if __name__ == "__main__":
 
     model.train(features, labels, num_voxels)
     model.test_hd(features_test, labels_test, num_voxels_test)
-    model.retrain(features, labels, num_voxels)
+    model.retrain(features, labels, num_voxels, features_test, labels_test, num_voxels_test)
     model.test_hd(features_test, labels_test, num_voxels_test)
