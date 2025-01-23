@@ -191,7 +191,7 @@ for i in range(101):
     print('pred_hd', pred_hd)
     print('label', first_label)
     accuracy = miou(pred_hd, first_label)
-    cm = confusion_matrix(pred_hd, first_label, labels=torch.Tensor(range(0,15)))
+    cm = confusion_matrix(pred_hd.cpu(), first_label.cpu(), labels=torch.Tensor(range(0,15)))
     print("Confusion matrix \n")
     print(cm)
     avg_acc = torch.mean(accuracy)
