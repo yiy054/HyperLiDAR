@@ -45,6 +45,16 @@ class HD_Model:
 
         samples = (samples - mean) / (std + 1e-8)
 
+        """Min-max normalization"""
+
+        # Compute the minimum and maximum of the tensor
+        #min_val = samples.min()
+        #max_val = samples.max()
+
+        # Perform Min-Max normalization
+        #normalized_tensor = (samples - min_val) / (max_val - min_val)
+        #samples = normalized_tensor * (max_range - min_range) + min_range
+
         return samples
     
     def quantize_integer_to_nbit(self, tensor, n_bits):
@@ -308,7 +318,7 @@ if __name__ == "__main__":
     print("Using {} device".format(device))
 
     INPUT_DIM = 768
-    HD_DIM = 10000
+    HD_DIM = 20000
     num_classes = 19
 
     # Loading the data
