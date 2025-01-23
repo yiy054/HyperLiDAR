@@ -86,16 +86,11 @@ class HD_Model:
         print("\nTrain First\n")
 
         for i in tqdm(range(len(features)), desc="1st Training:"):
-            first_sample = torch.Tensor(features[i][:int(num_voxels[i])]).to(self.device)
-            first_label = torch.Tensor(labels[i][:int(num_voxels[i])]).to(torch.int32).to(self.device)
+            first_sample = features[i][:,:int(num_voxels[i])].to(self.device)
+            first_sample = torch.transpose(first_sample, 0, 1)
+            first_label = labels[i][:int(num_voxels[i])].to(torch.int32).to(self.device)
 
             first_sample = self.normalize(first_sample) # Z1 score seems to work
-
-            #for vox in range(len(first_sample)):
-                
-            #    label = first_label[vox]
-            #    if vox % 5000 == 0:
-            #        print(f"Sample {i}: Voxel {vox}")
                 
             # HD training
 
@@ -139,8 +134,9 @@ class HD_Model:
             count = 0
 
             for i in range(len(features)):
-                first_sample = torch.Tensor(features[i][:int(num_voxels[i])]).to(self.device)
-                first_label = torch.Tensor(labels[i][:int(num_voxels[i])]).to(torch.int32).to(self.device)
+                first_sample = features[i][:,:int(num_voxels[i])].to(self.device)
+                first_sample = torch.transpose(first_sample, 0, 1)
+                first_label = labels[i][:int(num_voxels[i])].to(torch.int32).to(self.device)
 
                 first_sample = self.normalize(first_sample) # Z1 score seems to work
 
@@ -256,7 +252,7 @@ def test_soa(results, labels, num_voxels, device):
     assert len(results) == len(labels)
         
     # Metric
-    miou = MulticlassJaccardIndex(num_classes=16, average=None).to(device)
+    miou = MulticlassJaccardIndex(num_classes=19, average=None).to(device)
     final_shape = int(np.sum(num_voxels))
     final_labels = torch.empty((final_shape), device=device)
     final_pred = torch.empty((final_shape), device=device)
@@ -264,8 +260,8 @@ def test_soa(results, labels, num_voxels, device):
     start_idx = 0
     for i in tqdm(range(len(results)), desc="Testing SoA"):
         shape_sample = int(num_voxels[i])
-        first_sample = torch.Tensor(results[i][:shape_sample]).to(device)
-        first_label = torch.Tensor(labels[i][:shape_sample]).to(torch.int64)
+        first_sample = results[i][:shape_sample].to(device)
+        first_label = labels[i][:shape_sample].to(torch.int64)
         final_labels[start_idx:start_idx+shape_sample] = first_label
 
         pred = first_sample.max(1)[1]
@@ -291,7 +287,7 @@ def test_soa(results, labels, num_voxels, device):
 
 if __name__ == "__main__":
 
-    wandb.login(key="9487c04b8eff0c16cac4e785f2b57c3a475767d3")
+    #wandb.login(key="9487c04b8eff0c16cac4e785f2b57c3a475767d3")
 
     """run = wandb.init(
         # Set the project where this run will be logged
@@ -310,16 +306,16 @@ if __name__ == "__main__":
 
     INPUT_DIM = 768
     HD_DIM = 10000
-    num_classes = 16
+    num_classes = 19
 
     # Loading the data
-    arrays = np.load('/root/main/ScaLR/debug/SoA_results.npy')
-    features = np.load('/root/main/ScaLR/debug/SoA_features.npy')
-    labels = np.load('/root/main/ScaLR/debug/SoA_labels.npy')
-    num_voxels = np.load('/root/main/ScaLR/debug/num_voxels.npy')
+    arrays = torch.load('/root/main/ScaLR/debug/semantic_kitti/soa_train_semkitti.pt')
+    features = torch.load('/root/main/ScaLR/debug/semantic_kitti/feat_train_semkitti.pt')
+    labels = torch.load('/root/main/ScaLR/debug/semantic_kitti/labels_train_semkitti.pt')
+    num_voxels = torch.load('/root/main/ScaLR/debug/semantic_kitti/voxels_train_semkitti.pt')
 
-    #print("SOA results\n")
-    #test_soa(arrays, labels, num_voxels, device)
+    print("SOA results\n")
+    test_soa(arrays, labels, num_voxels, device)
 
     model = HD_Model(INPUT_DIM, HD_DIM, num_classes, device)
 
