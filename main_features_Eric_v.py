@@ -318,7 +318,7 @@ if __name__ == "__main__":
     print("Using {} device".format(device))
 
     INPUT_DIM = 768
-    HD_DIM = 20000
+    HD_DIM = 15000
     num_classes = 19
 
     # Loading the data
