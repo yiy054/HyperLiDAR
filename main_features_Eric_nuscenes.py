@@ -294,7 +294,7 @@ def test_soa(results, labels, num_voxels, device):
 
 if __name__ == "__main__":
 
-    wandb.login(key="9487c04b8eff0c16cac4e785f2b57c3a475767d3")
+    #wandb.login(key="9487c04b8eff0c16cac4e785f2b57c3a475767d3")
 
     """run = wandb.init(
         # Set the project where this run will be logged
@@ -316,10 +316,10 @@ if __name__ == "__main__":
     num_classes = 16
 
     # Loading the data
-    arrays = np.load('/root/main/ScaLR/debug/SoA_results.npy')
-    features = np.load('/root/main/ScaLR/debug/SoA_features.npy')
-    labels = np.load('/root/main/ScaLR/debug/SoA_labels.npy')
-    num_voxels = np.load('/root/main/ScaLR/debug/num_voxels.npy')
+    arrays = np.load('/root/main/ScaLR/debug/nuscenes/SoA_results.npy')
+    features = np.load('/root/main/ScaLR/debug/nuscenes/SoA_features.npy')
+    labels = np.load('/root/main/ScaLR/debug/nuscenes/SoA_labels.npy')
+    num_voxels = np.load('/root/main/ScaLR/debug/nuscenes/num_voxels.npy')
 
     #print("SOA results\n")
     #test_soa(arrays, labels, num_voxels, device)
