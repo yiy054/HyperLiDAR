@@ -44,9 +44,6 @@ class HD_Model:
         mean = torch.mean(samples, dim=0)
         std = torch.std(samples, dim=0)
 
-        print("Mean: ", mean)
-        print("Std: ", std)
-
         samples = (samples - mean) / (std + 1e-8)
 
         """Min-max normalization"""
@@ -91,7 +88,7 @@ class HD_Model:
 
         return quantized.int()  # Return as integer tensor
 
-    def train(self, features, labels, num_voxels):
+    def train(self, features, labels, num_voxels, points):
 
         """ Initial training pass """
 
@@ -99,79 +96,69 @@ class HD_Model:
 
         print("\nTrain First\n")
 
+        batch = 10000
+
         for i in tqdm(range(len(features)), desc="1st Training:"):
-            first_sample = features[i][:,:int(num_voxels[i])].to(self.device)
-            first_sample = torch.transpose(first_sample, 0, 1)
-            first_label = labels[i][:int(num_voxels[i])].to(torch.int32).to(self.device)
-            first_sample = self.normalize(first_sample) # Z1 score seems to work
-
-            #for batch in range(0,num_voxels[i], self.batch_size): # [batch:batch+self.batch_size]
-                
+            for b in range(0,int(num_voxels[i]), batch):
+                end = min(b + batch, int(num_voxels[i]))  # Ensure we don't exceed num_voxels[i]
+                first_sample = features[i][:,b:end].to(self.device)
+                first_sample = torch.transpose(first_sample, 0, 1)
+                first_label = labels[i][b:end].to(torch.int32).to(self.device)
+                first_sample = self.normalize(first_sample) # Z1 score seems to work
+                    
                 # HD training
-
-            samples_hv = self.encode(first_sample).to(torch.int32)
+                samples_hv = self.encode(first_sample).to(torch.int32)
 
                 ### Class Imbalance
-            self.model.add(samples_hv, first_label)
-            #print(self.model.weight)
-            #x = input("Enter")
+                self.model.add(samples_hv, first_label)
 
         # Normalizing works way better :)
         #self.model.normalize() # Min Max
         self.model.weight = nn.Parameter(torchhd.normalize(self.model.weight), requires_grad=False) # Binary
 
-    def retrain(self, features, labels, num_voxels, features_test, labels_test, num_voxel_test):
+    def retrain(self, features, labels, num_voxels, points, features_test, labels_test, num_voxel_test, points_test):
         
         """ Retrain with misclassified samples (also substract)"""
+
+        batch = 10000
         
         for e in tqdm(range(10), desc="Epoch"):
             count = 0
 
             for i in range(len(features)):
-                first_sample = features[i][:,:int(num_voxels[i])].to(self.device)
-                first_sample = torch.transpose(first_sample, 0, 1)
-                first_label = labels[i][:int(num_voxels[i])].to(torch.int32).to(self.device)
-                first_sample = self.normalize(first_sample)
+                for b in range(0,int(num_voxels[i]), batch):
+                    end = min(b + batch, int(num_voxels[i]))  # Ensure we don't exceed num_voxels[i]
+                    first_sample = features[i][:,b:end].to(self.device)
+                    first_sample = torch.transpose(first_sample, 0, 1)
+                    first_label = labels[i][b:end].to(torch.int32).to(self.device)
+                    first_sample = self.normalize(first_sample)
 
-                #for batch in range(0,num_voxels[i], self.batch_size):
+                    #for batch in range(0,num_voxels[i], self.batch_size):
 
-                    #for vox in range(len(first_sample)):
-                samples_hv = self.encode(first_sample)
-                sim = self.model(samples_hv, dot=True)
-                pred_hd = sim.argmax(1).data
+                        #for vox in range(len(first_sample)):
+                    samples_hv = self.encode(first_sample)
+                    sim = self.model(samples_hv, dot=True)
+                    pred_hd = sim.argmax(1).data
 
-                is_wrong = first_label != pred_hd
+                    is_wrong = first_label != pred_hd
 
-                # cancel update if all predictions were correct
-                if is_wrong.sum().item() == 0:
-                    continue
+                    # cancel update if all predictions were correct
+                    if is_wrong.sum().item() == 0:
+                        continue
 
-                # only update wrongly predicted inputs
-                samples_hv = samples_hv[is_wrong]
-                first_label = first_label[is_wrong]
-                pred_hd = pred_hd[is_wrong]
+                    # only update wrongly predicted inputs
+                    samples_hv = samples_hv[is_wrong]
+                    first_label = first_label[is_wrong]
+                    pred_hd = pred_hd[is_wrong]
 
-                #count = first_label.shape[0]
-
-                """
-                for c in range(self.num_classes):
-                    if samples_per_class[c] > 0:
-                        #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
-                        here = first_label == c
-                        self.model.weight.index_add_(0, first_label[here], samples_hv[here], alpha=weight_for_class_i[c])
-                        self.model.weight.index_add_(0, pred_hd[here], samples_hv[here], alpha=-1*weight_for_class_i[c])
-                """
-                        
-                #print(f"Misclassified for {i}: ", count)
-
-                ## Original ###
-                self.model.weight.index_add_(0, first_label, samples_hv)
-                self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1)
+                    ## Original ###
+                    self.model.weight.index_add_(0, first_label, samples_hv)
+                    self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1)
 
             # If you want to test for each sample
-            self.test_hd(features_test, labels_test, num_voxel_test)
+            self.test_hd(features_test, labels_test, num_voxel_test, points_test)
 
-    def test_hd(self, features, labels, num_voxels, epoch=0):
+    def test_hd(self, features, labels, num_voxels, points, epoch=0):
 
         """ Testing over all the samples in all the scans given """
 
@@ -184,21 +171,23 @@ class HD_Model:
         final_pred = torch.empty((final_shape), device=self.device)
         
         start_idx = 0
+        batch = 10000
         for i in tqdm(range(len(features)), desc="Testing"):
-            shape_sample = int(num_voxels[i])
-            first_sample = features[i][:,:shape_sample].to(self.device)
-            first_sample = torch.transpose(first_sample, 0, 1)
-            first_label = labels[i][:shape_sample].to(torch.int64)
-            final_labels[start_idx:start_idx+shape_sample] = first_label
+            for b in range(0,int(num_voxels[i]), batch):
+                end = min(b + batch, int(num_voxels[i]))  # Ensure we don't exceed num_voxels[i]
+                first_sample = features[i][:,b:end].to(self.device)
+                first_sample = torch.transpose(first_sample, 0, 1)
+                first_label = labels[i][b:end].to(torch.int64)
+                final_labels[start_idx:start_idx+end-b] = first_label
 
-            first_sample = self.normalize(first_sample) # Z1 score seems to work
+                first_sample = self.normalize(first_sample) # Z1 score seems to work
 
-            # HD inference
-            samples_hv = self.encode(first_sample)
-            pred_hd = self.model(samples_hv, dot=True).argmax(1).data
-            final_pred[start_idx:start_idx+shape_sample] = pred_hd
+                # HD inference
+                samples_hv = self.encode(first_sample)
+                pred_hd = self.model(samples_hv, dot=True).argmax(1).data
+                final_pred[start_idx:start_idx+end-b] = pred_hd
 
-            start_idx += shape_sample
+                start_idx += end-b
 
         print("================================")
 
@@ -287,17 +276,19 @@ if __name__ == "__main__":
     features = torch.load('/root/main/ScaLR/debug/semantic_kitti/feat_train_semkitti.pt', weights_only="False")
     labels = torch.load('/root/main/ScaLR/debug/semantic_kitti/labels_train_semkitti.pt', weights_only="False")
     num_voxels = torch.load('/root/main/ScaLR/debug/semantic_kitti/voxels_train_semkitti.pt', weights_only="False")
+    points = torch.load('/root/main/ScaLR/debug/semantic_kitti/pts_train_semkitti.pt', weights_only="False")
     arrays_test = torch.load('/root/main/ScaLR/debug/semantic_kitti/soa_test_semkitti.pt', weights_only="False")
     features_test = torch.load('/root/main/ScaLR/debug/semantic_kitti/feat_test_semkitti.pt', weights_only="False")
     labels_test = torch.load('/root/main/ScaLR/debug/semantic_kitti/labels_test_semkitti.pt', weights_only="False")
     num_voxels_test = torch.load('/root/main/ScaLR/debug/semantic_kitti/voxels_test_semkitti.pt', weights_only="False")
+    points_test = torch.load('/root/main/ScaLR/debug/semantic_kitti/pts_test_semkitti.pt', weights_only="False")
 
     print("SOA results\n")
     test_soa(arrays_test, labels_test, num_voxels_test, device)
 
     model = HD_Model(INPUT_DIM, HD_DIM, num_classes, device)
 
-    model.train(features, labels, num_voxels)
-    model.test_hd(features_test, labels_test, num_voxels_test)
-    model.retrain(features, labels, num_voxels, features_test, labels_test, num_voxels_test)
-    model.test_hd(features_test, labels_test, num_voxels_test)
+    model.train(features, labels, num_voxels, points)
+    model.test_hd(features_test, labels_test, num_voxels_test, points)
+    model.retrain(features, labels, num_voxels, points, features_test, labels_test, num_voxels_test, points_test)
+    model.test_hd(features_test, labels_test, num_voxels_test, points_test)
