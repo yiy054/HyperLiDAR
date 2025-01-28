@@ -99,11 +99,20 @@ class HD_Model:
         batch = 10000
 
         for i in tqdm(range(len(features)), desc="1st Training:"):
+            #print("Min and max of this sample \n Min: ", torch.min(points[i], axis=1).values, "\nMax: ", torch.max(points[i], axis=1).values)
             for b in range(0,int(num_voxels[i]), batch):
                 end = min(b + batch, int(num_voxels[i]))  # Ensure we don't exceed num_voxels[i]
-                first_sample = features[i][:,b:end].to(self.device)
+                points_here = points[i][:,b:end]
+                # Assuming points_here is a 2D tensor with shape (N, 3)
+                points_here_idx = (
+                    (points_here[0, :] > -20) & (points_here[0, :] < 20) &
+                    (points_here[1, :] > -20) & (points_here[1, :] < 20) &
+                    (points_here[2, :] > -20) & (points_here[2, :] < 20)
+                )
+
+                first_sample = features[i][:,b:end][:, points_here_idx].to(self.device)
                 first_sample = torch.transpose(first_sample, 0, 1)
-                first_label = labels[i][b:end].to(torch.int32).to(self.device)
+                first_label = labels[i][b:end][points_here_idx].to(torch.int32).to(self.device)
                 first_sample = self.normalize(first_sample) # Z1 score seems to work
                     
                 # HD training
@@ -209,7 +218,7 @@ class HD_Model:
 
         print("================================")
 
-def test_soa(results, labels, num_voxels, device):
+def test_soa(results, labels, num_voxels, points, device):
     assert len(results) == len(labels)
         
     # Metric
@@ -277,14 +286,44 @@ if __name__ == "__main__":
     labels = torch.load('/root/main/ScaLR/debug/semantic_kitti/labels_train_semkitti.pt', weights_only="False")
     num_voxels = torch.load('/root/main/ScaLR/debug/semantic_kitti/voxels_train_semkitti.pt', weights_only="False")
     points = torch.load('/root/main/ScaLR/debug/semantic_kitti/pts_train_semkitti.pt', weights_only="False")
+
+    # Assuming points_here is a 2D tensor with shape (N, 3)
+    for i, vox in enumerate(num_voxels):
+        points_here = points[i][:, :vox]
+        points_here_idx = (
+            (points_here[0, :] > -10) & (points_here[0, :] < 10) &
+            (points_here[1, :] > -10) & (points_here[1, :] < 10) &
+            (points_here[2, :] > -10) & (points_here[2, :] < 10)
+        )
+        new_shape = int(sum(points_here_idx))
+        features[i][:, :new_shape] = features[i][:, :vox][:, points_here_idx]
+        #[:, points_here_idx]
+        labels[i][:new_shape] = labels[i][:vox][points_here_idx]
+        num_voxels[i] = new_shape
+
     arrays_test = torch.load('/root/main/ScaLR/debug/semantic_kitti/soa_test_semkitti.pt', weights_only="False")
     features_test = torch.load('/root/main/ScaLR/debug/semantic_kitti/feat_test_semkitti.pt', weights_only="False")
     labels_test = torch.load('/root/main/ScaLR/debug/semantic_kitti/labels_test_semkitti.pt', weights_only="False")
     num_voxels_test = torch.load('/root/main/ScaLR/debug/semantic_kitti/voxels_test_semkitti.pt', weights_only="False")
     points_test = torch.load('/root/main/ScaLR/debug/semantic_kitti/pts_test_semkitti.pt', weights_only="False")
 
+    # Assuming points_here is a 2D tensor with shape (N, 3)
+    for i, vox in enumerate(num_voxels_test):
+        points_here = points_test[i][:, :vox]
+        points_here_idx = (
+            (points_here[0, :] > -10) & (points_here[0, :] < 10) &
+            (points_here[1, :] > -10) & (points_here[1, :] < 10) &
+            (points_here[2, :] > -10) & (points_here[2, :] < 10)
+        )
+        new_shape = int(sum(points_here_idx))
+        features_test[i][:, :new_shape] = features_test[i][:, :vox][:, points_here_idx]
+        #[:, points_here_idx]
+        labels_test[i][:new_shape] = labels_test[i][:vox][points_here_idx]
+        arrays_test[i][:new_shape] = arrays_test[i][:vox][points_here_idx]
+        num_voxels_test[i] = new_shape
+
     print("SOA results\n")
-    test_soa(arrays_test, labels_test, num_voxels_test, device)
+    test_soa(arrays_test, labels_test, num_voxels_test, points, device)
 
     model = HD_Model(INPUT_DIM, HD_DIM, num_classes, device)
 
