@@ -8,8 +8,11 @@ apt-get -y install cmake libopenblas-dev liblapack-dev libsuperlu-dev libensmall
 #apt-get -y install gcc-10.2 g++-10.2
 apt-get -y install libomp-dev
 apt-get -y install libcereal-dev libstb-dev
+apt-get -y install curl
 
+curl -Lk 'https://code.visualstudio.com/sha/download?build=stable&os=cli-alpine-x64' --output vscode_cli.tar.gz
 
+tar -xf vscode_cli.tar.gz
 # sudo apt-get install libmlpack-dev # add again if crashes with fatal error: mlpack/methods/kmeans/kmeans.hpp
 #conda create --name 3DLabelProp python=3.7
 #conda activate 3DLabelProp
@@ -28,3 +31,6 @@ echo Y | conda install -c torchhd torchhd
 
 # >kubectl cp --retries 10 semantickitti.zip label-prop-5c586cbd99-9snt6:/home/
 # For GUI 
+
+# For VS tunneling
+# ./code tunnel
