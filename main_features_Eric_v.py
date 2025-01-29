@@ -11,6 +11,8 @@ from torchhd import embeddings
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 import seaborn as sns
+from cuml.manifold import TSNE
+
 from tqdm import tqdm
 import wandb
 
@@ -118,6 +120,25 @@ class HD_Model:
                 # HD training
                 samples_hv = self.encode(first_sample).to(torch.int32)
 
+                if i==0 and b==0:
+                    # Apply t-SNE to reduce dimensions to 2D
+                    tsne = TSNE(n_components=2, perplexity=30, random_state=42)
+                    features_2d = tsne.fit_transform(samples_hv)
+
+                    # Plot the t-SNE result
+                    plt.figure(figsize=(10, 8))
+                    scatter = sns.scatterplot(x=features_2d[:, 0], y=features_2d[:, 1], hue=first_label, palette="tab10", alpha=0.7)
+                    plt.legend(title="Classes", bbox_to_anchor=(1.05, 1), loc="upper left")
+                    plt.xlabel("t-SNE Component 1")
+                    plt.ylabel("t-SNE Component 2")
+                    plt.title("t-SNE Visualization of Features")
+
+                    # Save the plot
+                    plt.savefig("tsne_plot_sem_kitti.png", dpi=300, bbox_inches="tight")
+
+                    # Show the plot (optional)
+                    plt.show()
+
                 ### Class Imbalance
                 self.model.add(samples_hv, first_label)
 
@@ -143,9 +164,6 @@ class HD_Model:
                     print(torch.bincount(first_label))
                     first_sample = self.normalize(first_sample)
 
-                    #for batch in range(0,num_voxels[i], self.batch_size):
-
-                        #for vox in range(len(first_sample)):
                     samples_hv = self.encode(first_sample)
                     sim = self.model(samples_hv, dot=True)
                     pred_hd = sim.argmax(1).data
@@ -214,7 +232,7 @@ class HD_Model:
         #wandb.log(log_data)
 
         # Compute the confusion matrix
-        cm = confusion_matrix(final_labels.cpu().numpy(), final_pred.cpu().numpy(), labels=torch.arange(18).numpy())
+        """cm = confusion_matrix(final_labels.cpu().numpy(), final_pred.cpu().numpy(), labels=torch.arange(18).numpy())
 
         # Plot the confusion matrix
         plt.figure(figsize=(16, 8))
@@ -224,7 +242,7 @@ class HD_Model:
         plt.title(f"Confusion Matrix for Epoch {epoch}")
 
         # Save the figure
-        plt.savefig(f"confusion_matrix_{epoch}.png", dpi=300, bbox_inches="tight")
+        plt.savefig(f"confusion_matrix_{epoch}.png", dpi=300, bbox_inches="tight")"""
 
         print("================================")
 
@@ -287,7 +305,7 @@ if __name__ == "__main__":
     print("Using {} device".format(device))
 
     INPUT_DIM = 768
-    HD_DIM = 10000
+    HD_DIM = 50000
     num_classes = 19
 
     # Loading the data

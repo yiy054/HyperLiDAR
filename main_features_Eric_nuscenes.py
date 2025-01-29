@@ -9,6 +9,8 @@ import torchhd
 from torchhd.models import Centroid
 from torchhd import embeddings
 from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt
+import seaborn as sns
 from tqdm import tqdm
 import wandb
 
@@ -40,13 +42,13 @@ class HD_Model:
 
         """ Normalize with Z-score"""
 
-        """mean = torch.mean(samples, dim=0)
+        mean = torch.mean(samples, dim=0)
         std = torch.std(samples, dim=0)
 
-        print("Mean in range: ", min(mean), " ", max(mean))
-        print("Std in range: ", min(std), " ", max(std))
+        #print("Mean in range: ", min(mean), " ", max(mean))
+        #print("Std in range: ", min(std), " ", max(std))
 
-        samples = (samples - mean) / (std + 1e-8)"""
+        samples = (samples - mean) / (std + 1e-8)
 
         """ Min - max"""
 
@@ -66,48 +68,49 @@ class HD_Model:
         assert len(features) == len(labels)
 
         print("\nTrain First\n")
+        batch = 15000
 
         for i in tqdm(range(len(features)), desc="1st Training:"):
-            first_sample = torch.Tensor(features[i][:int(num_voxels[i])]).to(self.device)
-            first_label = torch.Tensor(labels[i][:int(num_voxels[i])]).to(torch.int32).to(self.device)
+            for b in range(0,int(num_voxels[i]), batch):
+                end = min(b + batch, int(num_voxels[i]))  # Ensure we don't exceed num_voxels[i]
+                first_sample = torch.Tensor(features[i][b:end]).to(self.device)
+                first_label = torch.Tensor(labels[i][b:end]).to(torch.int32).to(self.device)
 
-            first_sample = self.normalize(first_sample) # Z1 score seems to work
+                first_sample = self.normalize(first_sample) # Z1 score seems to work
 
-            #for vox in range(len(first_sample)):
+                #for vox in range(len(first_sample)):
+                    
+                #    label = first_label[vox]
+                #    if vox % 5000 == 0:
+                #        print(f"Sample {i}: Voxel {vox}")
+                    
+                # HD training
+
+                samples_hv = self.encode(first_sample).to(torch.int32)
+
+                ### Class Imbalance
+
+                """samples_per_class = torch.bincount(first_label)
+                samples_dif_0 = samples_per_class[samples_per_class != 0]
+                classes_available = samples_dif_0.shape[0]
+                weight_for_class_i = first_label.shape[0] / ( samples_dif_0 * classes_available)
+
+                c = 0
+                for real_c in range(self.num_classes):
+                    if samples_per_class[real_c] > 0:
+                        #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
+                        here = first_label == real_c
+                        self.model.add(samples_hv[here], first_label[here], lr=weight_for_class_i[c])
+                        c += 1"""
                 
-            #    label = first_label[vox]
-            #    if vox % 5000 == 0:
-            #        print(f"Sample {i}: Voxel {vox}")
-                
-            # HD training
-
-            samples_hv = self.encode(first_sample).to(torch.int32)
-
-            ### Class Imbalance
-
-            """samples_per_class = torch.bincount(first_label)
-            samples_dif_0 = samples_per_class[samples_per_class != 0]
-            classes_available = samples_dif_0.shape[0]
-            weight_for_class_i = first_label.shape[0] / ( samples_dif_0 * classes_available)
-
-            c = 0
-            for real_c in range(self.num_classes):
-                if samples_per_class[real_c] > 0:
-                    #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
-                    here = first_label == real_c
-                    self.model.add(samples_hv[here], first_label[here], lr=weight_for_class_i[c])
-                    c += 1"""
-            
-            #### Original ####
-            #temp = torch.zeros(self.num_classes, self.hd_dim, dtype=torch.int32).to(self.device)
-            #temp.index_add_(0, first_label, samples_hv)
-            #print("Min: ", torch.min(temp), "\nMax: ", torch.max(temp))
-            #temp = temp
-            # Add the 16 bit integer
-            #self.model.weight = nn.Parameter(self.model.weight + temp, requires_grad=False) # Addition
-            self.model.add(samples_hv, first_label)
-            #print(self.model.weight)
-            #x = input("Enter")
+                #### Original ####
+                #temp = torch.zeros(self.num_classes, self.hd_dim, dtype=torch.int32).to(self.device)
+                #temp.index_add_(0, first_label, samples_hv)
+                #print("Min: ", torch.min(temp), "\nMax: ", torch.max(temp))
+                #temp = temp
+                # Add the 16 bit integer
+                #self.model.weight = nn.Parameter(self.model.weight + temp, requires_grad=False) # Addition
+                self.model.add(samples_hv, first_label)
 
         # Normalizing works way better :)
         #self.model.normalize() # Min Max
@@ -116,39 +119,43 @@ class HD_Model:
     def retrain(self, features, labels, num_voxels):
         
         """ Retrain with misclassified samples (also substract)"""
+
+        batch = 15000
         
         for e in tqdm(range(10), desc="Epoch"):
             count = 0
 
             for i in range(len(features)):
-                first_sample = torch.Tensor(features[i][:int(num_voxels[i])]).to(self.device)
-                first_label = torch.Tensor(labels[i][:int(num_voxels[i])]).to(torch.int32).to(self.device)
-                print(torch.bincount(first_label))
-                first_sample = self.normalize(first_sample) # Z1 score seems to work
+                for b in range(0,int(num_voxels[i]), batch):
+                    end = min(b + batch, int(num_voxels[i]))  # Ensure we don't exceed num_voxels[i]
+                    first_sample = torch.Tensor(features[i][b:end]).to(self.device)
+                    first_label = torch.Tensor(labels[i][b:end]).to(torch.int32).to(self.device)
+                    print(torch.bincount(first_label))
+                    first_sample = self.normalize(first_sample) # Z1 score seems to work
 
-                #for vox in range(len(first_sample)):
-                samples_hv = self.encode(first_sample)
-                sim = self.model(samples_hv, dot=True)
-                pred_hd = sim.argmax(1).data
+                    #for vox in range(len(first_sample)):
+                    samples_hv = self.encode(first_sample)
+                    sim = self.model(samples_hv, dot=True)
+                    pred_hd = sim.argmax(1).data
 
-                is_wrong = first_label != pred_hd
+                    is_wrong = first_label != pred_hd
 
-                # cancel update if all predictions were correct
-                if is_wrong.sum().item() == 0:
-                    continue
+                    # cancel update if all predictions were correct
+                    if is_wrong.sum().item() == 0:
+                        continue
 
-                # only update wrongly predicted inputs
-                samples_hv = samples_hv[is_wrong]
-                first_label = first_label[is_wrong]
-                pred_hd = pred_hd[is_wrong]
+                    # only update wrongly predicted inputs
+                    samples_hv = samples_hv[is_wrong]
+                    first_label = first_label[is_wrong]
+                    pred_hd = pred_hd[is_wrong]
 
-                #count = first_label.shape[0]
-                        
-                #print(f"Misclassified for {i}: ", count)
+                    #count = first_label.shape[0]
+                            
+                    #print(f"Misclassified for {i}: ", count)
 
-                ## Original ###
-                self.model.weight.index_add_(0, first_label, samples_hv)
-                self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1)
+                    ## Original ###
+                    self.model.weight.index_add_(0, first_label, samples_hv)
+                    self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1)
 
             # If you want to test for each sample
             #print(self.model.weight) # Int it is I think...
@@ -162,6 +169,8 @@ class HD_Model:
         """ Testing over all the samples in all the scans given """
 
         assert len(features) == len(labels)
+
+        batch = 15000
         
         # Metric
         miou = MulticlassJaccardIndex(num_classes=16, average=None).to(self.device)
@@ -171,19 +180,20 @@ class HD_Model:
         
         start_idx = 0
         for i in tqdm(range(len(features)), desc="Testing"):
-            shape_sample = int(num_voxels[i])
-            first_sample = torch.Tensor(features[i][:shape_sample]).to(self.device)
-            first_label = torch.Tensor(labels[i][:shape_sample]).to(torch.int64)
-            final_labels[start_idx:start_idx+shape_sample] = first_label
+            for b in range(0,int(num_voxels[i]), batch):
+                end = min(b + batch, int(num_voxels[i]))  # Ensure we don't exceed num_voxels[i]
+                first_sample = torch.Tensor(features[i][b:end]).to(self.device)
+                first_label = torch.Tensor(labels[i][b:end]).to(torch.int64)
+                final_labels[start_idx:start_idx+end-b] = first_label
 
-            first_sample = self.normalize(first_sample) # Z1 score seems to work
+                first_sample = self.normalize(first_sample) # Z1 score seems to work
 
-            # HD inference
-            samples_hv = self.encode(first_sample)
-            pred_hd = self.model(samples_hv, dot=True).argmax(1).data
-            final_pred[start_idx:start_idx+shape_sample] = pred_hd
+                # HD inference
+                samples_hv = self.encode(first_sample)
+                pred_hd = self.model(samples_hv, dot=True).argmax(1).data
+                final_pred[start_idx:start_idx+end-b] = pred_hd
 
-            start_idx += shape_sample
+                start_idx += end-b
 
         print("================================")
 
@@ -200,11 +210,11 @@ class HD_Model:
         #wandb.log(log_data)
 
         # Compute the confusion matrix
-        cm = confusion_matrix(final_labels.cpu().numpy(), final_pred.cpu().numpy(), labels=torch.arange(18).numpy())
+        cm = confusion_matrix(final_labels.cpu().numpy(), final_pred.cpu().numpy(), labels=torch.arange(16).numpy())
 
         # Plot the confusion matrix
         plt.figure(figsize=(16, 8))
-        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=range(18), yticklabels=range(18))
+        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=range(16), yticklabels=range(16))
         plt.xlabel("Predicted Labels")
         plt.ylabel("True Labels")
         plt.title(f"Confusion Matrix for Epoch {epoch}")
