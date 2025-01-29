@@ -11,6 +11,8 @@ from torchhd import embeddings
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 import seaborn as sns
+from tsnecuda import TSNE
+
 from tqdm import tqdm
 import wandb
 
@@ -88,20 +90,24 @@ class HD_Model:
 
                 samples_hv = self.encode(first_sample).to(torch.int32)
 
-                ### Class Imbalance
+                if i==0 and b==0:
+                    # Apply t-SNE to reduce dimensions to 2D
+                    tsne = TSNE(n_components=2, perplexity=10)
+                    features_2d = tsne.fit_transform(samples_hv.cpu())
 
-                """samples_per_class = torch.bincount(first_label)
-                samples_dif_0 = samples_per_class[samples_per_class != 0]
-                classes_available = samples_dif_0.shape[0]
-                weight_for_class_i = first_label.shape[0] / ( samples_dif_0 * classes_available)
+                    # Plot the t-SNE result
+                    plt.figure(figsize=(10, 8))
+                    scatter = sns.scatterplot(x=features_2d[:, 0], y=features_2d[:, 1], hue=first_label.cpu(), palette="tab10", alpha=0.7)
+                    plt.legend(title="Classes", bbox_to_anchor=(1.05, 1), loc="upper left")
+                    plt.xlabel("t-SNE Component 1")
+                    plt.ylabel("t-SNE Component 2")
+                    plt.title("t-SNE Visualization of Features")
 
-                c = 0
-                for real_c in range(self.num_classes):
-                    if samples_per_class[real_c] > 0:
-                        #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
-                        here = first_label == real_c
-                        self.model.add(samples_hv[here], first_label[here], lr=weight_for_class_i[c])
-                        c += 1"""
+                    # Save the plot
+                    plt.savefig("tsne_plot_nuscenes.png", dpi=300, bbox_inches="tight")
+
+                    # Show the plot (optional)
+                    plt.show()
                 
                 #### Original ####
                 #temp = torch.zeros(self.num_classes, self.hd_dim, dtype=torch.int32).to(self.device)

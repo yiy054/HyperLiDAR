@@ -11,7 +11,7 @@ from torchhd import embeddings
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 import seaborn as sns
-from cuml.manifold import TSNE
+from tsnecuda import TSNE
 
 from tqdm import tqdm
 import wandb
@@ -103,7 +103,7 @@ class HD_Model:
 
         print("\nTrain First\n")
 
-        batch = 20000
+        batch = 10000
 
         for i in tqdm(range(len(features)), desc="1st Training:"):
             #print("Min and max of this sample \n Min: ", torch.min(points[i], axis=1).values, "\nMax: ", torch.max(points[i], axis=1).values)
@@ -122,12 +122,12 @@ class HD_Model:
 
                 if i==0 and b==0:
                     # Apply t-SNE to reduce dimensions to 2D
-                    tsne = TSNE(n_components=2, perplexity=30, random_state=42)
-                    features_2d = tsne.fit_transform(samples_hv)
+                    tsne = TSNE(n_components=2, perplexity=10)
+                    features_2d = tsne.fit_transform(samples_hv.cpu())
 
                     # Plot the t-SNE result
                     plt.figure(figsize=(10, 8))
-                    scatter = sns.scatterplot(x=features_2d[:, 0], y=features_2d[:, 1], hue=first_label, palette="tab10", alpha=0.7)
+                    scatter = sns.scatterplot(x=features_2d[:, 0], y=features_2d[:, 1], hue=first_label.cpu(), palette="tab10", alpha=0.7)
                     plt.legend(title="Classes", bbox_to_anchor=(1.05, 1), loc="upper left")
                     plt.xlabel("t-SNE Component 1")
                     plt.ylabel("t-SNE Component 2")
