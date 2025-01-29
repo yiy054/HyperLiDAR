@@ -9,6 +9,8 @@ import torchhd
 from torchhd.models import Centroid
 from torchhd import embeddings
 from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt
+import seaborn as sns
 from tqdm import tqdm
 import wandb
 
@@ -41,23 +43,23 @@ class HD_Model:
 
         """ Normalize with Z-score"""
 
-        #mean = torch.mean(samples, dim=0)
-        #std = torch.std(samples, dim=0)
+        mean = torch.mean(samples, dim=0)
+        std = torch.std(samples, dim=0)
 
         #print("Mean in range: ", min(mean), " ", max(mean))
         #print("Std in range: ", min(std), " ", max(std))
 
-        #samples = (samples - mean) / (std + 1e-8)
+        samples = (samples - mean) / (std + 1e-8)
 
         """Min-max normalization"""
 
         # Compute the minimum and maximum of the tensor
-        min_val = samples.min(axis=0).values
-        max_val = samples.max(axis=0).values
+        #min_val = samples.min(axis=0).values
+        #max_val = samples.max(axis=0).values
 
         # Perform Min-Max normalization
-        normalized_tensor = (samples - min_val) / (max_val - min_val)
-        samples = normalized_tensor #* (max_range - min_range) + min_range
+        #normalized_tensor = (samples - min_val) / (max_val - min_val)
+        #samples = normalized_tensor #* (max_range - min_range) + min_range
 
         return samples
     
@@ -99,7 +101,7 @@ class HD_Model:
 
         print("\nTrain First\n")
 
-        batch = 10000
+        batch = 20000
 
         for i in tqdm(range(len(features)), desc="1st Training:"):
             #print("Min and max of this sample \n Min: ", torch.min(points[i], axis=1).values, "\nMax: ", torch.max(points[i], axis=1).values)
@@ -127,7 +129,7 @@ class HD_Model:
         
         """ Retrain with misclassified samples (also substract)"""
 
-        batch = 10000
+        batch = 20000
         
         for e in tqdm(range(10), desc="Epoch"):
             count = 0
@@ -138,6 +140,7 @@ class HD_Model:
                     first_sample = features[i][:,b:end].to(self.device)
                     first_sample = torch.transpose(first_sample, 0, 1)
                     first_label = labels[i][b:end].to(torch.int32).to(self.device)
+                    print(torch.bincount(first_label))
                     first_sample = self.normalize(first_sample)
 
                     #for batch in range(0,num_voxels[i], self.batch_size):
@@ -163,7 +166,7 @@ class HD_Model:
                     self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1)
 
             # If you want to test for each sample
-            self.test_hd(features_test, labels_test, num_voxel_test, points_test)
+            self.test_hd(features_test, labels_test, num_voxel_test, points_test, epoch=e+1)
 
     def test_hd(self, features, labels, num_voxels, points, epoch=0):
 
@@ -178,7 +181,7 @@ class HD_Model:
         final_pred = torch.empty((final_shape), device=self.device)
         
         start_idx = 0
-        batch = 10000
+        batch = 20000
         for i in tqdm(range(len(features)), desc="Testing"):
             for b in range(0,int(num_voxels[i]), batch):
                 end = min(b + batch, int(num_voxels[i]))  # Ensure we don't exceed num_voxels[i]
@@ -210,9 +213,18 @@ class HD_Model:
         #log_data["Retraining epoch"] = avg_acc
         #wandb.log(log_data)
 
-        #cm = confusion_matrix(pred_hd, first_label, labels=torch.Tensor(range(0,15)))
-        #print("Confusion matrix \n")
-        #print(cm)
+        # Compute the confusion matrix
+        cm = confusion_matrix(final_labels.cpu().numpy(), final_pred.cpu().numpy(), labels=torch.arange(18).numpy())
+
+        # Plot the confusion matrix
+        plt.figure(figsize=(16, 8))
+        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=range(18), yticklabels=range(18))
+        plt.xlabel("Predicted Labels")
+        plt.ylabel("True Labels")
+        plt.title(f"Confusion Matrix for Epoch {epoch}")
+
+        # Save the figure
+        plt.savefig(f"confusion_matrix_{epoch}.png", dpi=300, bbox_inches="tight")
 
         print("================================")
 

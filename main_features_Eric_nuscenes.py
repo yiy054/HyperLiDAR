@@ -123,19 +123,8 @@ class HD_Model:
             for i in range(len(features)):
                 first_sample = torch.Tensor(features[i][:int(num_voxels[i])]).to(self.device)
                 first_label = torch.Tensor(labels[i][:int(num_voxels[i])]).to(torch.int32).to(self.device)
-
+                print(torch.bincount(first_label))
                 first_sample = self.normalize(first_sample) # Z1 score seems to work
-
-                #samples_per_class = torch.bincount(first_label)
-                
-                ##### Like loss for NN #########
-                #weight_for_class_i = first_label.shape[0] / (( samples_per_class * num_classes) + 1e-6)
-                
-                ##### Inverse weights ####
-                #inverse_weights = 1.0 / (samples_per_class + 1.0)
-    
-                # Normalize the weights to sum to 1
-                #normalized_weights = inverse_weights / torch.sum(inverse_weights)
 
                 #for vox in range(len(first_sample)):
                 samples_hv = self.encode(first_sample)
@@ -154,15 +143,6 @@ class HD_Model:
                 pred_hd = pred_hd[is_wrong]
 
                 #count = first_label.shape[0]
-
-                """
-                for c in range(self.num_classes):
-                    if samples_per_class[c] > 0:
-                        #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
-                        here = first_label == c
-                        self.model.weight.index_add_(0, first_label[here], samples_hv[here], alpha=weight_for_class_i[c])
-                        self.model.weight.index_add_(0, pred_hd[here], samples_hv[here], alpha=-1*weight_for_class_i[c])
-                """
                         
                 #print(f"Misclassified for {i}: ", count)
 
@@ -170,21 +150,12 @@ class HD_Model:
                 self.model.weight.index_add_(0, first_label, samples_hv)
                 self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1)
 
-                ##### Try with int 16 #####
-                #temp_1 = torch.zeros(self.num_classes, self.hd_dim, dtype=torch.int32).to(self.device)
-                #temp_1.index_add_(0, first_label, samples_hv).to(torch.int16)
-                #temp_2 = torch.zeros(self.num_classes, self.hd_dim, dtype=torch.int32).to(self.device)
-                #temp_2.index_add_(0, pred_hd, samples_hv, alpha=-1).to(torch.int16)
-                # Add the 16 bit integer
-                #self.model.weight = nn.Parameter(self.model.weight + temp_1, requires_grad=False) # Addition
-                #self.model.weight = nn.Parameter(self.model.weight + temp_2, requires_grad=False) # Addition
-
             # If you want to test for each sample
             #print(self.model.weight) # Int it is I think...
             #self.model.weight = nn.Parameter(torch.clamp(self.model.weight, min=-128, max=127).to(torch.int8), requires_grad=False)
             #print("Min model: ", torch.min(self.model.weight), "\nMax model: ", torch.max(self.model.weight))
             #print(self.model.weight)
-            self.test_hd(features, labels, num_voxels)
+            self.test_hd(features, labels, num_voxels, e+1)
 
     def test_hd(self, features, labels, num_voxels, epoch=0):
 
@@ -228,9 +199,18 @@ class HD_Model:
         #log_data["Retraining epoch"] = avg_acc
         #wandb.log(log_data)
 
-        #cm = confusion_matrix(pred_hd, first_label, labels=torch.Tensor(range(0,15)))
-        #print("Confusion matrix \n")
-        #print(cm)
+        # Compute the confusion matrix
+        cm = confusion_matrix(final_labels.cpu().numpy(), final_pred.cpu().numpy(), labels=torch.arange(18).numpy())
+
+        # Plot the confusion matrix
+        plt.figure(figsize=(16, 8))
+        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=range(18), yticklabels=range(18))
+        plt.xlabel("Predicted Labels")
+        plt.ylabel("True Labels")
+        plt.title(f"Confusion Matrix for Epoch {epoch}")
+
+        # Save the figure
+        plt.savefig(f"nuscenes_confusion_matrix_{epoch}.png", dpi=300, bbox_inches="tight")
 
         print("================================")
 
