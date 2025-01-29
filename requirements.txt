@@ -31,3 +31,5 @@ ipython
 ipykernel
 torchmetrics
 wandb
+mkl
+tsnecuda
