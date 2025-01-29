@@ -40,45 +40,24 @@ class HD_Model:
 
         """ Normalize with Z-score"""
 
-        mean = torch.mean(samples, dim=0)
+        """mean = torch.mean(samples, dim=0)
         std = torch.std(samples, dim=0)
 
-        print("Mean: ", mean)
-        print("Std: ", std)
+        print("Mean in range: ", min(mean), " ", max(mean))
+        print("Std in range: ", min(std), " ", max(std))
 
-        samples = (samples - mean) / (std + 1e-8)
+        samples = (samples - mean) / (std + 1e-8)"""
+
+        """ Min - max"""
+
+        #min_val = samples.min()
+        #max_val = samples.max()
+
+        # Perform Min-Max normalization
+        #normalized_tensor = (samples - min_val) / (max_val - min_val)
+        #samples = normalized_tensor * (max_range - min_range) + min_range
 
         return samples
-    
-    def quantize_integer_to_nbit(self, tensor, n_bits):
-        """
-        Quantizes an integer tensor to a specified n-bit range.
-        
-        Args:
-            tensor (torch.Tensor): The input tensor of integers.
-            n_bits (int): The number of bits to represent the quantized range.
-
-        Returns:
-            torch.Tensor: The quantized tensor with values in the n-bit range.
-        """
-        # Define the target range based on n_bits
-        target_min = -(2 ** (n_bits - 1))       # Minimum value for signed n-bit
-        target_max = (2 ** (n_bits - 1)) - 1   # Maximum value for signed n-bit
-
-        # Determine the source range from the input tensor
-        source_min = -10000 #torch.min(tensor).item()
-        source_max = 10000 #torch.max(tensor).item()
-
-        # Step 1: Calculate scale factor
-        scale = (source_max - source_min) / (target_max - target_min)
-
-        # Step 2: Rescale and shift
-        rescaled = (tensor - source_min) / scale + target_min
-
-        # Step 3: Round to nearest integer and clip to target range
-        quantized = torch.clamp(torch.round(rescaled), target_min, target_max)
-
-        return quantized.int()  # Return as integer tensor
 
     def train(self, features, labels, num_voxels):
 
