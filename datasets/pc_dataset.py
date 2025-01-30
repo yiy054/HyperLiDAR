@@ -167,6 +167,10 @@ class PCDataset(Dataset):
 
         # Output to return
         out = (
+            pc_orig, labels_orig, # Points
+
+            # Voxel points points
+            pc[:, :3],
             # Point features
             pc[:, 3:].T[None],
             # Point labels of original entire point cloud
@@ -224,7 +228,7 @@ class Collate:
         list_of_data = (list(data) for data in zip(*list_data))
         #if self.device != torch.device('cpu'):
         #    torch.cuda.synchronize(device=self.device)
-        feat, label_orig, cell_ind, neighbors_emb, upsample, filename = list_of_data
+        pts, labels_orig, pts_voxel, feat, label_voxel, cell_ind, neighbors_emb, upsample, filename = list_of_data
         #if self.device != torch.device('cpu'):
         #    torch.cuda.synchronize(device=self.device)
 
@@ -253,16 +257,19 @@ class Collate:
         #torch.cuda.synchronize(device=self.device)
         
 
-        labels_orig = torch.from_numpy(np.hstack(label_orig))
+        label_voxel = torch.from_numpy(np.hstack(label_voxel))
         #torch.cuda.synchronize(device=self.device)
         upsample = [torch.from_numpy(u) for u in upsample]
 
         # Prepare output variables
         out = {
+            "points": pts,
+            "labels": labels_orig,
+            "points_voxel": pts_voxel,
             "feat": feat,
             "neighbors_emb": neighbors_emb,
             "upsample": upsample,
-            "labels_orig": labels_orig,
+            "labels_orig": label_voxel,
             "cell_ind": cell_ind,
             "occupied_cells": occupied_cells,
             "filename": filename,
