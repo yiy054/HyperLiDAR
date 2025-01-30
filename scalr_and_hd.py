@@ -284,6 +284,7 @@ class HD_Model:
         
         for e in tqdm(range(epochs), desc="Epoch"):
             #count = 0
+            self.scramble = np.random.permutation(len(self.im_idx))
 
             for it, batch in tqdm(enumerate(self.train_loader), desc=f"Retraining epoch {e}"):
                 

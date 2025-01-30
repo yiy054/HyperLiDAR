@@ -99,23 +99,26 @@ class SemanticKITTISemSeg(PCDataset):
                 raise ValueError(f"Split {ratio} not coded")
             self.im_idx = sorted(self.im_idx)[::skip_ratio]
             self.im_idx = [self.im_idx[self.scramble[i]] for i in self.scramble]
-            self.im_idx = self.im_idx[:600] # Remove to add all the samples
+            self.im_idx = self.im_idx[:2000] # Remove to add all the samples
         else:
             print("Using original split")
             #self.im_idx = np.sort(self.im_idx)
             self.im_idx = [self.im_idx[self.scramble[i]] for i in self.scramble]
-            self.im_idx = self.im_idx[:600] # Remove to add all the samples
+            self.im_idx = self.im_idx[:2000] # Remove to add all the samples
 
     def __len__(self):
         return len(self.im_idx)
 
     def load_pc(self, index):
         # Load point cloud
-        pc = np.fromfile(self.im_idx[index], dtype=np.float32).reshape((-1, 4))
+        if index == 0: # Reset every 0
+            self.scramble_intern = np.random.permutation(2000)
+            print("First sample is: ", self.im_idx[self.scramble_intern[index]])
+        pc = np.fromfile(self.im_idx[self.scramble_intern[index]], dtype=np.float32).reshape((-1, 4))
 
         # Extract Label
         labels_inst = np.fromfile(
-            self.im_idx[index].replace("velodyne", "labels")[:-3] + "label",
+            self.im_idx[self.scramble_intern[index]].replace("velodyne", "labels")[:-3] + "label",
             dtype=np.uint32,
         ).reshape((-1, 1))
         labels = labels_inst & 0xFFFF  # delete high 16 digits binary
@@ -125,7 +128,7 @@ class SemanticKITTISemSeg(PCDataset):
         labels = labels[:, 0] - 1
         labels[labels == -1] = 255
 
-        return pc, labels, self.im_idx[index]
+        return pc, labels, self.im_idx[self.scramble_intern[index]]
 
 
 class SemanticKITTIDistill(ImPcDataset):
