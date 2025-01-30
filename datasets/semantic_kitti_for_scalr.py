@@ -89,6 +89,8 @@ class SemanticKITTISemSeg(PCDataset):
                     )
                 )
             )
+            
+        self.scramble = np.random.permutation(len(self.im_idx))
 
         if self.phase == "train" and ratio != "100p":
             if ratio == "1p":
@@ -96,12 +98,11 @@ class SemanticKITTISemSeg(PCDataset):
             else:
                 raise ValueError(f"Split {ratio} not coded")
             self.im_idx = sorted(self.im_idx)[::skip_ratio]
+            self.im_idx = [self.im_idx[self.scramble[i]] for i in self.scramble]
         else:
             print("Using original split")
             #self.im_idx = np.sort(self.im_idx)
-            self.scramble = np.random.permutation(len(self.im_idx))
             self.im_idx = [self.im_idx[self.scramble[i]] for i in self.scramble]
-            self.im_idx = self.im_idx[:600] # Remove to add all the samples
 
     def __len__(self):
         return len(self.im_idx)
