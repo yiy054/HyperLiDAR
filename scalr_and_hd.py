@@ -192,6 +192,7 @@ class HD_Model:
         self.feature_extractor.load_pretrained(path_pretrained)
         self.stop = kwargs['args'].layers
         self.num_classes = num_classes
+        self.max_samples = kwargs['args'].number_samples
         self.kwargs = kwargs
 
     def normalize(self, samples):
@@ -253,7 +254,7 @@ class HD_Model:
            
             samples_hv, labels = self.sample_to_encode(it, batch)
             #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
-            if self.kwargs['args'].add_lr:
+            """if self.kwargs['args'].add_lr:
                 samples_per_class = torch.bincount(labels, minlength=self.num_classes)
                 inverse_weights = 1.0 / (samples_per_class + 1.0)
     
@@ -266,12 +267,16 @@ class HD_Model:
                         #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
                         here = labels == c
                         self.model.add(samples_hv[here], labels[here], lr=normalized_weights[c])
-            else:
-                self.model.add(samples_hv, labels)
-            
-            self.model.weight = nn.Parameter(torchhd.normalize(self.model.weight), requires_grad=False) # Binary
+            else:"""
+            self.model.add(samples_hv, labels)
+
             if self.device == torch.device("cuda:0"):
                 torch.cuda.synchronize(device=self.device)
+            print(it)
+            if it == self.max_samples:
+                break
+            
+        self.model.weight = nn.Parameter(torchhd.normalize(self.model.weight), requires_grad=False) # Binary
 
     def retrain(self, epochs):
         
@@ -304,6 +309,9 @@ class HD_Model:
                 self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1.0)
 
                 torch.cuda.synchronize(device=self.device)
+
+                if it == self.max_samples:
+                    break
 
             #print(f"Misclassified for {it}: ", count)
 
@@ -350,6 +358,9 @@ class HD_Model:
 
             start_idx += shape_sample
 
+            if it == self.max_samples:
+                break
+
         final_labels = final_labels[:start_idx]
         final_pred = final_pred[:start_idx]
 
@@ -378,7 +389,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('-stop', '--layers', type=int, help='how many layers deep', default=48)
     #parser.add_argument('-soa', '--soa', action="store_true", default=False, help='Plot SOA')
-    parser.add_argument('-number_samples', '--number_samples', type=int, help='how many scans to train', default=10000)
+    parser.add_argument('-number_samples', '--number_samples', type=int, help='how many scans to train', default=500)
     parser.add_argument(
             "--seed", default=None, type=int, help="Seed for initializing training"
         )
@@ -521,7 +532,7 @@ if __name__ == "__main__":
             config={
                 "encoding": "Random Projection",
                 "hd_dim": DIMENSIONS,
-                "training_samples":404,
+                "training_samples":args.number_samples,
             },
             id=f"{args.dataset}_training_layers_{args.layers}_norm_dim_{DIMENSIONS}",
         )
