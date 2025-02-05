@@ -72,23 +72,38 @@ class SemanticKITTISemSeg(PCDataset):
             split = semkittiyaml["split"]["test"]
         elif self.phase == "trainval":
             split = semkittiyaml["split"]["train"] + semkittiyaml["split"]["valid"]
+        elif self.phase == "specific":
+            split = None
         else:
             raise Exception(f"Unknown split {self.phase}")
 
         # Find all files
         self.im_idx = []
-        for i_folder in np.sort(split):
-            self.im_idx.extend(
-                glob(
-                    os.path.join(
-                        '/root/main/dataset/semantickitti',
-                        "sequences",
-                        str(i_folder).zfill(2),
-                        "velodyne",
-                        "*.bin",
+        if self.pbase != "specific":
+            for i_folder in np.sort(split):
+                self.im_idx.extend(
+                    glob(
+                        os.path.join(
+                            '/root/main/dataset/semantickitti',
+                            "sequences",
+                            str(i_folder).zfill(2),
+                            "velodyne",
+                            "*.bin",
+                        )
                     )
                 )
-            )
+        else:
+            with open("semantickitti_1pct.txt", "r") as file:
+                for line in file:
+                    self.im_idx.extend(
+                        os.path.join(
+                            '/root/main/dataset/semantickitti',
+                            "sequences",
+                            str(i_folder).zfill(2),
+                            "velodyne",
+                            "*.bin",
+                        )
+                    )
             
         self.scramble = np.random.permutation(len(self.im_idx))
 
@@ -99,20 +114,22 @@ class SemanticKITTISemSeg(PCDataset):
                 raise ValueError(f"Split {ratio} not coded")
             self.im_idx = sorted(self.im_idx)[::skip_ratio]
             self.im_idx = [self.im_idx[self.scramble[i]] for i in self.scramble]
-            self.im_idx = self.im_idx[:2000] # Remove to add all the samples
+            self.minimum = min(len(self.im_idx), 1000)  # Remove to add all the samples
+            self.im_idx = self.im_idx[:self.minimum]
         else:
             print("Using original split")
             #self.im_idx = np.sort(self.im_idx)
             self.im_idx = [self.im_idx[self.scramble[i]] for i in self.scramble]
-            self.im_idx = self.im_idx[:2000] # Remove to add all the samples
+            self.minimum = min(len(self.im_idx), 1000)
+            self.im_idx = self.im_idx[:self.minimum] # Remove to add all the samples
 
     def __len__(self):
         return len(self.im_idx)
 
     def load_pc(self, index):
         # Load point cloud
-        if index == 0: # Reset every 0
-            self.scramble_intern = np.random.permutation(2000)
+        if index == 0 and self.phase == "train": # Reset every 0 on train
+            self.scramble_intern = np.random.permutation(self.minimum)
             print("First sample is: ", self.im_idx[self.scramble_intern[index]])
         pc = np.fromfile(self.im_idx[self.scramble_intern[index]], dtype=np.float32).reshape((-1, 4))
 
