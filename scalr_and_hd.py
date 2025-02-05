@@ -191,7 +191,7 @@ class HD_Model:
         self.feature_extractor = Feature_Extractor(nb_class = num_classes, device=self.device, early_exit=kwargs['args'].layers, args=kwargs['args'])
         self.feature_extractor.load_pretrained(path_pretrained)
         self.stop = kwargs['args'].layers
-        self.num_samples_per_iter = kwargs['args'].number_samples
+        self.point_per_iter = kwargs['args'].number_samples
         self.num_classes = num_classes
         self.max_samples = kwargs['args'].number_samples
         self.kwargs = kwargs
@@ -213,7 +213,7 @@ class HD_Model:
         self.num_vox_train = 0
         self.num_vox_val = 0
 
-        for batch in tqdm(self.train_loader, desc="Training batch: "):
+        for batch in tqdm(self.train_loader, desc="Training loader: "):
             labels = batch["labels_orig"]
             if self.device == torch.device("cuda:0"):
                 labels = labels.cuda(0, non_blocking=True)
@@ -222,7 +222,7 @@ class HD_Model:
             #torch.cuda.synchronize(device=self.device)
             self.num_vox_train += labels[where].shape[0]
 
-        for batch in tqdm(self.val_loader, desc="Validation batch: "):
+        for batch in tqdm(self.val_loader, desc="Validation loader: "):
             labels = batch["labels_orig"]
             if self.device == torch.device("cuda:0"):
                 labels = labels.cuda(0, non_blocking=True)
@@ -252,28 +252,16 @@ class HD_Model:
         print("\nTrain First\n")
 
         for it, batch in tqdm(enumerate(self.train_loader), desc="Training"):
-           
             samples_hv, labels = self.sample_to_encode(it, batch)
+            for b in range(0, samples_hv.shape[0], self.point_per_iter):
+                end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
+           
             #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
-            """if self.kwargs['args'].add_lr:
-                samples_per_class = torch.bincount(labels, minlength=self.num_classes)
-                inverse_weights = 1.0 / (samples_per_class + 1.0)
-    
-                # Normalize the weights to sum to 1
-                normalized_weights = inverse_weights / torch.sum(inverse_weights)
-                #print(normalized_weights)
+            
+                self.model.add(samples_hv[b:end], labels[b:end])
 
-                for c in range(self.num_classes):
-                    if samples_per_class[c] > 0:
-                        #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
-                        here = labels == c
-                        self.model.add(samples_hv[here], labels[here], lr=normalized_weights[c])
-            else:"""
-            self.model.add(samples_hv, labels)
-
-            if self.device == torch.device("cuda:0"):
-                torch.cuda.synchronize(device=self.device)
-            print(it)
+                if self.device == torch.device("cuda:0"):
+                    torch.cuda.synchronize(device=self.device)
             if it == self.max_samples:
                 break
             
@@ -290,27 +278,31 @@ class HD_Model:
             for it, batch in tqdm(enumerate(self.train_loader), desc=f"Retraining epoch {e}"):
                 
                 samples_hv, labels = self.sample_to_encode(it, batch)
-                sim = self.model(samples_hv, dot=True)
-                #pred_hd = sim.argmax(1).data
-                pred_hd = torch.argmax(sim, axis=1)
+                for b in range(0, samples_hv.shape[0], self.point_per_iter):
+                    end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
+                    samples_hv_here = samples_hv[b:end]
+                    labels_here = labels[b:end]
+                    sim = self.model(samples_hv_here, dot=True)
+                    #pred_hd = sim.argmax(1).data
+                    pred_hd = torch.argmax(sim, axis=1)
 
-                is_wrong = labels != pred_hd
+                    is_wrong = labels_here != pred_hd
 
-                # cancel update if all predictions were correct
-                if is_wrong.sum().item() == 0:
-                    continue
+                    # cancel update if all predictions were correct
+                    if is_wrong.sum().item() == 0:
+                        continue
 
-                # only update wrongly predicted inputs
-                samples_hv = samples_hv[is_wrong]
-                labels = labels[is_wrong]
-                pred_hd = pred_hd[is_wrong]
+                    # only update wrongly predicted inputs
+                    samples_hv_here = samples_hv_here[is_wrong]
+                    labels_here = labels_here[is_wrong]
+                    pred_hd = pred_hd[is_wrong]
 
-                #count = labels.shape[0]
+                    #count = labels.shape[0]
 
-                self.model.weight.index_add_(0, labels, samples_hv)
-                self.model.weight.index_add_(0, pred_hd, samples_hv, alpha=-1.0)
+                    self.model.weight.index_add_(0, labels_here, samples_hv_here)
+                    self.model.weight.index_add_(0, pred_hd, samples_hv_here, alpha=-1.0)
 
-                torch.cuda.synchronize(device=self.device)
+                #torch.cuda.synchronize(device=self.device)
 
                 if it == self.max_samples:
                     break
@@ -340,25 +332,29 @@ class HD_Model:
         for it, batch in tqdm(enumerate(loader), desc="Validation:"):
             
             samples_hv, labels = self.sample_to_encode(it, batch)
-            torch.cuda.synchronize(device=self.device)
+            for b in range(0, samples_hv.shape[0], self.point_per_iter):
+                end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
+                samples_hv_here = samples_hv[b:end]
+                labels_here = labels[b:end]
+                #torch.cuda.synchronize(device=self.device)
             
-            shape_sample = labels.shape[0]
+                shape_sample = labels_here.shape[0]
 
-            #pred_hd = self.model(samples_hv, dot=True).argmax(1).data
-            sim = self.model(samples_hv, dot=True)
-            torch.cuda.synchronize(device=self.device)
+                #pred_hd = self.model(samples_hv, dot=True).argmax(1).data
+                sim = self.model(samples_hv_here, dot=True)
+                #torch.cuda.synchronize(device=self.device)
 
-            pred_hd = torch.argmax(sim, axis=1)
-            torch.cuda.synchronize(device=self.device)
+                pred_hd = torch.argmax(sim, axis=1)
+                #torch.cuda.synchronize(device=self.device)
 
-            #print("Labels: ", labels.shape[0])
-            #print(start_idx, start_idx+shape_sample)
-            #print(shape_sample)
+                #print("Labels: ", labels.shape[0])
+                #print(start_idx, start_idx+shape_sample)
+                #print(shape_sample)
 
-            final_labels[start_idx:start_idx+shape_sample] = labels
-            final_pred[start_idx:start_idx+shape_sample] = pred_hd
+                final_labels[start_idx:start_idx+shape_sample] = labels_here
+                final_pred[start_idx:start_idx+shape_sample] = pred_hd
 
-            start_idx += shape_sample
+                start_idx += shape_sample
 
             if it == self.max_samples:
                 break
@@ -406,6 +402,7 @@ def parse_arguments():
 
     # HD arguments
     parser.add_argument('--dim', type=int, help='Dimensionality of Hypervectors', default=10000)
+    parser.add_argument('--batch_points', type=int, help='Number of points to process per scan', default=20000)
     #parser.add_argument('-val', '--val', action="store_true", default=False, help='Train with validation for each scan')
     args = parser.parse_args()
     return args
