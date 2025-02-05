@@ -72,14 +72,14 @@ class SemanticKITTISemSeg(PCDataset):
             split = semkittiyaml["split"]["test"]
         elif self.phase == "trainval":
             split = semkittiyaml["split"]["train"] + semkittiyaml["split"]["valid"]
-        elif self.phase == "specific":
+        elif self.phase == "specific_train":
             split = None
         else:
             raise Exception(f"Unknown split {self.phase}")
 
         # Find all files
         self.im_idx = []
-        if self.pbase != "specific":
+        if self.phase != "specific_train":
             for i_folder in np.sort(split):
                 self.im_idx.extend(
                     glob(
@@ -93,15 +93,15 @@ class SemanticKITTISemSeg(PCDataset):
                     )
                 )
         else:
-            with open("semantickitti_1pct.txt", "r") as file:
+            with open("/home/HyperLiDAR/datasets/semantickitti_1pct.txt", "r") as file:
                 for line in file:
-                    self.im_idx.extend(
+                    line = line.split("/")
+                    line = "/".join(line[2:])
+                    line = line[:-1]
+                    im_idx.append(
                         os.path.join(
                             '/root/main/dataset/semantickitti',
-                            "sequences",
-                            str(i_folder).zfill(2),
-                            "velodyne",
-                            "*.bin",
+                            line
                         )
                     )
             
@@ -116,12 +116,15 @@ class SemanticKITTISemSeg(PCDataset):
             self.im_idx = [self.im_idx[self.scramble[i]] for i in self.scramble]
             self.minimum = min(len(self.im_idx), 1000)  # Remove to add all the samples
             self.im_idx = self.im_idx[:self.minimum]
+        if self.phase == "specific_train":
+            self.im_idx = sorted(self.im_idx)
         else:
             print("Using original split")
             #self.im_idx = np.sort(self.im_idx)
             self.im_idx = [self.im_idx[self.scramble[i]] for i in self.scramble]
             self.minimum = min(len(self.im_idx), 1000)
             self.im_idx = self.im_idx[:self.minimum] # Remove to add all the samples
+            #self.scramble_intern = np.random.permutation(self.minimum)
 
     def __len__(self):
         return len(self.im_idx)
@@ -131,7 +134,11 @@ class SemanticKITTISemSeg(PCDataset):
         if index == 0 and self.phase == "train": # Reset every 0 on train
             self.scramble_intern = np.random.permutation(self.minimum)
             print("First sample is: ", self.im_idx[self.scramble_intern[index]])
-        pc = np.fromfile(self.im_idx[self.scramble_intern[index]], dtype=np.float32).reshape((-1, 4))
+            pc = np.fromfile(self.im_idx[self.scramble_intern[index]], dtype=np.float32).reshape((-1, 4))
+            file_name = self.im_idx[self.scramble_intern[index]]
+        else:
+            pc = np.fromfile(self.im_idx[index], dtype=np.float32).reshape((-1, 4))
+            file_name = self.im_idx[index]
 
         # Extract Label
         labels_inst = np.fromfile(
@@ -145,7 +152,7 @@ class SemanticKITTISemSeg(PCDataset):
         labels = labels[:, 0] - 1
         labels[labels == -1] = 255
 
-        return pc, labels, self.im_idx[self.scramble_intern[index]]
+        return pc, labels, file_name
 
 
 class SemanticKITTIDistill(ImPcDataset):
