@@ -191,6 +191,7 @@ class HD_Model:
         self.feature_extractor = Feature_Extractor(nb_class = num_classes, device=self.device, early_exit=kwargs['args'].layers, args=kwargs['args'])
         self.feature_extractor.load_pretrained(path_pretrained)
         self.stop = kwargs['args'].layers
+        self.num_samples_per_iter = kwargs['args'].number_samples
         self.num_classes = num_classes
         self.max_samples = kwargs['args'].number_samples
         self.kwargs = kwargs
