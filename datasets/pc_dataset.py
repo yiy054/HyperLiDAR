@@ -41,7 +41,7 @@ class PCDataset(Dataset):
 
         # Dataset split
         self.phase = phase
-        assert self.phase in ["train", "val", "trainval", "test"]
+        assert self.phase in ["train", "val", "trainval", "test", "specific_train"]
 
         # Root directory of dataset
         self.rootdir = rootdir
@@ -80,7 +80,7 @@ class PCDataset(Dataset):
 
         # Train time augmentations
         if train_augmentations is not None:
-            assert self.phase in ["train", "val"]
+            assert self.phase in ["train", "val", "specific_train"]
         self.train_augmentations = train_augmentations
 
     def get_occupied_2d_cells(self, pc):
@@ -160,21 +160,21 @@ class PCDataset(Dataset):
         dist, neighbors_emb = kdtree.query(pc[:, :3], k=self.num_neighbors + 1)
 
         # Nearest neighbor interpolation to undo cropping & voxelisation at validation time
-        if self.phase in ["train", "val"]:
+        if self.phase in ["train", "val", "specific_train"]:
             upsample = np.arange(pc.shape[0])
         else:
             _, upsample = kdtree.query(pc_orig[:, :3], k=1)
 
         # Output to return
         out = (
-            pc_orig, labels_orig, # Points
+            #pc_orig, labels_orig, # Points
 
             # Voxel points points
             pc[:, :3],
             # Point features
             pc[:, 3:].T[None],
             # Point labels of original entire point cloud
-            labels if self.phase in ["train", "val"] else labels_orig,
+            labels if self.phase in ["train", "val", "specific_train"] else labels_orig,
             # Projection 2D -> 3D: index of 2D cells for each point
             cell_ind[None],
             # Neighborhood for point embedding layer, which provides tokens to waffleiron backbone
@@ -228,7 +228,7 @@ class Collate:
         list_of_data = (list(data) for data in zip(*list_data))
         #if self.device != torch.device('cpu'):
         #    torch.cuda.synchronize(device=self.device)
-        pts, labels_orig, pts_voxel, feat, label_voxel, cell_ind, neighbors_emb, upsample, filename = list_of_data
+        pts_voxel, feat, label_voxel, cell_ind, neighbors_emb, upsample, filename = list_of_data
         #if self.device != torch.device('cpu'):
         #    torch.cuda.synchronize(device=self.device)
 
@@ -263,8 +263,8 @@ class Collate:
 
         # Prepare output variables
         out = {
-            "points": pts,
-            "labels": labels_orig,
+            #"points": pts,
+            #"labels": labels_orig,
             "points_voxel": pts_voxel,
             "feat": feat,
             "neighbors_emb": neighbors_emb,

@@ -98,7 +98,7 @@ class SemanticKITTISemSeg(PCDataset):
                     line = line.split("/")
                     line = "/".join(line[2:])
                     line = line[:-1]
-                    im_idx.append(
+                    self.im_idx.append(
                         os.path.join(
                             '/root/main/dataset/semantickitti',
                             line
@@ -122,7 +122,7 @@ class SemanticKITTISemSeg(PCDataset):
             print("Using original split")
             #self.im_idx = np.sort(self.im_idx)
             self.im_idx = [self.im_idx[self.scramble[i]] for i in self.scramble]
-            self.minimum = min(len(self.im_idx), 1000)
+            self.minimum = min(len(self.im_idx), 250)
             self.im_idx = self.im_idx[:self.minimum] # Remove to add all the samples
             #self.scramble_intern = np.random.permutation(self.minimum)
 
@@ -142,7 +142,7 @@ class SemanticKITTISemSeg(PCDataset):
 
         # Extract Label
         labels_inst = np.fromfile(
-            self.im_idx[self.scramble_intern[index]].replace("velodyne", "labels")[:-3] + "label",
+            file_name.replace("velodyne", "labels")[:-3] + "label",
             dtype=np.uint32,
         ).reshape((-1, 1))
         labels = labels_inst & 0xFFFF  # delete high 16 digits binary
