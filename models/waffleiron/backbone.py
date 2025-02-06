@@ -213,10 +213,15 @@ class WaffleIron(nn.Module):
         )
 
         # Actual backbone
+        tokens = torch.reshape(tokens, (1, tokens.shape[0], tokens.shape[1], tokens.shape[2]))
         for d, (smix, cmix) in enumerate(zip(self.spatial_mix, self.channel_mix)):
             if d == stop:
                 break
-            tokens = smix(tokens, sp_mat[d % len(sp_mat)])
-            tokens = cmix(tokens)
+            print(tokens.shape)
+            tokens_new = smix(tokens[-1], sp_mat[d % len(sp_mat)])
+            tokens_new = cmix(tokens_new)
+            tokens = torch.cat((tokens, torch.reshape(tokens_new, (1, tokens_new.shape[0], tokens_new.shape[1], tokens_new.shape[2]))), 0)
+            print(tokens.shape)
+
 
         return tokens

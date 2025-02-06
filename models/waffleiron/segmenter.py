@@ -50,4 +50,4 @@ class Segmenter(nn.Module):
         #print(tokens)
         #.
         # print(tokens.shape)
-        return tokens_1, tokens, self.classif(tokens)
+        return tokens_1, tokens, self.classif(tokens[-1])
