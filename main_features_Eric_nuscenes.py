@@ -90,7 +90,7 @@ class HD_Model:
 
                 samples_hv = self.encode(first_sample).to(torch.int32)
 
-                if i==0 and b==0:
+                """if i==0 and b==0:
                     # Apply t-SNE to reduce dimensions to 2D
                     tsne = TSNE(n_components=2, perplexity=10)
                     features_2d = tsne.fit_transform(samples_hv.cpu())
@@ -107,7 +107,7 @@ class HD_Model:
                     plt.savefig("tsne_plot_nuscenes.png", dpi=300, bbox_inches="tight")
 
                     # Show the plot (optional)
-                    plt.show()
+                    plt.show()"""
                 
                 #### Original ####
                 #temp = torch.zeros(self.num_classes, self.hd_dim, dtype=torch.int32).to(self.device)
