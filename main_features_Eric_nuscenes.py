@@ -89,25 +89,6 @@ class HD_Model:
                 # HD training
 
                 samples_hv = self.encode(first_sample).to(torch.int32)
-
-                """if i==0 and b==0:
-                    # Apply t-SNE to reduce dimensions to 2D
-                    tsne = TSNE(n_components=2, perplexity=10)
-                    features_2d = tsne.fit_transform(samples_hv.cpu())
-
-                    # Plot the t-SNE result
-                    plt.figure(figsize=(10, 8))
-                    scatter = sns.scatterplot(x=features_2d[:, 0], y=features_2d[:, 1], hue=first_label.cpu(), palette="tab10", alpha=0.7)
-                    plt.legend(title="Classes", bbox_to_anchor=(1.05, 1), loc="upper left")
-                    plt.xlabel("t-SNE Component 1")
-                    plt.ylabel("t-SNE Component 2")
-                    plt.title("t-SNE Visualization of Features")
-
-                    # Save the plot
-                    plt.savefig("tsne_plot_nuscenes.png", dpi=300, bbox_inches="tight")
-
-                    # Show the plot (optional)
-                    plt.show()"""
                 
                 #### Original ####
                 #temp = torch.zeros(self.num_classes, self.hd_dim, dtype=torch.int32).to(self.device)
@@ -136,7 +117,6 @@ class HD_Model:
                     end = min(b + batch, int(num_voxels[i]))  # Ensure we don't exceed num_voxels[i]
                     first_sample = torch.Tensor(features[i][b:end]).to(self.device)
                     first_label = torch.Tensor(labels[i][b:end]).to(torch.int32).to(self.device)
-                    print(torch.bincount(first_label))
                     first_sample = self.normalize(first_sample) # Z1 score seems to work
 
                     #for vox in range(len(first_sample)):
