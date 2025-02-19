@@ -204,24 +204,30 @@ class WaffleIron(nn.Module):
             self.channel_mix[d].compress()
             self.spatial_mix[d].compress()
 
-    def forward(self, tokens, cell_ind, occupied_cell, stop=48):
+    def forward(self, tokens, cell_ind, occupied_cell, stop=48, all_features = False):
         # Build all 3D to 2D projection matrices
         batch_size, nb_feat, num_points = tokens.shape
         sp_mat = get_all_projections(
             cell_ind, nb_feat, batch_size, num_points, 
             occupied_cell, tokens.device, self.grids_shape,
         )
-
-        # Actual backbone
-        tokens = torch.reshape(tokens, (1, tokens.shape[0], tokens.shape[1], tokens.shape[2]))
-        for d, (smix, cmix) in enumerate(zip(self.spatial_mix, self.channel_mix)):
-            if d == stop:
-                break
-            print(tokens.shape)
-            tokens_new = smix(tokens[-1], sp_mat[d % len(sp_mat)])
-            tokens_new = cmix(tokens_new)
-            tokens = torch.cat((tokens, torch.reshape(tokens_new, (1, tokens_new.shape[0], tokens_new.shape[1], tokens_new.shape[2]))), 0)
-            print(tokens.shape)
-
+        
+        if all_features: ## This one returns the 48 intermediate layers for each token as well
+            tokens = torch.reshape(tokens, (1, tokens.shape[0], tokens.shape[1], tokens.shape[2])) # This is just to get the intermediate
+            for d, (smix, cmix) in enumerate(zip(self.spatial_mix, self.channel_mix)):
+                if d == stop:
+                    break
+                #print(tokens.shape)
+                tokens_new = smix(tokens[-1], sp_mat[d % len(sp_mat)])
+                tokens_new = cmix(tokens_new)
+                tokens = torch.cat((tokens, torch.reshape(tokens_new, (1, tokens_new.shape[0], tokens_new.shape[1], tokens_new.shape[2]))), 0)
+                #print(tokens.shape)
+        else:
+            for d, (smix, cmix) in enumerate(zip(self.spatial_mix, self.channel_mix)):
+                if d == stop:
+                    break
+                tokens = smix(tokens, sp_mat[d % len(sp_mat)])
+                tokens = cmix(tokens)
+                #print(tokens.shape)
 
         return tokens
