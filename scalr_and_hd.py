@@ -102,7 +102,10 @@ class Feature_Extractor:
 
         self.model.eval()
 
-    def forward_model(self, it, batch):
+    def forward_model(self, it, batch, start=0, stop=48):
+
+        # Checking all of the parameters needed for feature extractor
+        # Obj: only pass what you need
         feat = batch["feat"]
         labels = batch["labels_orig"]
         cell_ind = batch["cell_ind"]
@@ -123,7 +126,7 @@ class Feature_Extractor:
             with torch.autocast("cuda", enabled=True):
                 # Logits
                 with torch.no_grad():
-                    out = self.model(*net_inputs, self.early_exit)
+                    out = self.model(*net_inputs, stop=stop)
                     encode, tokens, out = out[0], out[1], out[2]
                     pred_label = out.max(1)[1]
 
@@ -133,13 +136,13 @@ class Feature_Extractor:
                     #torch.cuda.synchronize(device=self.device)
         else:
             with torch.no_grad():
-                out = self.model(*net_inputs, self.early_exit)
+                out = self.model(*net_inputs, stop=stop)
                 encode, tokens, out = out[0], out[1], out[2]
                 pred_label = out.max(1)[1]
 
                 # Only return samples that are not noise
                 where = labels != 255
-        
+
         return tokens[0,:,where], labels[where], pred_label[0, where]
 
     def test(self, loader, total_voxels):        
@@ -233,8 +236,8 @@ class HD_Model:
 
         print("Finished loading data loaders")
     
-    def sample_to_encode(self, it, batch):
-        features, labels, soa_result = self.feature_extractor.forward_model(it, batch)
+    def sample_to_encode(self, it, batch, stop_layer=48):
+        features, labels, soa_result = self.feature_extractor.forward_model(it, batch, stop_layer) # Everything for what hasn't been dropped
         features = torch.transpose(features, 0, 1).to(dtype=torch.float32, device = self.device, non_blocking=True)
         labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
 
@@ -252,10 +255,12 @@ class HD_Model:
         print("\nTrain First\n")
 
         for it, batch in tqdm(enumerate(self.train_loader), desc="Training"):
+ 
             samples_hv, labels = self.sample_to_encode(it, batch)
+            
             for b in range(0, samples_hv.shape[0], self.point_per_iter):
                 end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
-           
+        
             #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
             
                 self.model.add(samples_hv[b:end], labels[b:end])
@@ -330,8 +335,9 @@ class HD_Model:
         
         start_idx = 0
         for it, batch in tqdm(enumerate(loader), desc="Validation:"):
+      
+            samples_hv, labels = self.sample_to_encode(it, batch, stop_layer) # Only return the features that haven't been dropped
             
-            samples_hv, labels = self.sample_to_encode(it, batch)
             for b in range(0, samples_hv.shape[0], self.point_per_iter):
                 end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
                 samples_hv_here = samples_hv[b:end]
@@ -385,7 +391,8 @@ class HD_Model:
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-stop', '--layers', type=int, help='how many layers deep', default=48)
+    parser.add_argument('-stops', '--layers', nargs='+', type=int, help='how many layers deep', default=[48])
+    parser.add_argument('--confidence', type=float, help="Confidence threshold", default=1.0)
     #parser.add_argument('-soa', '--soa', action="store_true", default=False, help='Plot SOA')
     parser.add_argument('-number_samples', '--number_samples', type=int, help='how many scans to train', default=500)
     parser.add_argument(
