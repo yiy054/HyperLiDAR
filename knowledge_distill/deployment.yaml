@@ -29,12 +29,12 @@ spec:
           limits:
             memory: "8G"
             cpu: "2"
-            ephemeral-storage: "1Gi"
+            ephemeral-storage: "5Gi"
             #nvidia.com/gpu: 1
           requests:
              memory: "6G"
              cpu: "1"
-             ephemeral-storage: "500M"
+             ephemeral-storage: "2Gi"
              #nvidia.com/gpu: 1
       volumes:
         - name: ivannia-volume-clone
