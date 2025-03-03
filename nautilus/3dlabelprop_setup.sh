@@ -26,11 +26,12 @@ bash compile_wrappers.sh
 echo Y | pip install --force-reinstall torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu117
 echo Y | conda install -c torchhd torchhd
 
-cd /tmp
-wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
-apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
-apt update
-apt-get -y install intel-mkl-64bit-2018.2-046
+## Not sure what this is for
+#cd /tmp
+#wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+#apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+#apt update
+#apt-get -y install intel-mkl-64bit-2018.2-046
 
 #export LD_LIBRARY_PATH=/root/anaconda3/envs/3DLabelProp/lib:$LD_LIBRARY_PATH
 # OR export LD_LIBRARY_PATH=/home/ubuntu/anaconda3/envs/3DLabelProp/lib:$LD_LIBRARY_PATH
