@@ -25,18 +25,12 @@ RUN git clone --depth=1 https://github.com/DarthIV02/HyperLiDAR.git /home/HyperL
 RUN conda create -n env python=3.8 -y && \
     conda init bash
 
-WORKDIR /home/OFAKD
+WORKDIR /home/HyperLiDAR
 
 # make RUN commands use the new environment
 SHELL ["conda", "run", "--no-capture-output", "-n", "env", "/bin/bash", "-c"]
 
 RUN echo 'conda activate env' >> /root/.bashrc
-
-RUN echo Y | pip install --force-reinstall torch==1.10.2 torchvision==0.11.3 torchaudio --extra-index-url https://download.pytorch.org/whl/cu113 && \
-    echo Y | pip install timm==0.6.5 && \
-    echo Y | pip install -r requirements.txt
-
-WORKDIR /home/HyperLiDAR
 
 RUN bash nautilus/3dlabelprop_setup.sh
 
@@ -50,4 +44,12 @@ RUN tar -xvzf info_datasets.tar.gz
 
 RUN rm info_datasets.tar.gz
 
+WORKDIR /home/OFAKD
+
 RUN echo Y | pip install pyyaml
+
+RUN echo Y | pip install --force-reinstall torch==1.10.2 torchvision==0.11.3 torchaudio --extra-index-url https://download.pytorch.org/whl/cu113 && \
+    echo Y | pip install timm==0.6.5 && \
+    echo Y | pip install -r requirements.txt
+
+
