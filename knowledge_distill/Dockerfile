@@ -35,8 +35,7 @@ RUN echo 'conda activate env' >> /root/.bashrc
 
 RUN echo Y | pip install --force-reinstall torch==1.10.2 torchvision==0.11.3 torchaudio --extra-index-url https://download.pytorch.org/whl/cu113 && \
     echo Y | pip install timm==0.6.5 && \
-    echo Y | pip install -r requirements.txt && \
-    echo Y | pip install pyyaml
+    echo Y | pip install -r requirements.txt
 
 WORKDIR /home/HyperLiDAR
 
@@ -51,3 +50,5 @@ RUN wget https://github.com/valeoai/ScaLR/releases/download/v0.1.0/info_datasets
 RUN tar -xvzf info_datasets.tar.gz
 
 RUN rm info_datasets.tar.gz
+
+RUN echo Y | pip install pyyaml
