@@ -19,11 +19,11 @@ tar -xf vscode_cli.tar.gz
 #cd /home
 #git clone https://github.com/DarthIV02/3DLabelProp.git
 #cd 3DLabelProp/
-echo Y | conda install pytorch==2.4.1 torchvision==0.19.1 torchaudio cudatoolkit=11.0 -c pytorch
+#echo Y | conda install pytorch==2.4.1 torchvision==0.19.1 torchaudio cudatoolkit=11.0 -c pytorch
 echo Y | pip install -r requirements.txt
 cd cpp_wrappers
 bash compile_wrappers.sh
-echo Y | pip install --force-reinstall torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu117
+#echo Y | pip install --force-reinstall torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu117
 echo Y | conda install -c torchhd torchhd
 
 ## Not sure what this is for
