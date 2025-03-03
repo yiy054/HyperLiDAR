@@ -14,7 +14,9 @@ RUN wget https://repo.anaconda.com/archive/Anaconda3-2023.03-1-Linux-x86_64.sh &
 
 ENV PATH=$PATH:/root/anaconda3/bin/
 
-WORKDIR /root/main
+WORKDIR /home
+
+COPY initial_setup.sh .
 
 RUN bash initial_setup.sh
 
@@ -24,8 +26,6 @@ RUN conda create -n env python=3.8 -y && \
     conda init bash
 
 WORKDIR /home/OFAKD
-
-#COPY . .
 
 # make RUN commands use the new environment
 SHELL ["conda", "run", "--no-capture-output", "-n", "cenet", "/bin/bash", "-c"]
