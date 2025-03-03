@@ -14,23 +14,24 @@ RUN wget https://repo.anaconda.com/archive/Anaconda3-2023.03-1-Linux-x86_64.sh &
 
 ENV PATH=$PATH:/root/anaconda3/bin/
 
+WORKDIR /root/main
+
+RUN bash initial_setup.sh
+
 ## install repo / conda environment (repo instructions)
-RUN git clone --depth=1 https://github.com/huixiancheng/CENet /home/CENET
-RUN conda create -n cenet python=3.8 -y && \
+RUN git clone --depth=1 https://github.com/Hao840/OFAKD.git /home/OFAKD
+RUN conda create -n env python=3.8 -y && \
     conda init bash
 
-WORKDIR /root/CENET
+WORKDIR /home/OFAKD
 
-COPY . .
+#COPY . .
 
 # make RUN commands use the new environment
 SHELL ["conda", "run", "--no-capture-output", "-n", "cenet", "/bin/bash", "-c"]
 
-RUN yes | apt-get install p7zip-full && \ 
-yes | apt-get install vim && \
-yes | apt-get install tmux 
+RUN echo 'conda activate env' >> /root/.bashrc
 
-RUN echo 'conda activate cenet' >> /root/.bashrc
-
-RUN yes | pip install -r requirements_cenet.txt && \
-yes | pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu118
+RUN echo Y | pip install --force-reinstall torch==1.10.2 torchvision==0.11.3 torchaudio --extra-index-url https://download.pytorch.org/whl/cu113 && \
+    echo Y | pip install timm==0.6.5 && \
+    echo Y | pip install -r requirements.txt
