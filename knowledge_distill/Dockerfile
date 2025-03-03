@@ -22,6 +22,7 @@ RUN bash initial_setup.sh
 
 ## install repo / conda environment (repo instructions)
 RUN git clone --depth=1 https://github.com/Hao840/OFAKD.git /home/OFAKD
+RUN git clone --depth=1 https://github.com/DarthIV02/HyperLiDAR.git /home/HyperLiDAR
 RUN conda create -n env python=3.8 -y && \
     conda init bash
 
@@ -35,3 +36,17 @@ RUN echo 'conda activate env' >> /root/.bashrc
 RUN echo Y | pip install --force-reinstall torch==1.10.2 torchvision==0.11.3 torchaudio --extra-index-url https://download.pytorch.org/whl/cu113 && \
     echo Y | pip install timm==0.6.5 && \
     echo Y | pip install -r requirements.txt
+
+WORKDIR /home/HyperLiDAR
+
+RUN bash nautilus/3dlabelprop_setup.sh
+
+RUN git clone https://github.com/valeoai/WaffleIron
+
+RUN echo Y | pip install -e WaffleIron/
+
+RUN wget https://github.com/valeoai/ScaLR/releases/download/v0.1.0/info_datasets.tar.gz
+
+RUN tar -xvzf info_datasets.tar.gz
+
+RUN rm info_datasets.tar.gz
