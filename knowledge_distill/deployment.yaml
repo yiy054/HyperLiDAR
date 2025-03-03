@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: one-for-all-pod
-        image: nvidia/cuda:11.3.1-cudnn8-devel-ubuntu20.04
+        image: ghcr.io/darthiv02/knowledge_distill:1.0
         command: ["sleep", "infinity"]
         volumeMounts:
           - mountPath: /mnt/data
@@ -27,15 +27,15 @@ spec:
             name: cache-volume
         resources:
           limits:
-            memory: "8G"
+            memory: "32G"
             cpu: "2"
-            ephemeral-storage: "25Gi"
-            nvidia.com/gpu: 1
+            ephemeral-storage: "120Gi"
+            nvidia.com/gpu: 4
           requests:
-             memory: "6G"
+             memory: "24G"
              cpu: "1"
-             ephemeral-storage: "10Gi"
-             nvidia.com/gpu: 1
+             ephemeral-storage: "80Gi"
+             nvidia.com/gpu: 4
       volumes:
         - name: ivannia-volume-clone
           persistentVolumeClaim:
