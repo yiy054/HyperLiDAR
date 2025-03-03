@@ -1,5 +1,4 @@
 # Knowledge distillation
-
 FROM nvidia/cuda:11.3.1-cudnn8-devel-ubuntu20.04
 
 ENV DEBIAN_FRONTEND='noninteractive'
@@ -21,7 +20,7 @@ COPY initial_setup.sh .
 RUN bash initial_setup.sh
 
 ## install repo / conda environment (repo instructions)
-RUN git clone --depth=1 https://github.com/Hao840/OFAKD.git /home/OFAKD
+RUN git clone --depth=1 https://github.com/DarthIV02/OFAKD.git /home/OFAKD
 RUN git clone --depth=1 https://github.com/DarthIV02/HyperLiDAR.git /home/HyperLiDAR
 RUN conda create -n env python=3.8 -y && \
     conda init bash
