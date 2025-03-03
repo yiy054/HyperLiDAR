@@ -6,7 +6,7 @@ ENV DEBIAN_FRONTEND='noninteractive'
 
 ## apt installs
 RUN apt-get update && \
-    apt install -y git wget tmuz zip git && \
+    apt install -y git wget tmux zip git && \
 
 ## install conda
 RUN wget https://repo.anaconda.com/archive/Anaconda3-2023.03-1-Linux-x86_64.sh && \
