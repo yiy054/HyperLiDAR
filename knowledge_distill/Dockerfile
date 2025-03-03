@@ -28,7 +28,7 @@ RUN conda create -n env python=3.8 -y && \
 WORKDIR /home/OFAKD
 
 # make RUN commands use the new environment
-SHELL ["conda", "run", "--no-capture-output", "-n", "cenet", "/bin/bash", "-c"]
+SHELL ["conda", "run", "--no-capture-output", "-n", "env", "/bin/bash", "-c"]
 
 RUN echo 'conda activate env' >> /root/.bashrc
 
