@@ -46,6 +46,8 @@ RUN tar -xvzf info_datasets.tar.gz
 
 RUN rm info_datasets.tar.gz
 
+RUN echo Y | pip install -r requirements.txt
+
 WORKDIR /home/OFAKD
 
 RUN echo Y | pip install pyyaml
