@@ -648,6 +648,7 @@ def train_one_epoch(
 
 
 def validate(model, loader, loss_fn, args, amp_autocast=suppress, log_suffix=''):
+    
     batch_time_m = AverageMeter()
     losses_m = AverageMeter()
     top1_m = AverageMeter()
@@ -950,22 +951,6 @@ if __name__ == "__main__":
     
     ###### Passing the dataset ######
 
-    second_order = hasattr(optimizer, 'is_second_order') and optimizer.is_second_order
-    batch_time_m = AverageMeter()
-    data_time_m = AverageMeter()
-    losses_m = AverageMeter()
-    losses_gt_m = AverageMeter()
-    losses_kd_m = AverageMeter()
-
-    from collections import defaultdict
-    losses_m_dict = defaultdict(AverageMeter)
-
-    distiller.train()
-
-    end = time.time()
-    last_idx = len(loader) - 1
-    num_updates = epoch * len(loader)
-
     for epoch in range(start_epoch, num_epochs):
         for it, batch in tqdm(enumerate(train_loader), desc="Training"):
             features, labels, soa_result = feature_extractor.forward_model(it, batch) # Everything for what hasn't been dropped
@@ -973,4 +958,41 @@ if __name__ == "__main__":
                     epoch, distiller, train_loader, optimizer, args,
                     lr_scheduler=lr_scheduler, output_dir='/home/output_dist',
                     amp_autocast=amp_autocast, loss_scaler=loss_scaler, model_emas=model_emas, mixup_fn=mixup_fn)
+
+            is_eval = epoch > int(args.eval_interval_end * args.epochs) or epoch % args.eval_interval == 0
+            if not args.speedtest and is_eval:
+                eval_metrics = validate(model, loader_eval, validate_loss_fn, args, amp_autocast=amp_autocast)
+
+                if saver is not None:
+                    # save proper checkpoint with eval metric
+                    save_metric = eval_metrics[eval_metric]
+                    best_metric, best_epoch = saver.save_checkpoint(epoch, metric=save_metric)
+
+                if model_emas is not None and not args.model_ema_force_cpu:
+                    for j, ((ema, decay), ema_saver) in enumerate(zip(model_emas, ema_savers)):
+
+                        if args.distributed and args.dist_bn in ('broadcast', 'reduce'):
+                            distribute_bn(ema, args.world_size, args.dist_bn == 'reduce')
+
+                        ema_eval_metrics = validate(ema.module, loader_eval, validate_loss_fn, args,
+                                                    amp_autocast=amp_autocast, log_suffix=f' (EMA {decay:.5f})')
+
+                        if ema_saver is not None:
+                            # save proper checkpoint with eval metric
+                            save_metric = ema_eval_metrics[eval_metric]
+                            ema_saver.save_checkpoint(epoch, metric=save_metric)
+
+                if output_dir is not None:
+                    update_summary(
+                        epoch, train_metrics, eval_metrics, os.path.join(output_dir, 'summary.csv'),
+                        write_header=best_metric is None)
+
+            if lr_scheduler is not None:
+                # step LR for next epoch
+                lr_scheduler.step(epoch + 1, eval_metrics[eval_metric])
+
+            tp.update()
+            if args.rank == 0:
+                print(f'Will finish at {tp.get_pred_text()}')
+                print(f'Avg running time of latest {len(tp.time_list)} epochs: {np.mean(tp.time_list):.2f}s/ep.')
 
