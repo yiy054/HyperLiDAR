@@ -23,7 +23,7 @@ from sklearn.metrics import confusion_matrix
 import torchhd
 from torchhd.models import Centroid
 from torchhd import embeddings
-from knowladge_distill.ofa import OFA
+from knowledge_distill.ofa import OFA
 from timm.models import convert_splitbn_model, create_model, model_parameters, safe_model_name, load_checkpoint
 from timm.loss import *
 from timm.optim import create_optimizer_v2, optimizer_kwargs
