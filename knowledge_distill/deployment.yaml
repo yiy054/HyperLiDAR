@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: one-for-all-pod
-        image: ghcr.io/darthiv02/knowledge_distill:1.0
+        image: ghcr.io/darthiv02/knowledge_distill:1.1
         command: ["sleep", "infinity"]
         volumeMounts:
           - mountPath: /mnt/data
