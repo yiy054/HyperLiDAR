@@ -54,4 +54,13 @@ RUN echo Y | pip install --force-reinstall torch==1.10.2 torchvision==0.11.3 tor
     echo Y | pip install timm==0.6.5 && \
     echo Y | pip install -r requirements.txt
 
+RUN apt install software-properties-common
+
+RUN echo Y | add-apt-repository ppa:ubuntu-toolchain-r/test
+
+RUN echo Y | apt-get update
+
+RUN echo Y | apt-get upgrade libstdc++6
+
+RUN echo Y | apt-get dist-upgrade
 
