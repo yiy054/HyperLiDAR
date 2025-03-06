@@ -347,10 +347,8 @@ if __name__ == "__main__":
     optimizer = optim.SGD(linear.parameters(), lr=0.01)  # Optimizing only the Linear layer
 
     # Initialize the first layer -> Second one keep it intact
-    for n, m in projector.named_modules():
-        nn.init.zeros_(m.bias)
-        trunc_normal_(m.weight, std=.02)
-        break
+    nn.init.zeros_(linear.bias)
+    trunc_normal_(linear.weight, std=.02)
 
     for it, batch in tqdm(enumerate(train_loader), desc="Transfer Learning: "):
         features_complete, labels, soa_result_complete = feature_extractor_complete.forward_model(it, batch, stop=48)
