@@ -337,7 +337,7 @@ if __name__ == "__main__":
     feature_extractor_small = Feature_Extractor(nb_class = num_classes, device=device, early_exit=36, args=args)
     feature_extractor_small.load_pretrained(path_pretrained)
 
-    linear = nn.Linear(758, 758)
+    linear = nn.Linear(768, 768)
 
     projector = nn.Sequential(
         linear,  # todo: cifar100
