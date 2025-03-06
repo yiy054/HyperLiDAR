@@ -28,6 +28,9 @@ from timm.models.layers import _assert, trunc_normal_
 
 import torch.optim as optim
 
+import numpy as np
+import matplotlib.pyplot as plt
+
 def ofa_loss(logits_student, logits_teacher, target_mask, eps, temperature=1.):
     pred_student = F.softmax(logits_student / temperature, dim=1)
     pred_teacher = F.softmax(logits_teacher / temperature, dim=1)
@@ -352,24 +355,46 @@ if __name__ == "__main__":
     nn.init.zeros_(linear.bias)
     trunc_normal_(linear.weight, std=.02)
 
-    for it, batch in tqdm(enumerate(train_loader), desc="Transfer Learning: "):
-        features_complete, labels, soa_result_complete = feature_extractor_complete.forward_model(it, batch, stop=48)
-        features_small, _, soa_result_small = feature_extractor_complete.forward_model(it, batch, stop=36)
+    loss_epochs = []
+    for e in range(10):
+        loss_epoch = []
+        for it, batch in tqdm(enumerate(train_loader), desc=f"Transfer Learning at epoch {e}: "):
+            features_complete, labels, soa_result_complete = feature_extractor_complete.forward_model(it, batch, stop=48)
+            features_small, _, soa_result_small = feature_extractor_complete.forward_model(it, batch, stop=36)
 
-        projection = linear(torch.transpose(features_small, 0, 1).to(torch.float32))
-        print(projection.shape)
+            projection = linear(torch.transpose(features_small, 0, 1).to(torch.float32))
 
-        small_head = feature_extractor_complete.model.classif(torch.reshape(projection, (1, projection.shape[1], projection.shape[0])))
+            small_head = feature_extractor_complete.model.classif(torch.reshape(projection, (1, projection.shape[1], projection.shape[0])))
 
-        target_mask = F.one_hot(labels.argmax(-1), num_classes).to(device)
+            target_mask = F.one_hot(labels, num_classes).to(device)
 
-        loss = ofa_loss(small_head, soa_result_complete, target_mask)
+            loss = ofa_loss(torch.transpose(small_head[0], 0,1), torch.transpose(soa_result_complete, 0,1), target_mask, 1)
 
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
-        print(f"Loss at it {it}: {loss}")
+            loss_epoch.append(loss)
+        loss_epochs.append(np.mean(np.array(loss_epoch)))
+
+    # Create a range of epochs (assuming the loss array corresponds to these epochs)
+    epochs = np.arange(1, len(loss_values) + 1)
+
+    # Plot the loss values
+    plt.plot(epochs, loss_values, marker='o', color='b', label='Loss')
+
+    # Add labels and title
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Loss per Epoch')
+
+    # Show the legend
+    plt.legend()
+
+    # Save the plot as an image file
+    plt.savefig('loss_per_epoch.png')
+    
+
 
 
 
