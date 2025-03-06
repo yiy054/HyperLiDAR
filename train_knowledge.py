@@ -359,7 +359,7 @@ if __name__ == "__main__":
         projection = linear(torch.transpose(features_small, 0, 1).to(torch.float32))
         print(projection.shape)
 
-        small_head = feature_extractor_complete.model.classif(projection)
+        small_head = feature_extractor_complete.model.classif(torch.reshape(projection, (1, projection.shape[0], projection.shape[1])))
 
         target_mask = F.one_hot(labels.argmax(-1), num_classes).to(device)
 
