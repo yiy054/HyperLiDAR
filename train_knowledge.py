@@ -374,14 +374,18 @@ if __name__ == "__main__":
             loss.backward()
             optimizer.step()
 
-            loss_epoch.append(loss)
-        loss_epochs.append(np.mean(np.array(loss_epoch)))
+            torch.save(linear.state_dict(), 'linear_weights_32.pth')
+
+            loss_epoch.append(float(loss.cpu()))
+        loss_at_epoch = np.mean(np.array(loss_epoch))
+        print(f"Loss at epoch {e} = {loss_at_epoch}")
+        loss_epochs.append(loss_at_epoch)
 
     # Create a range of epochs (assuming the loss array corresponds to these epochs)
-    epochs = np.arange(1, len(loss_values) + 1)
+    epochs = np.arange(1, len(loss_epochs) + 1)
 
     # Plot the loss values
-    plt.plot(epochs, loss_values, marker='o', color='b', label='Loss')
+    plt.plot(epochs, loss_epochs, marker='o', color='b', label='Loss')
 
     # Add labels and title
     plt.xlabel('Epochs')
