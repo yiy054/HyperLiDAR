@@ -331,10 +331,10 @@ if __name__ == "__main__":
         persistent_workers=False,
     )
 
-    feature_extractor_complete = Feature_Extractor(nb_class = num_classes, device=device, early_exit=48, args=kwargs['args'])
+    feature_extractor_complete = Feature_Extractor(nb_class = num_classes, device=device, early_exit=48, args=args)
     feature_extractor_complete.load_pretrained(path_pretrained)
 
-    feature_extractor_small = Feature_Extractor(nb_class = num_classes, device=device, early_exit=36, args=kwargs['args'])
+    feature_extractor_small = Feature_Extractor(nb_class = num_classes, device=device, early_exit=36, args=args)
     feature_extractor_small.load_pretrained(path_pretrained)
 
     linear = nn.Linear(758, 758)
