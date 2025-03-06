@@ -155,7 +155,7 @@ class Feature_Extractor:
                 # Only return samples that are not noise
                 where = labels != 255
 
-        return tokens[0,:,where], labels[where], out[0, where]
+        return tokens[0,:,where], labels[where], out[:, where]
 
     def test(self, loader, total_voxels):        
         # Metric
