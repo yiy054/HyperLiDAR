@@ -344,7 +344,11 @@ if __name__ == "__main__":
         feature_extractor_complete.model.classif
     )
 
+    projector.to(device)
+
     optimizer = optim.SGD(linear.parameters(), lr=0.01)  # Optimizing only the Linear layer
+
+    optimizer.to(device)
 
     # Initialize the first layer -> Second one keep it intact
     nn.init.zeros_(linear.bias)
@@ -356,7 +360,7 @@ if __name__ == "__main__":
 
         small_head = projector(features_small)
 
-        target_mask = F.one_hot(labels.argmax(-1), num_classes)
+        target_mask = F.one_hot(labels.argmax(-1), num_classes).to(device)
 
         loss = ofa_loss(small_head, soa_result_complete, target_mask)
 
