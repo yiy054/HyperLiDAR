@@ -348,8 +348,6 @@ if __name__ == "__main__":
 
     optimizer = optim.SGD(linear.parameters(), lr=0.01)  # Optimizing only the Linear layer
 
-    optimizer.to(device)
-
     # Initialize the first layer -> Second one keep it intact
     nn.init.zeros_(linear.bias)
     trunc_normal_(linear.weight, std=.02)
