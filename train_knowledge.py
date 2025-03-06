@@ -357,9 +357,8 @@ if __name__ == "__main__":
         features_small, _, soa_result_small = feature_extractor_complete.forward_model(it, batch, stop=36)
 
         projection = linear(torch.transpose(features_small, 0, 1).to(torch.float32))
-        print(projection.shape)
 
-        small_head = feature_extractor_complete.model.classif(torch.transpose(projection, 0, 1))
+        small_head = feature_extractor_complete.model.classif(projection)
 
         target_mask = F.one_hot(labels.argmax(-1), num_classes).to(device)
 
