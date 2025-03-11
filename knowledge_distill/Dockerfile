@@ -32,7 +32,7 @@ SHELL ["conda", "run", "--no-capture-output", "-n", "env", "/bin/bash", "-c"]
 
 RUN echo 'conda activate env' >> /root/.bashrc
 
-RUN echo Y | pip install --force-reinstall torch==1.10.2 torchvision==0.11.3 torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
+RUN echo Y | pip install --force-reinstall torch==1.12.0 torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
 
 RUN bash nautilus/3dlabelprop_setup.sh
 
@@ -52,9 +52,10 @@ WORKDIR /home/OFAKD
 
 RUN echo Y | pip install pyyaml
 
-RUN echo Y | pip install --force-reinstall torch==1.10.2 torchvision==0.11.3 torchaudio --extra-index-url https://download.pytorch.org/whl/cu113 && \
-    echo Y | pip install timm==0.6.5 && \
+RUN echo Y | pip install timm==0.6.5 && \
     echo Y | pip install -r requirements.txt
+
+# echo Y | pip install --force-reinstall torch==0.11.0 torchvision==0.11.3 torchaudio --extra-index-url https://download.pytorch.org/whl/cu113 && \
 
 RUN apt install software-properties-common
 
@@ -66,3 +67,6 @@ RUN echo Y | apt-get upgrade libstdc++6
 
 RUN echo Y | apt-get dist-upgrade
 
+WORKDIR /home/HyperLiDAR
+
+RUN RUN echo Y | pip install --force-reinstall torch==1.12.0 torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
