@@ -69,4 +69,6 @@ RUN echo Y | apt-get dist-upgrade
 
 WORKDIR /home/HyperLiDAR
 
+RUN echo Y | pip install -r requirements.txt
+
 RUN RUN echo Y | pip install --force-reinstall torch==1.12.0 torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
