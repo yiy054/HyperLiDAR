@@ -204,10 +204,7 @@ class HD_Model:
 
         """ Normalize with Z-score"""
 
-        print(samples.shape)
-
         mean = torch.mean(samples, dim=0)
-        print(mean.shape)
         std = torch.std(samples, dim=0)
 
         samples = (samples - mean) / (std + 1e-8)
@@ -244,6 +241,7 @@ class HD_Model:
         self.linear_weights = nn.Linear(768, 768)
         state_dict = torch.load(weights_path)
         self.linear_weights.load_state_dict(state_dict)
+        self.linear_weights = self.linear_weights.to(self.device)
         self.compensation = True
     
     def sample_to_encode(self, it, batch, stop_layer=48):
