@@ -198,6 +198,7 @@ class HD_Model:
         self.num_classes = num_classes
         self.max_samples = kwargs['args'].number_samples
         self.kwargs = kwargs
+        self.compensation = None
 
     def normalize(self, samples):
 
@@ -238,11 +239,20 @@ class HD_Model:
             self.num_vox_val += labels[where].shape[0]
 
         print("Finished loading data loaders")
+
+    def set_compensation(self, weights_path):
+        self.linear_weights = nn.Linear(768, 768)
+        state_dict = torch.load(weights_path)
+        self.linear_weights.load_state_dict(state_dict)
+        self.compensation = True
     
     def sample_to_encode(self, it, batch, stop_layer=48):
         features, labels, soa_result = self.feature_extractor.forward_model(it, batch, stop_layer) # Everything for what hasn't been dropped
         features = torch.transpose(features, 0, 1).to(dtype=torch.float32, device = self.device, non_blocking=True)
         labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
+
+        if self.compensation:
+            features = self.linear_weights(features)
 
         features = self.normalize(features) # Z1 score seems to work
 
@@ -394,7 +404,7 @@ class HD_Model:
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-stops', '--layers', nargs='+', type=int, help='how many layers deep', default=[48])
+    parser.add_argument('-stops', '--layers', nargs='+', type=int, help='how many layers deep', default=[36])
     parser.add_argument('--confidence', type=float, help="Confidence threshold", default=1.0)
     #parser.add_argument('-soa', '--soa', action="store_true", default=False, help='Plot SOA')
     parser.add_argument('-number_samples', '--number_samples', type=int, help='how many scans to train', default=500)
@@ -532,6 +542,7 @@ if __name__ == "__main__":
 
     hd_model = HD_Model(FEAT_SIZE, DIMENSIONS, num_classes, path_pretrained, device=device, args=args)
     hd_model.set_loaders(train_loader=train_loader, val_loader=val_loader)
+    hd_model.set_compensation('linear_weights_32_ep_0.75.pth')
 
     if args.wandb_run:
         run = wandb.init(
