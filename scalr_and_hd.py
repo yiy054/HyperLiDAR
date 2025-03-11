@@ -203,10 +203,7 @@ class HD_Model:
 
         """ Normalize with Z-score"""
 
-        print(samples.shape)
-
         mean = torch.mean(samples, dim=0)
-        print(mean.shape)
         std = torch.std(samples, dim=0)
 
         samples = (samples - mean) / (std + 1e-8)
