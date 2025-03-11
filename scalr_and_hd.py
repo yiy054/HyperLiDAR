@@ -759,7 +759,7 @@ class HD_Model:
         self.device = device
         self.feature_extractor = Feature_Extractor(nb_class = num_classes, device=self.device, early_exit=kwargs['args'].layers, args=kwargs['args'])
         self.feature_extractor.load_pretrained(path_pretrained)
-        self.stop = kwargs['args'].layers
+        self.stop = kwargs['args'].layers[0]
         self.point_per_iter = kwargs['args'].number_samples
         self.num_classes = num_classes
         self.max_samples = kwargs['args'].number_samples
@@ -768,7 +768,7 @@ class HD_Model:
     def normalize(self, samples):
 
         """ Normalize with Z-score"""
-        
+
         mean = torch.mean(samples, dim=0)
         std = torch.std(samples, dim=0)
 
@@ -802,8 +802,8 @@ class HD_Model:
 
         print("Finished loading data loaders")
     
-    def sample_to_encode(self, it, batch, stop_layer=48):
-        features, labels, soa_result = self.feature_extractor.forward_model(it, batch, stop_layer) # Everything for what hasn't been dropped
+    def sample_to_encode(self, it, batch):
+        features, labels, soa_result = self.feature_extractor.forward_model(it, batch, self.stop) # Everything for what hasn't been dropped
         features = torch.transpose(features, 0, 1).to(dtype=torch.float32, device = self.device, non_blocking=True)
         labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
 
@@ -902,7 +902,7 @@ class HD_Model:
         start_idx = 0
         for it, batch in tqdm(enumerate(loader), desc="Validation:"):
       
-            samples_hv, labels = self.sample_to_encode(it, batch, stop_layer) # Only return the features that haven't been dropped
+            samples_hv, labels = self.sample_to_encode(it, batch) # Only return the features that haven't been dropped
             
             for b in range(0, samples_hv.shape[0], self.point_per_iter):
                 end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
