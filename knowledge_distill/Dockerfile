@@ -57,7 +57,7 @@ RUN echo Y | pip install timm==0.6.5 && \
 
 # echo Y | pip install --force-reinstall torch==0.11.0 torchvision==0.11.3 torchaudio --extra-index-url https://download.pytorch.org/whl/cu113 && \
 
-RUN apt install software-properties-common
+RUN echo Y | apt install software-properties-common
 
 RUN echo Y | add-apt-repository ppa:ubuntu-toolchain-r/test
 
