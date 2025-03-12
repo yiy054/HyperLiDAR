@@ -52,7 +52,7 @@ WORKDIR /home/OFAKD
 
 RUN echo Y | pip install pyyaml
 
-RUN echo Y | pip install --force-reinstall torch==0.11.0 torchvision==0.11.3 torchaudio --extra-index-url https://download.pytorch.org/whl/cu113 && \
+RUN echo Y | pip install --force-reinstall torch==1.10.2 torchvision==0.11.3 torchaudio --extra-index-url https://download.pytorch.org/whl/cu113 && \
     echo Y | pip install timm==0.6.5 && \
     echo Y | pip install -r requirements.txt
 
