@@ -336,7 +336,7 @@ class HD_Model:
         start_idx = 0
         for it, batch in tqdm(enumerate(loader), desc="Validation:"):
       
-            samples_hv, labels = self.sample_to_encode(it, batch, stop_layer) # Only return the features that haven't been dropped
+            samples_hv, labels = self.sample_to_encode(it, batch) # Only return the features that haven't been dropped
             
             for b in range(0, samples_hv.shape[0], self.point_per_iter):
                 end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
