@@ -102,7 +102,7 @@ class Feature_Extractor:
 
         self.model.eval()
 
-    def forward_model(self, it, batch, start=0, stop=48):
+    def forward_model(self, it, batch, stop=48):
 
         # Checking all of the parameters needed for feature extractor
         # Obj: only pass what you need
@@ -216,23 +216,21 @@ class HD_Model:
         self.num_vox_train = 0
         self.num_vox_val = 0
 
-        for batch in tqdm(self.train_loader, desc="Training loader: "):
-            labels = batch["labels_orig"]
-            if self.device == torch.device("cuda:0"):
-                labels = labels.cuda(0, non_blocking=True)
-            #torch.cuda.synchronize(device=self.device)
-            where = labels != 255
-            #torch.cuda.synchronize(device=self.device)
-            self.num_vox_train += labels[where].shape[0]
+        for loader, desc, attr in [(self.train_loader, "Training loader", "num_vox_train"),
+                           (self.val_loader, "Validation loader", "num_vox_val")]:
+            for batch in tqdm(loader, desc=desc):
+                labels = batch["labels_orig"]
 
-        for batch in tqdm(self.val_loader, desc="Validation loader: "):
-            labels = batch["labels_orig"]
-            if self.device == torch.device("cuda:0"):
-                labels = labels.cuda(0, non_blocking=True)
-            #torch.cuda.synchronize(device=self.device)
-            where = labels != 255
-            #torch.cuda.synchronize(device=self.device)
-            self.num_vox_val += labels[where].shape[0]
+                # Ensure labels are tensors
+                if isinstance(labels, list):
+                    labels = torch.stack(labels)  # Convert list of tensors to a single tensor
+                
+                # Move to GPU if applicable
+                if self.device.type == "cuda":
+                    labels = labels.cuda(non_blocking=True)
+
+                # Compute the number of valid voxels
+                setattr(self, attr, getattr(self, attr) + (labels != 255).sum().item())
 
         print("Finished loading data loaders")
     

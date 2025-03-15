@@ -212,7 +212,7 @@ class WaffleIron(nn.Module):
             occupied_cell, tokens.device, self.grids_shape,
         )
         
-        if all_features: ## This one returns the 48 intermediate layers for each token as well
+        """if all_features: ## This one returns the 48 intermediate layers for each token as well
             tokens = torch.reshape(tokens, (1, tokens.shape[0], tokens.shape[1], tokens.shape[2])) # This is just to get the intermediate
             for d, (smix, cmix) in enumerate(zip(self.spatial_mix, self.channel_mix)):
                 if d == stop:
@@ -222,12 +222,14 @@ class WaffleIron(nn.Module):
                 tokens_new = cmix(tokens_new)
                 tokens = torch.cat((tokens, torch.reshape(tokens_new, (1, tokens_new.shape[0], tokens_new.shape[1], tokens_new.shape[2]))), 0)
                 #print(tokens.shape)
-        else:
-            for d, (smix, cmix) in enumerate(zip(self.spatial_mix, self.channel_mix)):
-                if d == stop:
-                    break
-                tokens = smix(tokens, self.sp_mat[d % len(self.sp_mat)])
-                tokens = cmix(tokens)
-                #print(tokens.shape)
+        else:"""
+
+        cropped_model = zip(self.spatial_mix, self.channel_mix)
+        cropped_model = list(cropped_model)[:stop]
+
+        for d, (smix, cmix) in enumerate(cropped_model):
+            tokens = smix(tokens, self.sp_mat[d % len(self.sp_mat)])
+            tokens = cmix(tokens)
+            #print(tokens.shape)
 
         return tokens
