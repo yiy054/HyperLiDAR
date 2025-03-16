@@ -198,13 +198,19 @@ class WaffleIron(nn.Module):
                 for d in range(depth)
             ]
         )
+        #cropped_model = zip(self.spatial_mix, self.channel_mix)
+        #self.cropped_model = list(cropped_model)[:stop]
 
     def compress(self):
         for d in range(self.depth):
             self.channel_mix[d].compress()
             self.spatial_mix[d].compress()
 
-    def forward(self, tokens, cell_ind, occupied_cell, stop, all_features):
+    def crop_model(self, stop):
+        self.channel_mix = self.channel_mix[:stop]
+        self.spatial_mix = self.spatial_mix[:stop]
+
+    def forward(self, tokens, cell_ind, occupied_cell):
         # Build all 3D to 2D projection matrices
         batch_size, nb_feat, num_points = tokens.shape
         self.sp_mat = get_all_projections(
@@ -224,10 +230,7 @@ class WaffleIron(nn.Module):
                 #print(tokens.shape)
         else:"""
 
-        cropped_model = zip(self.spatial_mix, self.channel_mix)
-        cropped_model = list(cropped_model)[:stop]
-
-        for d, (smix, cmix) in enumerate(cropped_model):
+        for d, (smix, cmix) in enumerate(zip(self.spatial_mix, self.channel_mix)):
             tokens = smix(tokens, self.sp_mat[d % len(self.sp_mat)])
             tokens = cmix(tokens)
             #print(tokens.shape)

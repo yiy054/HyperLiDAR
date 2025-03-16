@@ -102,7 +102,9 @@ class Feature_Extractor:
 
         self.model.eval()
 
-    def forward_model(self, it, batch, stop=48):
+        self.model.waffleiron.crop_model(self.early_exit)
+
+    def forward_model(self, it, batch):
 
         # Checking all of the parameters needed for feature extractor
         # Obj: only pass what you need
@@ -126,7 +128,7 @@ class Feature_Extractor:
             with torch.autocast("cuda", enabled=True):
                 # Logits
                 with torch.no_grad():
-                    out = self.model(*net_inputs, stop=stop)
+                    out = self.model(*net_inputs)
                     encode, tokens, out = out[0], out[1], out[2]
                     pred_label = out.max(1)[1]
 
@@ -136,7 +138,7 @@ class Feature_Extractor:
                     #torch.cuda.synchronize(device=self.device)
         else:
             with torch.no_grad():
-                out = self.model(*net_inputs, stop=stop)
+                out = self.model(*net_inputs)
                 encode, tokens, out = out[0], out[1], out[2]
                 pred_label = out.max(1)[1]
 
@@ -191,7 +193,7 @@ class HD_Model:
         model = Centroid(out_dim, num_classes)
         self.model = model.to(device=device, non_blocking=True)
         self.device = device
-        self.feature_extractor = Feature_Extractor(nb_class = num_classes, device=self.device, early_exit=kwargs['args'].layers, args=kwargs['args'])
+        self.feature_extractor = Feature_Extractor(nb_class = num_classes, device=self.device, early_exit=int(kwargs['args'].layers[0]), args=kwargs['args'])
         self.feature_extractor.load_pretrained(path_pretrained)
         self.stop = int(kwargs['args'].layers[0])
         self.point_per_iter = kwargs['args'].number_samples
@@ -235,7 +237,7 @@ class HD_Model:
         print("Finished loading data loaders")
     
     def sample_to_encode(self, it, batch):
-        features, labels, soa_result = self.feature_extractor.forward_model(it, batch, self.stop) # Everything for what hasn't been dropped
+        features, labels, soa_result = self.feature_extractor.forward_model(it, batch) # Everything for what hasn't been dropped
         features = torch.transpose(features, 0, 1).to(dtype=torch.float32, device = self.device, non_blocking=True)
         labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
 
@@ -263,8 +265,8 @@ class HD_Model:
             
                 self.model.add(samples_hv[b:end], labels[b:end])
 
-                if self.device == torch.device("cuda:0"):
-                    torch.cuda.synchronize(device=self.device)
+                #if self.device == torch.device("cuda:0"):
+                #    torch.cuda.synchronize(device=self.device)
             if it == self.max_samples:
                 break
             

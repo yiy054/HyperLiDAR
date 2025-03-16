@@ -27,7 +27,7 @@ class Segmenter(nn.Module):
         depth,
         grid_shape,
         drop_path_prob=0,
-        layer_norm=False,
+        layer_norm=False
     ):
         super().__init__()
         # Embedding layer
@@ -41,13 +41,13 @@ class Segmenter(nn.Module):
         self.embed.compress()
         self.waffleiron.compress()
 
-    def forward(self, feats, cell_ind, occupied_cell, neighbors, stop=48, all_features=False):
+    def forward(self, feats, cell_ind, occupied_cell, neighbors):
 
         tokens_1 = self.embed(feats, neighbors) # radius can change based on the local density 
         # Node classification -> self and its neighbors
-        tokens = self.waffleiron(tokens_1, cell_ind, occupied_cell, stop=stop, all_features=all_features)
+        tokens = self.waffleiron(tokens_1, cell_ind, occupied_cell)
 
-        if all_features:
-            return tokens_1, tokens, self.classif(tokens[-1])
-        else:
-            return tokens_1, tokens, self.classif(tokens)
+        #if all_features:
+        #    return tokens_1, tokens, self.classif(tokens[-1])
+        #else:
+        return tokens_1, tokens, self.classif(tokens)
