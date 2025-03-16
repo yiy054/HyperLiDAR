@@ -102,7 +102,9 @@ class Feature_Extractor:
 
         self.model.eval()
 
-    def forward_model(self, it, batch, start=0, stop=48):
+        self.model.waffleiron.crop_model(self.early_exit)
+
+    def forward_model(self, it, batch):
 
         # Checking all of the parameters needed for feature extractor
         # Obj: only pass what you need
@@ -126,7 +128,7 @@ class Feature_Extractor:
             with torch.autocast("cuda", enabled=True):
                 # Logits
                 with torch.no_grad():
-                    out = self.model(*net_inputs, stop=stop)
+                    out = self.model(*net_inputs)
                     encode, tokens, out = out[0], out[1], out[2]
                     pred_label = out.max(1)[1]
 
@@ -136,7 +138,7 @@ class Feature_Extractor:
                     #torch.cuda.synchronize(device=self.device)
         else:
             with torch.no_grad():
-                out = self.model(*net_inputs, stop=stop)
+                out = self.model(*net_inputs)
                 encode, tokens, out = out[0], out[1], out[2]
                 pred_label = out.max(1)[1]
 
@@ -191,7 +193,7 @@ class HD_Model:
         model = Centroid(out_dim, num_classes)
         self.model = model.to(device=device, non_blocking=True)
         self.device = device
-        self.feature_extractor = Feature_Extractor(nb_class = num_classes, device=self.device, early_exit=kwargs['args'].layers, args=kwargs['args'])
+        self.feature_extractor = Feature_Extractor(nb_class = num_classes, device=self.device, early_exit=int(kwargs['args'].layers[0]), args=kwargs['args'])
         self.feature_extractor.load_pretrained(path_pretrained)
         self.stop = int(kwargs['args'].layers[0])
         self.point_per_iter = kwargs['args'].number_samples
@@ -217,23 +219,21 @@ class HD_Model:
         self.num_vox_train = 0
         self.num_vox_val = 0
 
-        for batch in tqdm(self.train_loader, desc="Training loader: "):
-            labels = batch["labels_orig"]
-            if self.device == torch.device("cuda:0"):
-                labels = labels.cuda(0, non_blocking=True)
-            #torch.cuda.synchronize(device=self.device)
-            where = labels != 255
-            #torch.cuda.synchronize(device=self.device)
-            self.num_vox_train += labels[where].shape[0]
+        for loader, desc, attr in [(self.train_loader, "Training loader", "num_vox_train"),
+                           (self.val_loader, "Validation loader", "num_vox_val")]:
+            for batch in tqdm(loader, desc=desc):
+                labels = batch["labels_orig"]
 
-        for batch in tqdm(self.val_loader, desc="Validation loader: "):
-            labels = batch["labels_orig"]
-            if self.device == torch.device("cuda:0"):
-                labels = labels.cuda(0, non_blocking=True)
-            #torch.cuda.synchronize(device=self.device)
-            where = labels != 255
-            #torch.cuda.synchronize(device=self.device)
-            self.num_vox_val += labels[where].shape[0]
+                # Ensure labels are tensors
+                if isinstance(labels, list):
+                    labels = torch.stack(labels)  # Convert list of tensors to a single tensor
+                
+                # Move to GPU if applicable
+                if self.device.type == "cuda":
+                    labels = labels.cuda(non_blocking=True)
+
+                # Compute the number of valid voxels
+                setattr(self, attr, getattr(self, attr) + (labels != 255).sum().item())
 
         print("Finished loading data loaders")
 
@@ -276,8 +276,8 @@ class HD_Model:
             
                 self.model.add(samples_hv[b:end], labels[b:end])
 
-                if self.device == torch.device("cuda:0"):
-                    torch.cuda.synchronize(device=self.device)
+                #if self.device == torch.device("cuda:0"):
+                #    torch.cuda.synchronize(device=self.device)
             if it == self.max_samples:
                 break
             
@@ -540,7 +540,7 @@ if __name__ == "__main__":
 
     hd_model = HD_Model(FEAT_SIZE, DIMENSIONS, num_classes, path_pretrained, device=device, args=args)
     hd_model.set_loaders(train_loader=train_loader, val_loader=val_loader)
-    hd_model.set_compensation('linear_weights_32_ep_0.75.pth')
+    hd_model.set_compensation('linear_weights_24_ep_0.75.pth')
 
     if args.wandb_run:
         run = wandb.init(
