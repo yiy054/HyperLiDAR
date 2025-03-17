@@ -27,13 +27,14 @@ class Segmenter(nn.Module):
         depth,
         grid_shape,
         drop_path_prob=0,
-        layer_norm=False
+        layer_norm=False,
+        early_exit=None,
     ):
         super().__init__()
         # Embedding layer
         self.embed = Embedding(input_channels, feat_channels)
         # WaffleIron backbone
-        self.waffleiron = WaffleIron(feat_channels, depth, grid_shape, drop_path_prob, layer_norm)
+        self.waffleiron = WaffleIron(feat_channels, depth, grid_shape, drop_path_prob, layer_norm, early_exit)
         # Classification layer
         self.classif = nn.Conv1d(feat_channels, nb_class, 1)
 
@@ -45,9 +46,9 @@ class Segmenter(nn.Module):
 
         tokens_1 = self.embed(feats, neighbors) # radius can change based on the local density 
         # Node classification -> self and its neighbors
-        tokens = self.waffleiron(tokens_1, cell_ind, occupied_cell)
+        tokens, exit_layer = self.waffleiron(tokens_1, cell_ind, occupied_cell)
 
         #if all_features:
         #    return tokens_1, tokens, self.classif(tokens[-1])
         #else:
-        return tokens_1, tokens, self.classif(tokens)
+        return tokens_1, tokens, self.classif(tokens), exit_layer

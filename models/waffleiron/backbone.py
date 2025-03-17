@@ -17,6 +17,7 @@ import os
 import torch
 import warnings
 import torch.nn as nn
+from knowledge_distill.cka_loss import cka
 
 from waffleiron import WI_SCATTER_REDUCE
 if WI_SCATTER_REDUCE:
@@ -185,7 +186,7 @@ class SpatialMix(nn.Module):
 
 
 class WaffleIron(nn.Module):
-    def __init__(self, channels, depth, grids_shape, drop_path_prob, layer_norm=False):
+    def __init__(self, channels, depth, grids_shape, drop_path_prob, layer_norm=False, early_exit=None):
         super().__init__()
         self.depth = depth
         self.grids_shape = grids_shape
@@ -198,6 +199,7 @@ class WaffleIron(nn.Module):
                 for d in range(depth)
             ]
         )
+        self.early_exit = [0] + early_exit
         #cropped_model = zip(self.spatial_mix, self.channel_mix)
         #self.cropped_model = list(cropped_model)[:stop]
 
@@ -217,20 +219,22 @@ class WaffleIron(nn.Module):
             cell_ind, nb_feat, batch_size, num_points, 
             occupied_cell, tokens.device, self.grids_shape,
         )
-        
-        """if all_features: ## This one returns the 48 intermediate layers for each token as well
-            tokens = torch.reshape(tokens, (1, tokens.shape[0], tokens.shape[1], tokens.shape[2])) # This is just to get the intermediate
-            for d, (smix, cmix) in enumerate(zip(self.spatial_mix, self.channel_mix)):
-                if d == stop:
-                    break
-                #print(tokens.shape)
-                tokens_new = smix(tokens[-1], self.sp_mat[d % len(self.sp_mat)])
-                tokens_new = cmix(tokens_new)
-                tokens = torch.cat((tokens, torch.reshape(tokens_new, (1, tokens_new.shape[0], tokens_new.shape[1], tokens_new.shape[2]))), 0)
-                #print(tokens.shape)
-        else:"""
+
+        prev_gram = None
 
         for d, (smix, cmix) in enumerate(zip(self.spatial_mix, self.channel_mix)):
+            if d in self.early_exit:
+                ## Check CKA
+                
+                gram_current = torch.matmul(tokens, tokens.T)
+                if prev_gram != None:
+                    cka_loss = cka(gram_current, prev_gram)
+
+                    # Check if cka is bigger than value...
+
+                ## Update prev_tokens
+                prev_gram = gram_current
+                
             tokens = smix(tokens, self.sp_mat[d % len(self.sp_mat)])
             tokens = cmix(tokens)
             #print(tokens.shape)
