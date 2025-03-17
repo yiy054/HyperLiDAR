@@ -227,10 +227,15 @@ class WaffleIron(nn.Module):
                 ## Check CKA
                 
                 gram_current = torch.matmul(tokens, tokens.T)
+                print(gram_current.shape)
+                x = input()
                 if prev_gram != None:
                     cka_loss = cka(gram_current, prev_gram)
 
                     # Check if cka is bigger than value...
+                    print(cka_loss.shape)
+                    print(cka_loss)
+                    x = input()
 
                 ## Update prev_tokens
                 prev_gram = gram_current
