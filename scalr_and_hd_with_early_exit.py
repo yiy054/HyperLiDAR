@@ -38,7 +38,7 @@ class Encoder(nn.Module):
 class Feature_Extractor:
     def __init__(self, input_channels=5, feat_channels=768, depth=48, 
                  grid_shape=[[256, 256], [256, 32], [256, 32]], nb_class=16, layer_norm=True, 
-                 device=torch.device("cpu"), early_exit = 48, **kwargs):
+                 device=torch.device("cpu"), early_exit = [48], **kwargs):
         self.model = Segmenter(
             input_channels=input_channels,
             feat_channels=feat_channels,
@@ -47,6 +47,7 @@ class Feature_Extractor:
             nb_class=nb_class, # class for prediction
             #drop_path_prob=config["waffleiron"]["drop_path"],
             layer_norm=layer_norm,
+            early_exit = early_exit
         )
 
         classif = torch.nn.Conv1d(
@@ -102,7 +103,7 @@ class Feature_Extractor:
 
         self.model.eval()
 
-        self.model.waffleiron.crop_model(self.early_exit)
+        #self.model.waffleiron.crop_model(self.early_exit)
 
     def forward_model(self, it, batch):
 
@@ -193,9 +194,11 @@ class HD_Model:
         model = Centroid(out_dim, num_classes)
         self.model = model.to(device=device, non_blocking=True)
         self.device = device
-        self.feature_extractor = Feature_Extractor(nb_class = num_classes, device=self.device, early_exit=int(kwargs['args'].layers[0]), args=kwargs['args'])
+        self.feature_extractor = Feature_Extractor(nb_class = num_classes, device=self.device, 
+                                                   early_exit=[int(i) for i in kwargs['args'].layers], 
+                                                   args=kwargs['args'])
         self.feature_extractor.load_pretrained(path_pretrained)
-        self.stop = int(kwargs['args'].layers[0])
+        self.stop = kwargs['args'].layers
         self.point_per_iter = kwargs['args'].number_samples
         self.num_classes = num_classes
         self.max_samples = kwargs['args'].number_samples
@@ -237,20 +240,26 @@ class HD_Model:
 
         print("Finished loading data loaders")
 
-    def set_compensation(self, weights_path):
-        self.linear_weights = nn.Linear(768, 768)
-        state_dict = torch.load(weights_path)
-        self.linear_weights.load_state_dict(state_dict)
+    def set_compensation(self, inter_weights_path):
+
+        """Load all the paths for every exit"""
+
+        self.linear_weights = {}
+
+        for layer, path in inter_weights_path.items():
+            self.linear_weights[layer] = nn.Linear(768, 768)
+            state_dict = torch.load(path)
+            self.linear_weights[layer].load_state_dict(state_dict)
         self.linear_weights = self.linear_weights.to(self.device)
         self.compensation = True
     
     def sample_to_encode(self, it, batch):
-        features, labels, soa_result = self.feature_extractor.forward_model(it, batch) # Everything for what hasn't been dropped
+        features, labels, soa_result, exit_layer = self.feature_extractor.forward_model(it, batch) # Everything for what hasn't been dropped
         features = torch.transpose(features, 0, 1).to(dtype=torch.float32, device = self.device, non_blocking=True)
         labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
 
         if self.compensation:
-            features = self.linear_weights(features)
+            features = self.linear_weights[exit_layer](features)
 
         features = self.normalize(features) # Z1 score seems to work
 
@@ -402,7 +411,7 @@ class HD_Model:
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-stops', '--layers', nargs='+', type=int, help='how many layers deep', default=[36])
+    parser.add_argument('-stops', '--layers', nargs='+', type=int, help='how many layers deep', default=[24, 36])
     parser.add_argument('--confidence', type=float, help="Confidence threshold", default=1.0)
     #parser.add_argument('-soa', '--soa', action="store_true", default=False, help='Plot SOA')
     parser.add_argument('-number_samples', '--number_samples', type=int, help='how many scans to train', default=500)
@@ -540,7 +549,7 @@ if __name__ == "__main__":
 
     hd_model = HD_Model(FEAT_SIZE, DIMENSIONS, num_classes, path_pretrained, device=device, args=args)
     hd_model.set_loaders(train_loader=train_loader, val_loader=val_loader)
-    hd_model.set_compensation('linear_weights_24_0.75.pth')
+    hd_model.set_compensation({24: 'linear_weights_24_ep_0.75.pth', 36: 'linear_weights_36_0.75.pth'} )
 
     if args.wandb_run:
         run = wandb.init(
@@ -552,7 +561,7 @@ if __name__ == "__main__":
                 "hd_dim": DIMENSIONS,
                 "training_samples":args.number_samples,
             },
-            id=f"{args.dataset}_training_layers_{args.layers}_norm_dim_{DIMENSIONS}",
+            id=f"{args.dataset}_training_layers_{args.layers}_norm_dim_{DIMENSIONS}_OFA_early_exit",
         )
 
     ####### HD Pipeline ##########
