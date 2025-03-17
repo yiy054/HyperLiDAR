@@ -17,7 +17,7 @@ import os
 import torch
 import warnings
 import torch.nn as nn
-from knowledge_distill.cka_loss import cka
+from knowledge_distill.cka_loss import CKALoss
 
 from waffleiron import WI_SCATTER_REDUCE
 if WI_SCATTER_REDUCE:
@@ -200,6 +200,7 @@ class WaffleIron(nn.Module):
             ]
         )
         self.early_exit = [0] + early_exit
+        self.cka_module = CKALoss()
         #cropped_model = zip(self.spatial_mix, self.channel_mix)
         #self.cropped_model = list(cropped_model)[:stop]
 
@@ -230,7 +231,7 @@ class WaffleIron(nn.Module):
                 print(gram_current.shape)
                 x = input()
                 if prev_gram != None:
-                    cka_loss = cka(gram_current, prev_gram)
+                    cka_loss = self.cka_module.cka(gram_current, prev_gram)
 
                     # Check if cka is bigger than value...
                     print(cka_loss.shape)
