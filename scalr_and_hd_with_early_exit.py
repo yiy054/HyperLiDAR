@@ -130,7 +130,7 @@ class Feature_Extractor:
                 # Logits
                 with torch.no_grad():
                     out = self.model(*net_inputs)
-                    encode, tokens, out = out[0], out[1], out[2]
+                    encode, tokens, out, exit_layer = out[0], out[1], out[2], out[3]
                     pred_label = out.max(1)[1]
 
                     # Only return samples that are not noise
@@ -140,13 +140,13 @@ class Feature_Extractor:
         else:
             with torch.no_grad():
                 out = self.model(*net_inputs)
-                encode, tokens, out = out[0], out[1], out[2]
+                encode, tokens, out, exit_layer = out[0], out[1], out[2], out[3]
                 pred_label = out.max(1)[1]
 
                 # Only return samples that are not noise
                 where = labels != 255
 
-        return tokens[0,:,where], labels[where], pred_label[0, where]
+        return tokens[0,:,where], labels[where], pred_label[0, where], exit_layer
 
     def test(self, loader, total_voxels):        
         # Metric
@@ -250,7 +250,7 @@ class HD_Model:
             self.linear_weights[layer] = nn.Linear(768, 768)
             state_dict = torch.load(path)
             self.linear_weights[layer].load_state_dict(state_dict)
-        self.linear_weights = self.linear_weights.to(self.device)
+            self.linear_weights[layer] = self.linear_weights[layer].to(self.device)
         self.compensation = True
     
     def sample_to_encode(self, it, batch):
@@ -258,7 +258,7 @@ class HD_Model:
         features = torch.transpose(features, 0, 1).to(dtype=torch.float32, device = self.device, non_blocking=True)
         labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
 
-        if self.compensation:
+        if self.compensation and exit_layer != 47:
             features = self.linear_weights[exit_layer](features)
 
         features = self.normalize(features) # Z1 score seems to work
