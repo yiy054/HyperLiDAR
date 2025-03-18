@@ -200,7 +200,10 @@ class WaffleIron(nn.Module):
                 for d in range(depth)
             ]
         )
-        self.early_exit = [0] + early_exit
+        try:
+            self.early_exit = [0] + early_exit
+        except:
+            self.early_exit = [48]
         self.cka_module = CKALoss()
         #cropped_model = zip(self.spatial_mix, self.channel_mix)
         #self.cropped_model = list(cropped_model)[:stop]
