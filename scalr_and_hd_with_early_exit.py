@@ -258,7 +258,7 @@ class HD_Model:
         features = torch.transpose(features, 0, 1).to(dtype=torch.float32, device = self.device, non_blocking=True)
         labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
 
-        if self.compensation or exit_layer != 48:
+        if self.compensation and exit_layer != 47:
             features = self.linear_weights[exit_layer](features)
 
         features = self.normalize(features) # Z1 score seems to work
