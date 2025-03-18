@@ -241,7 +241,7 @@ class HD_Model:
         features = torch.transpose(features, 0, 1).to(dtype=torch.float32, device = self.device, non_blocking=True)
         labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
 
-        features = self.normalize(features) # Z1 score seems to work
+        #features = self.normalize(features) # Z1 score seems to work
 
         # HD training
         samples_hv = self.encode(features)
