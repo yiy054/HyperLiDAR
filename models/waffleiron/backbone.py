@@ -18,6 +18,7 @@ import torch
 import warnings
 import torch.nn as nn
 from knowledge_distill.cka_loss import CKALoss
+import torch.nn.functional as F
 
 from waffleiron import WI_SCATTER_REDUCE
 if WI_SCATTER_REDUCE:
@@ -227,15 +228,13 @@ class WaffleIron(nn.Module):
             if d in self.early_exit:
                 ## Check CKA
                 
-                gram_current = torch.matmul(tokens, tokens.T)
-                print(gram_current.shape)
-                x = input()
+                tokens_single = F.normalize(tokens[0])
+                gram_current = torch.matmul(tokens_single.T, tokens_single)
                 if prev_gram != None:
                     cka_loss = self.cka_module.cka(gram_current, prev_gram)
 
                     # Check if cka is bigger than value...
-                    print(cka_loss.shape)
-                    print(cka_loss)
+                    print(f"Layer {d} cka loss: ", cka_loss)
                     x = input()
 
                 ## Update prev_tokens
@@ -245,4 +244,5 @@ class WaffleIron(nn.Module):
             tokens = cmix(tokens)
             #print(tokens.shape)
 
-        return tokens
+        tokens = F.normalize(tokens)
+        return tokens, d
