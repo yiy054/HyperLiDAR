@@ -219,7 +219,6 @@ class WaffleIron(nn.Module):
     def set_exit_threshold(self, layer, threshold):
         self.threshold[int(layer)] = threshold
         print(self.threshold)
-        x = input("Threshold saved")
 
     def forward(self, tokens, cell_ind, occupied_cell, step_type):
         # Build all 3D to 2D projection matrices
@@ -232,9 +231,10 @@ class WaffleIron(nn.Module):
         prev_gram = None
 
         for d, (smix, cmix) in enumerate(zip(self.spatial_mix, self.channel_mix)):
-            if d in self.early_exit and step_type == 'retrain':
+            if d in self.early_exit and step_type == 'retrain': # step_type != None:
                 ## Check CKA
-                tokens_single = F.normalize(tokens[0])
+                tokens_max = tokens[0][:, torch.argmax(tokens[0], dim=1)]
+                tokens_single = F.normalize(tokens_max)
                 gram_current = torch.matmul(tokens_single.T, tokens_single)
                 if prev_gram != None:
                     cka_loss = self.cka_module.cka(gram_current, prev_gram) # Similarity
