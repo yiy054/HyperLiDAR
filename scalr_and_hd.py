@@ -102,8 +102,6 @@ class Feature_Extractor:
 
         self.model.eval()
 
-        self.model.waffleiron.crop_model(self.early_exit)
-
     def forward_model(self, it, batch):
 
         # Checking all of the parameters needed for feature extractor

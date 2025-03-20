@@ -204,6 +204,7 @@ class HD_Model:
         self.max_samples = kwargs['args'].number_samples
         self.kwargs = kwargs
         self.compensation = None
+        self.debug_sim = []
 
     def normalize(self, samples):
 

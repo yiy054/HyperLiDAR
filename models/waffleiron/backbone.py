@@ -215,10 +215,6 @@ class WaffleIron(nn.Module):
         for d in range(self.depth):
             self.channel_mix[d].compress()
             self.spatial_mix[d].compress()
-
-    def crop_model(self, stop):
-        self.channel_mix = self.channel_mix[:stop]
-        self.spatial_mix = self.spatial_mix[:stop]
     
     def set_exit_threshold(self, layer, threshold):
         self.threshold[int(layer)] = threshold
@@ -234,30 +230,29 @@ class WaffleIron(nn.Module):
         )
 
         prev_gram = None
+        self.cka_losses = {24: [], 36: []}
 
         for d, (smix, cmix) in enumerate(zip(self.spatial_mix, self.channel_mix)):
-            if d in self.early_exit:
+            if d in self.early_exit and step_type == 'retrain':
                 ## Check CKA
-                
-                if self.type != None:
-                    tokens_single = F.normalize(tokens[0])
-                    gram_current = torch.matmul(tokens_single.T, tokens_single)
-                    if prev_gram != None:
-                        cka_loss = self.cka_module.cka(gram_current, prev_gram) # Similarity
+                tokens_single = F.normalize(tokens[0])
+                gram_current = torch.matmul(tokens_single.T, tokens_single)
+                if prev_gram != None:
+                    cka_loss = self.cka_module.cka(gram_current, prev_gram) # Similarity
 
-                        # Check if cka is bigger than value...
-                        if step_type == "train":
-                            self.cka_losses[d].append(cka_loss)
-                        else:
-                            if cka_loss > self.threshold[d]:
-                                break
+                    # Check if cka is bigger than value...
+                    if step_type == "retrain":
+                        self.cka_losses[d].append(cka_loss)
+                    else:
+                        #if cka_loss > self.threshold[d]:
+                        #    break
+                        pass
 
-                    ## Update prev_tokens
-                    prev_gram = gram_current
+                ## Update prev_tokens
+                prev_gram = gram_current
                 
             tokens = smix(tokens, self.sp_mat[d % len(self.sp_mat)])
             tokens = cmix(tokens)
             #print(tokens.shape)
-
         #tokens = F.normalize(tokens)
         return tokens, d
