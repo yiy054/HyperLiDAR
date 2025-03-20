@@ -230,7 +230,6 @@ class WaffleIron(nn.Module):
         )
 
         prev_gram = None
-        self.cka_losses = {24: [], 36: []}
 
         for d, (smix, cmix) in enumerate(zip(self.spatial_mix, self.channel_mix)):
             if d in self.early_exit and step_type == 'retrain':

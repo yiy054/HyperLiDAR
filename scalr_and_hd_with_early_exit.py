@@ -586,11 +586,11 @@ if __name__ == "__main__":
     print("Testing")
     hd_model.test_hd()
 
-    """print("Retraining")
+    print("Retraining")
     hd_model.retrain(epochs=10)
     
     print("Testing")
-    hd_model.test_hd()"""
+    hd_model.test_hd()
 
 
     ####### SOA results ##########
