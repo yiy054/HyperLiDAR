@@ -105,7 +105,7 @@ class Feature_Extractor:
 
         #self.model.waffleiron.crop_model(self.early_exit)
 
-    def forward_model(self, it, batch):
+    def forward_model(self, it, batch, step_type):
 
         # Checking all of the parameters needed for feature extractor
         # Obj: only pass what you need
@@ -129,7 +129,7 @@ class Feature_Extractor:
             with torch.autocast("cuda", enabled=True):
                 # Logits
                 with torch.no_grad():
-                    out = self.model(*net_inputs)
+                    out = self.model(*net_inputs, step_type)
                     encode, tokens, out, exit_layer = out[0], out[1], out[2], out[3]
                     pred_label = out.max(1)[1]
 
@@ -139,7 +139,7 @@ class Feature_Extractor:
                     #torch.cuda.synchronize(device=self.device)
         else:
             with torch.no_grad():
-                out = self.model(*net_inputs)
+                out = self.model(*net_inputs, step_type)
                 encode, tokens, out, exit_layer = out[0], out[1], out[2], out[3]
                 pred_label = out.max(1)[1]
 
@@ -253,8 +253,8 @@ class HD_Model:
             self.linear_weights[layer] = self.linear_weights[layer].to(self.device)
         self.compensation = True
     
-    def sample_to_encode(self, it, batch):
-        features, labels, soa_result, exit_layer = self.feature_extractor.forward_model(it, batch) # Everything for what hasn't been dropped
+    def sample_to_encode(self, it, batch, step_type="train"):
+        features, labels, soa_result, exit_layer = self.feature_extractor.forward_model(it, batch, step_type=step_type) # Everything for what hasn't been dropped
         features = torch.transpose(features, 0, 1).to(dtype=torch.float32, device = self.device, non_blocking=True)
         labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
 
@@ -276,7 +276,7 @@ class HD_Model:
 
         for it, batch in tqdm(enumerate(self.train_loader), desc="Training"):
  
-            samples_hv, labels = self.sample_to_encode(it, batch)
+            samples_hv, labels = self.sample_to_encode(it, batch, step_type="train")
             
             for b in range(0, samples_hv.shape[0], self.point_per_iter):
                 end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
@@ -292,6 +292,19 @@ class HD_Model:
             
         self.model.weight = nn.Parameter(torchhd.normalize(self.model.weight), requires_grad=False) # Binary
 
+        x = input("CKA values computed")
+
+        threshold_values = []
+
+        ## Get the threshold values
+        for layer in self.stop:
+            np_cka = np.array([i.cpu() for i in self.feature_extractor.model.waffleiron.cka_losses[int(layer)]])
+            mean_cka = np.mean(np_cka)
+            std_cka = np.std(np_cka)
+            threshold = mean_cka - std_cka
+            print("Threshold = ", threshold)
+            self.feature_extractor.model.waffleiron.set_exit_threshold(layer = layer, threshold = threshold)
+
     def retrain(self, epochs):
         
         """ Retrain with misclassified samples (also substract)"""
@@ -302,7 +315,7 @@ class HD_Model:
 
             for it, batch in tqdm(enumerate(self.train_loader), desc=f"Retraining epoch {e}"):
                 
-                samples_hv, labels = self.sample_to_encode(it, batch)
+                samples_hv, labels = self.sample_to_encode(it, batch, step_type="retrain")
                 for b in range(0, samples_hv.shape[0], self.point_per_iter):
                     end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
                     samples_hv_here = samples_hv[b:end]
@@ -356,7 +369,7 @@ class HD_Model:
         start_idx = 0
         for it, batch in tqdm(enumerate(loader), desc="Validation:"):
       
-            samples_hv, labels = self.sample_to_encode(it, batch) # Only return the features that haven't been dropped
+            samples_hv, labels = self.sample_to_encode(it, batch, "Test") # Only return the features that haven't been dropped
             
             for b in range(0, samples_hv.shape[0], self.point_per_iter):
                 end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
@@ -572,11 +585,11 @@ if __name__ == "__main__":
     print("Testing")
     hd_model.test_hd()
 
-    print("Retraining")
+    """print("Retraining")
     hd_model.retrain(epochs=10)
     
     print("Testing")
-    hd_model.test_hd()
+    hd_model.test_hd()"""
 
 
     ####### SOA results ##########

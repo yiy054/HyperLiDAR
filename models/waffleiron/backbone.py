@@ -208,6 +208,9 @@ class WaffleIron(nn.Module):
         #cropped_model = zip(self.spatial_mix, self.channel_mix)
         #self.cropped_model = list(cropped_model)[:stop]
 
+        self.cka_losses = {24: [], 36: []}
+        self.threshold = {}
+
     def compress(self):
         for d in range(self.depth):
             self.channel_mix[d].compress()
@@ -216,8 +219,13 @@ class WaffleIron(nn.Module):
     def crop_model(self, stop):
         self.channel_mix = self.channel_mix[:stop]
         self.spatial_mix = self.spatial_mix[:stop]
+    
+    def set_exit_threshold(self, layer, threshold):
+        self.threshold[int(layer)] = threshold
+        print(self.threshold)
+        x = input("Threshold saved")
 
-    def forward(self, tokens, cell_ind, occupied_cell):
+    def forward(self, tokens, cell_ind, occupied_cell, step_type):
         # Build all 3D to 2D projection matrices
         batch_size, nb_feat, num_points = tokens.shape
         self.sp_mat = get_all_projections(
@@ -231,21 +239,25 @@ class WaffleIron(nn.Module):
             if d in self.early_exit:
                 ## Check CKA
                 
-                tokens_single = F.normalize(tokens[0])
-                gram_current = torch.matmul(tokens_single.T, tokens_single)
-                if prev_gram != None:
-                    cka_loss = self.cka_module.cka(gram_current, prev_gram)
+                if self.type != None:
+                    tokens_single = F.normalize(tokens[0])
+                    gram_current = torch.matmul(tokens_single.T, tokens_single)
+                    if prev_gram != None:
+                        cka_loss = self.cka_module.cka(gram_current, prev_gram) # Similarity
 
-                    # Check if cka is bigger than value...
-                    print(f"Layer {d} cka loss: ", cka_loss)
-                    x = input()
+                        # Check if cka is bigger than value...
+                        if step_type == "train":
+                            self.cka_losses[d].append(cka_loss)
+                        else:
+                            if cka_loss > self.threshold[d]:
+                                break
 
-                ## Update prev_tokens
-                prev_gram = gram_current
+                    ## Update prev_tokens
+                    prev_gram = gram_current
                 
             tokens = smix(tokens, self.sp_mat[d % len(self.sp_mat)])
             tokens = cmix(tokens)
             #print(tokens.shape)
 
-        tokens = F.normalize(tokens)
+        #tokens = F.normalize(tokens)
         return tokens, d
