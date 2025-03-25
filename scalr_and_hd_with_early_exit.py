@@ -29,7 +29,7 @@ class Encoder(nn.Module):
         super(Encoder, self).__init__()
         self.flatten = torch.nn.Flatten()
         self.projection = embeddings.Projection(size, hd_dim)
-        self.projection.weight = nn.Parameter(torchhd.normalize(self.projection.weight), requires_grad=False) # Binary
+        #self.projection.weight = nn.Parameter(torchhd.normalize(self.projection.weight), requires_grad=False) # Binary
 
     def forward(self, x):
         sample_hv = self.projection(x)
@@ -62,17 +62,17 @@ class Feature_Extractor:
 
         for p in self.model.parameters():
             p.requires_grad = False
-        for p in self.model.classif.parameters():
-            p.requires_grad = True
+        #for p in self.model.classif.parameters():
+        #    p.requires_grad = True
 
-        def get_optimizer(parameters):
-            return torch.optim.AdamW(
-                parameters,
-                lr=0.001,
-                weight_decay=0.003,
-            )
+        #def get_optimizer(parameters):
+        #    return torch.optim.AdamW(
+        #        parameters,
+        #        lr=0.001,
+        #        weight_decay=0.003,
+        #    )
 
-        optim = get_optimizer(self.model.parameters())
+        #optim = get_optimizer(self.model.parameters())
         self.device = device
         self.device_string = "cuda:0" if (torch.cuda.is_available() and kwargs['args'].device == 'gpu') else "cpu"
         self.num_classes = nb_class
@@ -191,8 +191,13 @@ class HD_Model:
         encode = Encoder(out_dim, in_dim)
         self.encode = encode.to(device=device, non_blocking=True)
 
-        model = Centroid(out_dim, num_classes)
-        self.model = model.to(device=device, non_blocking=True)
+        ## Edit - use self-managed linear
+        #model = Centroid(out_dim, num_classes)
+        classify = nn.Linear(out_dim, num_classes, bias=False)
+        classify.weight.data.fill_(0.0)
+        self.classify = classify.to(device=device, non_blocking=True)
+        # Need a copy of the weight as the unnormalized version
+        self.classify_weights = copy.deepcopy(self.classify.weight)
         self.device = device
         self.feature_extractor = Feature_Extractor(nb_class = num_classes, device=self.device, 
                                                    early_exit=[int(i) for i in kwargs['args'].layers], 
@@ -262,14 +267,14 @@ class HD_Model:
         if self.compensation and exit_layer != 47:
             features = self.linear_weights[exit_layer](features)
 
-        features = self.normalize(features) # Z1 score seems to work
+        #features = self.normalize(features) # Z1 score seems to work
 
         # HD training
         samples_hv = self.encode(features)
 
-        return samples_hv, labels
+        return samples_hv, labels, soa_labels
     
-    def train(self):
+    def train(self, weights=None):
 
         """ Initial training pass """
 
@@ -277,21 +282,37 @@ class HD_Model:
 
         for it, batch in tqdm(enumerate(self.train_loader), desc="Training"):
  
-            samples_hv, labels = self.sample_to_encode(it, batch, step_type="train")
+            samples_hv, labels, _ = self.sample_to_encode(it, batch, step_type="train")
             
             for b in range(0, samples_hv.shape[0], self.point_per_iter):
                 end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
         
-            #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
-            
-                self.model.add(samples_hv[b:end], labels[b:end])
+            ##samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
+                    
+                    #self.model.add(samples_hv[b:end], labels[b:end])
 
-                #if self.device == torch.device("cuda:0"):
-                #    torch.cuda.synchronize(device=self.device)
-            if it == self.max_samples:
-                break
+                    ## EDIT - training with the new linear layer
+                    #for i in range(b, end):
+                    #    self.classify_weights[labels[i]] += samples_hv[i]
+                    if weights is not None:
+                        self.classify_weights.index_add_(0, labels[b:end], weights[labels[b:end]].reshape(-1, 1) * samples_hv[b:end])
+                    else:
+                        self.classify_weights.index_add_(0, labels[b:end], samples_hv[b:end])
+
+                    if self.device == torch.device("cuda:0"):
+                        torch.cuda.synchronize(device=self.device)
+                
+                if it == self.max_samples:
+                    break
+                ###### End of one scan
             
-        self.model.weight = nn.Parameter(torchhd.normalize(self.model.weight), requires_grad=False) # Binary
+            ####### End of all scans in single-pass training
+                
+            #self.model.weight = nn.Parameter(torchhd.normalize(self.model.weight), requires_grad=False) # Binary
+
+            # EDIT - normalize classify_weights for filling in self.classify.weight. 
+            # Note, they are different! The first is the unnormalized, the 2nd is the normalized
+            self.classify.weight[:] = F.normalize(self.classify_weights)
 
         x = input("CKA values computed")
 
@@ -311,45 +332,80 @@ class HD_Model:
         """ Retrain with misclassified samples (also substract)"""
         
         for e in tqdm(range(epochs), desc="Epoch"):
-            #count = 0
-            #self.scramble = np.random.permutation(len(self.im_idx))
+            num_wrong = []
 
-            for it, batch in tqdm(enumerate(self.train_loader), desc=f"Retraining epoch {e}"):
-                
-                samples_hv, labels = self.sample_to_encode(it, batch, step_type="retrain")
-                for b in range(0, samples_hv.shape[0], self.point_per_iter):
-                    end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
-                    samples_hv_here = samples_hv[b:end]
-                    labels_here = labels[b:end]
-                    sim = self.model(samples_hv_here, dot=True)
-                    #pred_hd = sim.argmax(1).data
-                    pred_hd = torch.argmax(sim, axis=1)
+            with torch.no_grad():
+                count = 0
+                for it, batch in tqdm(enumerate(self.train_loader), desc=f"Retraining epoch {e}"):
+                    
+                    samples_hv, labels, _ = self.sample_to_encode(it, batch)
+                    is_wrong_count = 0
 
-                    is_wrong = labels_here != pred_hd
+                    for b in range(0, samples_hv.shape[0], self.point_per_iter):
+                        end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
+                        samples_hv_here = samples_hv[b:end]
+                        labels_here = labels[b:end]
+                        
+                        #sim = self.model(samples_hv_here, dot=True)
+                        #pred_hd = sim.argmax(1).data
 
-                    # cancel update if all predictions were correct
-                    if is_wrong.sum().item() == 0:
-                        continue
+                        # EDIT - normalize classify_weights for filling in self.classify.weight. 
+                        # Need to do normalization right before the classification during retraining!
+                        self.classify.weight[:] = F.normalize(self.classify_weights)
 
-                    # only update wrongly predicted inputs
-                    samples_hv_here = samples_hv_here[is_wrong]
-                    labels_here = labels_here[is_wrong]
-                    pred_hd = pred_hd[is_wrong]
+                        # EDIT - with new classify
+                        logits = self.classify(F.normalize(samples_hv_here))
+                        pred_hd = torch.argmax(logits, axis=1)
 
-                    #count = labels.shape[0]
+                        is_wrong = labels_here != pred_hd
+                        is_wrong_count += is_wrong.sum().item()
 
-                    self.model.weight.index_add_(0, labels_here, samples_hv_here)
-                    self.model.weight.index_add_(0, pred_hd, samples_hv_here, alpha=-1.0)
+                        # cancel update if all predictions were correct
+                        if is_wrong.sum().item() == 0:
+                            continue
 
-                #torch.cuda.synchronize(device=self.device)
+                        count += is_wrong.sum().item()
+                        
+                        #print(f'Wrong predictions: {is_wrong.sum().item()}')
 
-                if it == self.max_samples:
-                    break
+                        # only update wrongly predicted inputs
+                        samples_hv_here = samples_hv_here[is_wrong]
+                        labels_here = labels_here[is_wrong]
+                        pred_hd = pred_hd[is_wrong]
 
-            #print(f"Misclassified for {it}: ", count)
+                        #self.model.weight.index_add_(0, labels_here, samples_hv_here)
+                        #self.model.weight.index_add_(0, pred_hd, samples_hv_here, alpha=-1.0)
 
-            # If you want to test for each sample
-            self.test_hd()
+                        ## EDIT - retraining with the new linear layer
+                        #for i in range(len(labels_here)):
+                        #    self.classify_weights[labels_here[i]] += samples_hv_here[i]
+                        #    self.classify_weights[pred_hd[i]] -= samples_hv_here[i]
+                        if weights is not None:
+                            self.classify_weights.index_add_(0, labels_here, weights[labels_here].reshape(-1, 1) * samples_hv_here)
+                            self.classify_weights.index_add_(0, pred_hd, - weights[pred_hd].reshape(-1, 1) * samples_hv_here)
+                        else:
+                            self.classify_weights.index_add_(0, labels_here, samples_hv_here)
+                            self.classify_weights.index_add_(0, pred_hd, -samples_hv_here)
+                    
+                    num_wrong.append(is_wrong_count)
+
+                    #torch.cuda.synchronize(device=self.device)
+
+                    if it == self.max_samples:
+                        break
+                    ########## End of one scan
+
+                ######### End of all scans
+
+                # Print total misclassified samples in the current retraining epoch
+                print("###########################")
+                print(f"Total misclassified for retraining epoch {e}: ", count)
+
+            ######## End of one retraining epoch
+
+            # Retraining test
+            if (e + 1) % 2 == 0:
+                self.test_hd()
 
     def test_hd(self, loader='val'):
 
@@ -366,41 +422,50 @@ class HD_Model:
         miou = MulticlassJaccardIndex(num_classes=self.num_classes, average=None).to(self.device, non_blocking=True)
         final_labels = torch.empty((num_vox+1000), dtype=torch.int64, device=self.device)
         final_pred = torch.empty((num_vox+1000), dtype=torch.int64, device=self.device)
+        soa_pred = torch.empty((num_vox+1000), dtype=torch.int64, device=self.device)
         
         start_idx = 0
-        for it, batch in tqdm(enumerate(loader), desc="Validation:"):
-      
-            samples_hv, labels = self.sample_to_encode(it, batch, "Test") # Only return the features that haven't been dropped
-            
-            for b in range(0, samples_hv.shape[0], self.point_per_iter):
-                end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
-                samples_hv_here = samples_hv[b:end]
-                labels_here = labels[b:end]
-                #torch.cuda.synchronize(device=self.device)
-            
-                shape_sample = labels_here.shape[0]
+        with torch.no_grad():
+            for it, batch in tqdm(enumerate(loader), desc="Validation:"):
+        
+                samples_hv, labels, soa_labels = self.sample_to_encode(it, batch) # Only return the features that haven't been dropped
+                
+                for b in range(0, samples_hv.shape[0], self.point_per_iter):
+                    end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
+                    samples_hv_here = samples_hv[b:end]
+                    labels_here = labels[b:end]
+                    soa_here = soa_labels[b:end]  # EDIT: Add soa results
 
-                #pred_hd = self.model(samples_hv, dot=True).argmax(1).data
-                sim = self.model(samples_hv_here, dot=True)
-                #torch.cuda.synchronize(device=self.device)
+                    #torch.cuda.synchronize(device=self.device)
+                
+                    shape_sample = labels_here.shape[0]
 
-                pred_hd = torch.argmax(sim, axis=1)
-                #torch.cuda.synchronize(device=self.device)
+                    #pred_hd = self.model(samples_hv, dot=True).argmax(1).data
+                    #sim = self.model(samples_hv_here, dot=True)
+                    #torch.cuda.synchronize(device=self.device)
 
-                #print("Labels: ", labels.shape[0])
-                #print(start_idx, start_idx+shape_sample)
-                #print(shape_sample)
+                    ## EDIT - new classify
+                    logits = self.classify(F.normalize(samples_hv_here))
 
-                final_labels[start_idx:start_idx+shape_sample] = labels_here
-                final_pred[start_idx:start_idx+shape_sample] = pred_hd
+                    pred_hd = torch.argmax(logits, axis=1)
+                    #torch.cuda.synchronize(device=self.device)
 
-                start_idx += shape_sample
+                    #print("Labels: ", labels.shape[0])
+                    #print(start_idx, start_idx+shape_sample)
+                    #print(shape_sample)
 
-            if it == self.max_samples:
-                break
+                    final_labels[start_idx:start_idx+shape_sample] = labels_here
+                    final_pred[start_idx:start_idx+shape_sample] = pred_hd
+                    soa_pred[start_idx:start_idx+shape_sample] = soa_here
+
+                    start_idx += shape_sample
+
+                if it == self.max_samples:
+                    break
 
         final_labels = final_labels[:start_idx]
         final_pred = final_pred[:start_idx]
+        soa_pred = soa_pred[:start_idx]
 
         print("================================")
 
