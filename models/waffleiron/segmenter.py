@@ -51,4 +51,8 @@ class Segmenter(nn.Module):
         #if all_features:
         #    return tokens_1, tokens, self.classif(tokens[-1])
         #else:
-        return tokens_1, tokens, self.classif(tokens), exit_layer
+
+        norm_feat = self.classif[0](tokens)
+        soa_pred = self.classif[1](norm_feat)
+
+        return tokens_1, norm_feat, soa_pred, exit_layer
