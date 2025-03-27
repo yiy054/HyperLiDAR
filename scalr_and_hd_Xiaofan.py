@@ -43,7 +43,7 @@ class Encoder(nn.Module):
 class Feature_Extractor:
     def __init__(self, input_channels=5, feat_channels=768, depth=48, 
                  grid_shape=[[256, 256], [256, 32], [256, 32]], nb_class=16, layer_norm=True, 
-                 device=torch.device("cpu"), early_exit = [48], **kwargs):
+                 device=torch.device("cpu"), early_exit = 48, **kwargs):
         self.model = Segmenter(
             input_channels=input_channels,
             feat_channels=feat_channels,
@@ -52,7 +52,6 @@ class Feature_Extractor:
             nb_class=nb_class, # class for prediction
             #drop_path_prob=config["waffleiron"]["drop_path"],
             layer_norm=layer_norm,
-            early_exit = early_exit
         )
 
         classif = torch.nn.Conv1d(
@@ -108,9 +107,7 @@ class Feature_Extractor:
 
         self.model.eval()
 
-        #self.model.waffleiron.crop_model(self.early_exit)
-
-    def forward_model(self, it, batch, step_type):
+    def forward_model(self, it, batch, start=0, stop=48):
 
         # Checking all of the parameters needed for feature extractor
         # Obj: only pass what you need
@@ -134,8 +131,8 @@ class Feature_Extractor:
             with torch.autocast("cuda", enabled=True):
                 # Logits
                 with torch.no_grad():
-                    out = self.model(*net_inputs, step_type)
-                    encode, tokens, out, exit_layer = out[0], out[1], out[2], out[3]
+                    out = self.model(*net_inputs)
+                    encode, tokens, out = out[0], out[1], out[2]
                     pred_label = out.max(1)[1]
 
                     # Only return samples that are not noise
@@ -144,14 +141,14 @@ class Feature_Extractor:
                     #torch.cuda.synchronize(device=self.device)
         else:
             with torch.no_grad():
-                out = self.model(*net_inputs, step_type)
-                encode, tokens, out, exit_layer = out[0], out[1], out[2], out[3]
+                out = self.model(*net_inputs)
+                encode, tokens, out = out[0], out[1], out[2]
                 pred_label = out.max(1)[1]
 
                 # Only return samples that are not noise
                 where = labels != 255
 
-        return tokens[0,:,where], labels[where], pred_label[0, where], exit_layer
+        return tokens[0,:,where], labels[where], pred_label[0, where]
 
     def test(self, loader, total_voxels):        
         # Metric
@@ -203,10 +200,9 @@ class HD_Model:
         self.classify = classify.to(device=device, non_blocking=True)
         # Need a copy of the weight as the unnormalized version
         self.classify_weights = copy.deepcopy(self.classify.weight)
+
         self.device = device
-        self.feature_extractor = Feature_Extractor(nb_class = num_classes, device=self.device, 
-                                                   early_exit=[int(i) for i in kwargs['args'].layers], 
-                                                   args=kwargs['args'])
+        self.feature_extractor = Feature_Extractor(nb_class = num_classes, device=self.device, early_exit=kwargs['args'].layers, args=kwargs['args'])
         self.feature_extractor.load_pretrained(path_pretrained)
         self.stop = kwargs['args'].layers
         self.point_per_iter = kwargs['args'].number_samples
@@ -214,8 +210,6 @@ class HD_Model:
         self.max_samples = kwargs['args'].number_samples
         self.test_max_samples = kwargs['args'].test_number_samples
         self.kwargs = kwargs
-        self.compensation = None
-        self.debug_sim = []
 
     def normalize(self, samples):
 
@@ -251,27 +245,11 @@ class HD_Model:
                 setattr(self, attr, getattr(self, attr) + (labels != 255).sum().item())
 
         print("Finished loading data loaders")
-
-    def set_compensation(self, inter_weights_path):
-
-        """Load all the paths for every exit"""
-
-        self.linear_weights = {}
-
-        for layer, path in inter_weights_path.items():
-            self.linear_weights[layer] = nn.Linear(768, 768)
-            state_dict = torch.load(path)
-            self.linear_weights[layer].load_state_dict(state_dict)
-            self.linear_weights[layer] = self.linear_weights[layer].to(self.device)
-        self.compensation = True
     
-    def sample_to_encode(self, it, batch, step_type="train"):
-        features, labels, soa_result, exit_layer = self.feature_extractor.forward_model(it, batch, step_type=step_type) # Everything for what hasn't been dropped
+    def sample_to_encode(self, it, batch, stop_layer=48):
+        features, labels, soa_labels = self.feature_extractor.forward_model(it, batch, stop_layer) # Everything for what hasn't been dropped
         features = torch.transpose(features, 0, 1).to(dtype=torch.float32, device = self.device, non_blocking=True)
         labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
-
-        if self.compensation and exit_layer != 47:
-            features = self.linear_weights[exit_layer](features)
 
         #features = self.normalize(features) # Z1 score seems to work
 
@@ -289,18 +267,16 @@ class HD_Model:
         with torch.no_grad():
             for it, batch in tqdm(enumerate(self.train_loader), desc="Training"):
     
-                samples_hv, labels, _ = self.sample_to_encode(it, batch, step_type="train")
+                samples_hv, labels, _ = self.sample_to_encode(it, batch)
                 
                 for b in range(0, samples_hv.shape[0], self.point_per_iter):
                     end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
             
-                    ##samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
-                        
+                    #samples_hv = samples_hv.reshape((1,samples_hv.shape[0]))
+                    
                     #self.model.add(samples_hv[b:end], labels[b:end])
 
                     ## EDIT - training with the new linear layer
-                    #for i in range(b, end):
-                    #    self.classify_weights[labels[i]] += samples_hv[i]
                     if weights is not None:
                         self.classify_weights.index_add_(0, labels[b:end], weights[labels[b:end]].reshape(-1, 1) * samples_hv[b:end])
                     else:
@@ -321,16 +297,6 @@ class HD_Model:
             # Note, they are different! The first is the unnormalized, the 2nd is the normalized
             self.classify.weight[:] = F.normalize(self.classify_weights)
 
-        threshold_values = []
-
-        ## Get the threshold values
-        for layer in self.stop:
-            np_cka = np.array([i.cpu() for i in self.feature_extractor.model.waffleiron.cka_losses[int(layer)]])
-            mean_cka = np.mean(np_cka)
-            std_cka = np.std(np_cka)
-            threshold = mean_cka - std_cka
-            print("Threshold = ", threshold)
-            self.feature_extractor.model.waffleiron.set_exit_threshold(layer = layer, threshold = threshold)
 
     def retrain(self, epochs, weights=None):
         
@@ -339,15 +305,14 @@ class HD_Model:
         misclassified_cnts = []
         acc_results = []
         
-        for e in tqdm(range(epochs), desc="Epoch"):
-            num_wrong = []
+        for e in range(epochs):
+            #self.scramble = np.random.permutation(len(self.im_idx))
 
             with torch.no_grad():
                 count = 0
                 for it, batch in tqdm(enumerate(self.train_loader), desc=f"Retraining epoch {e}"):
                     
                     samples_hv, labels, _ = self.sample_to_encode(it, batch)
-                    is_wrong_count = 0
 
                     for b in range(0, samples_hv.shape[0], self.point_per_iter):
                         end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
@@ -366,14 +331,12 @@ class HD_Model:
                         pred_hd = torch.argmax(logits, axis=1)
 
                         is_wrong = labels_here != pred_hd
-                        is_wrong_count += is_wrong.sum().item()
 
                         # cancel update if all predictions were correct
                         if is_wrong.sum().item() == 0:
                             continue
 
-                        count += is_wrong.sum().item()
-                        
+                        count += int(is_wrong.sum().item())
                         #print(f'Wrong predictions: {is_wrong.sum().item()}')
 
                         # only update wrongly predicted inputs
@@ -385,17 +348,12 @@ class HD_Model:
                         #self.model.weight.index_add_(0, pred_hd, samples_hv_here, alpha=-1.0)
 
                         ## EDIT - retraining with the new linear layer
-                        #for i in range(len(labels_here)):
-                        #    self.classify_weights[labels_here[i]] += samples_hv_here[i]
-                        #    self.classify_weights[pred_hd[i]] -= samples_hv_here[i]
                         if weights is not None:
                             self.classify_weights.index_add_(0, labels_here, weights[labels_here].reshape(-1, 1) * samples_hv_here)
                             self.classify_weights.index_add_(0, pred_hd, - weights[pred_hd].reshape(-1, 1) * samples_hv_here)
                         else:
                             self.classify_weights.index_add_(0, labels_here, samples_hv_here)
                             self.classify_weights.index_add_(0, pred_hd, -samples_hv_here)
-                    
-                    num_wrong.append(is_wrong_count)
 
                     #torch.cuda.synchronize(device=self.device)
 
@@ -490,6 +448,12 @@ class HD_Model:
         print(f'accuracy: {accuracy}')
         print(f'avg acc: {avg_acc}')
 
+        ## EDIT: Report soa accuracy
+        soa_accuracy = miou(soa_pred, final_labels)
+        avg_soa_acc = torch.mean(soa_accuracy)
+        print(f'soa accuracy: {soa_accuracy}')
+        print(f'avg soa acc: {avg_soa_acc}')
+
         if args.wandb_run:
             log_data = {f"Training class_{i}_IoU": c for i, c in enumerate(accuracy)}
             log_data["Retraining epoch"] = avg_acc
@@ -505,7 +469,7 @@ class HD_Model:
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-stops', '--layers', nargs='+', type=int, help='how many layers deep', default=[12, 24, 36])
+    parser.add_argument('-stops', '--layers', nargs='+', type=int, help='how many layers deep', default=[48])
     parser.add_argument('--confidence', type=float, help="Confidence threshold", default=1.0)
     #parser.add_argument('-soa', '--soa', action="store_true", default=False, help='Plot SOA')
     parser.add_argument('-number_samples', '--number_samples', type=int, help='how many scans to train', default=500)
@@ -528,6 +492,7 @@ def parse_arguments():
     #parser.add_argument('-val', '--val', action="store_true", default=False, help='Train with validation for each scan')
     args = parser.parse_args()
     return args
+
 
 def plot(acc_points, acc_results, misclassified_cnts, output_path):
     init_acc, final_acc = acc_points
@@ -681,6 +646,7 @@ if __name__ == "__main__":
         
     print(f'train dataset length: {len(dataset_train)}')
     print(f'val dataset length: {len(dataset_val)}')
+
     train_loader = torch.utils.data.DataLoader(
         dataset_train,
         batch_size=1,
@@ -730,7 +696,6 @@ if __name__ == "__main__":
     ####### HD Model ##########
     hd_model = HD_Model(FEAT_SIZE, DIMENSIONS, num_classes, path_pretrained, device=device, args=args)
     hd_model.set_loaders(train_loader=train_loader, val_loader=val_loader)
-    hd_model.set_compensation({12: 'linear_weights_12.pth', 24: 'linear_weights_24_ep_0.75.pth', 36: 'linear_weights_36_0.75.pth'} )
 
     if args.wandb_run:
         run = wandb.init(
@@ -742,8 +707,9 @@ if __name__ == "__main__":
                 "hd_dim": DIMENSIONS,
                 "training_samples":args.number_samples,
             },
-            id=f"{args.dataset}_training_layers_{args.layers}_norm_dim_{DIMENSIONS}_OFA_early_exit",
+            id=f"{args.dataset}_training_layers_{args.layers}_norm_dim_{DIMENSIONS}",
         )
+    
     ####### Results dir setup ##########
     if not os.path.exists(args.result_path):
         os.mkdir(args.result_path)
@@ -753,6 +719,7 @@ if __name__ == "__main__":
     output_path = os.path.join(args.result_path, model_name)
     if not os.path.exists(output_path):
         os.mkdir(output_path)
+
 
     ####### HD Pipeline ##########
 
@@ -774,4 +741,4 @@ if __name__ == "__main__":
     ####### SOA results ##########
     #print("SoA results")
 
-    #hd_model.feature_extractor.test(hd_model.val_loader, hd_model.num_vox_val+1000, 48)
+    #hd_model.feature_extractor.test(hd_model.val_loader, hd_model.num_vox_val+1000, 48)from models.waffleiron.segmenter import Segmenter
