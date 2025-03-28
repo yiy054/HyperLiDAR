@@ -53,7 +53,7 @@ def init_weights(module):
 class Feature_Extractor:
     def __init__(self, input_channels=5, feat_channels=768, depth=48, 
                  grid_shape=[[256, 256], [256, 32], [256, 32]], nb_class=16, layer_norm=True, 
-                 device=torch.device("cpu"), early_exit = 48, **kwargs):
+                 device=torch.device("cpu"), early_exit = [48], **kwargs):
         self.model = Segmenter(
             input_channels=input_channels,
             feat_channels=feat_channels,
@@ -62,6 +62,7 @@ class Feature_Extractor:
             nb_class=nb_class, # class for prediction
             #drop_path_prob=config["waffleiron"]["drop_path"],
             layer_norm=layer_norm,
+            early_exit = early_exit
         )
 
         classif = torch.nn.Conv1d(
@@ -76,22 +77,24 @@ class Feature_Extractor:
 
         for p in self.model.parameters():
             p.requires_grad = False
-        for p in self.model.classif.parameters():
-            p.requires_grad = True
+        #for p in self.model.classif.parameters():
+        #    p.requires_grad = True
 
-        def get_optimizer(parameters):
-            return torch.optim.AdamW(
-                parameters,
-                lr=0.001,
-                weight_decay=0.003,
-            )
+        #def get_optimizer(parameters):
+        #    return torch.optim.AdamW(
+        #        parameters,
+        #        lr=0.001,
+        #        weight_decay=0.003,
+        #    )
 
-        optim = get_optimizer(self.model.parameters())
+        #optim = get_optimizer(self.model.parameters())
         self.device = device
         self.device_string = "cuda:0" if (torch.cuda.is_available() and kwargs['args'].device == 'gpu') else "cpu"
         self.num_classes = nb_class
         self.early_exit = early_exit
         self.kwargs = kwargs
+
+        self.model.waffleiron.separate_model()
     
     def load_pretrained(self, path):
         # Load pretrained model
@@ -117,7 +120,9 @@ class Feature_Extractor:
 
         self.model.eval()
 
-    def forward_model(self, it, batch, start=0, stop=48):
+        #self.model.waffleiron.crop_model(self.early_exit)
+
+    def forward_model(self, it, batch, step_type):
 
         # Checking all of the parameters needed for feature extractor
         # Obj: only pass what you need
@@ -141,8 +146,8 @@ class Feature_Extractor:
             with torch.autocast("cuda", enabled=True):
                 # Logits
                 with torch.no_grad():
-                    out = self.model(*net_inputs, stop=stop)
-                    encode, tokens, out = out[0], out[1], out[2]
+                    out = self.model(*net_inputs, step_type)
+                    encode, tokens, out, exit_layer = out[0], out[1], out[2], out[3]
                     pred_label = out.max(1)[1]
 
                     # Only return samples that are not noise
@@ -151,14 +156,15 @@ class Feature_Extractor:
                     #torch.cuda.synchronize(device=self.device)
         else:
             with torch.no_grad():
-                out = self.model(*net_inputs, stop=stop)
-                encode, tokens, out = out[0], out[1], out[2]
+                out = self.model(*net_inputs, step_type)
+                encode, tokens, out, exit_layer = out[0], out[1], out[2], out[3]
                 pred_label = out.max(1)[1]
 
                 # Only return samples that are not noise
                 where = labels != 255
 
-        return tokens[0,:,where], labels[where], out[0, :, where]
+        return tokens[0,:,where], labels[where], pred_label[0, where], exit_layer
+            
 
     def test(self, loader, total_voxels):        
         # Metric
@@ -198,25 +204,26 @@ class Feature_Extractor:
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-stops', '--layers', nargs='+', type=int, help='how many layers deep', default=[48])
+    parser.add_argument('-stops', '--layers', nargs='+', type=int, help='how many layers deep', default=[12, 24, 36])
     parser.add_argument('--confidence', type=float, help="Confidence threshold", default=1.0)
     #parser.add_argument('-soa', '--soa', action="store_true", default=False, help='Plot SOA')
     parser.add_argument('-number_samples', '--number_samples', type=int, help='how many scans to train', default=500)
-    parser.add_argument(
-            "--seed", default=None, type=int, help="Seed for initializing training"
-        )
-    parser.add_argument(
-            "--add_lr", action="store_true", default=False, help='Add lr to help class imbalance'
-        )
-    parser.add_argument(
-            "--dataset", choices=['nuscenes', 'semantic_kitti', 'tls'], default='nuscenes', help='Which dataset to train and test on?'
-        )
+    parser.add_argument('-test_number_samples', '--test_number_samples', type=int, help='how many scans to test', default=400)
+    parser.add_argument("--seed", default=None, type=int, help="Seed for initializing training")
+    #parser.add_argument("--add_lr", action="store_true", default=False, help='Add lr to help class imbalance')
+    parser.add_argument("--dataset", choices=['nuscenes', 'semantic_kitti', 'tls'], default='nuscenes', help='Which dataset to train and test on?')
+    parser.add_argument("--data_path", type=str, default='./root/main/dataset/', help='data dir path')
+    parser.add_argument("--result_path", type=str, default='./results', help='result dir path')
+
     parser.add_argument("--wandb_run", action="store_true", default=False, help='Pass values to WandDB')
     parser.add_argument("--device", choices=['gpu', 'cpu'], default='gpu', help='Which device to use for training')
+    parser.add_argument('--epochs', type=int, help='how many epochs to train', default=10)
+    parser.add_argument('--subset', type=float, help='the ratio for dataset subset', default=1.0)
 
     # HD arguments
-    parser.add_argument('--dim', type=int, help='Dimensionality of Hypervectors', default=10000)
+    parser.add_argument('--dim', type=int, help='fality of Hypervectors', default=10000)
     parser.add_argument('--batch_points', type=int, help='Number of points to process per scan', default=20000)
+    parser.add_argument("--imbalance", action="store_true", default=False, help='Use imbalance weights')
     #parser.add_argument('-val', '--val', action="store_true", default=False, help='Train with validation for each scan')
     args = parser.parse_args()
     return args
@@ -247,11 +254,11 @@ if __name__ == "__main__":
     # Modify the path for each of the folders
 
     if args.dataset == 'nuscenes':
-        path = '/root/main/dataset/nuscenes'
+        path = os.path.join(args.data_path, 'nuscenes')
     elif args.dataset == 'semantic_kitti':
-        path = '/root/main/dataset/semantickitti'
+        path = os.path.join(args.data_path, 'semantickitti')
     elif args.dataset == 'tls':
-        path = '/root/main/dataset/tls'
+        path = os.path.join(args.data_path, 'tls')
 
 
     # Get datatset
@@ -316,9 +323,27 @@ if __name__ == "__main__":
     else:
         raise Exception("Dataset Not identified")
     
+    # Use subsets of dataset
+    if args.subset < 1.0 and args.subset > 0:
+        subset_len = int(len(dataset_train) * args.subset)
+        dataset_train, _ = torch.utils.data.random_split(dataset=dataset_train,
+                                                        lengths=[subset_len, len(dataset_train) - subset_len])
+
+        subset_len = int(len(dataset_val) * 0.01)
+        dataset_val, _ = torch.utils.data.random_split(dataset=dataset_val,
+                                                    lengths=[subset_len, len(dataset_val) - subset_len])
+
+    # Temporal edits - all use training dataset
+    #subset_len = int(len(dataset_train) * 0.8)
+    #dataset_train, dataset_val = torch.utils.data.random_split(dataset=dataset_train,
+    #                                                           lengths=[subset_len, len(dataset_train) - subset_len])
+        
+    print(f'train dataset length: {len(dataset_train)}')
+    print(f'val dataset length: {len(dataset_val)}')
     train_loader = torch.utils.data.DataLoader(
         dataset_train,
         batch_size=1,
+        shuffle=True,
         pin_memory=True,
         drop_last=True,
         collate_fn=Collate(device=device),
@@ -328,53 +353,50 @@ if __name__ == "__main__":
     val_loader = torch.utils.data.DataLoader(
         dataset_val,
         batch_size=1,
+        shuffle=True,
         pin_memory=True,
         drop_last=True,
         collate_fn=Collate(device=device),
         persistent_workers=False,
     )
 
-    feature_extractor_complete = Feature_Extractor(nb_class = num_classes, device=device, early_exit=48, args=args)
+    feature_extractor_complete = Feature_Extractor(nb_class = num_classes, device=device, early_exit=[48], args=args)
     feature_extractor_complete.load_pretrained(path_pretrained)
 
-    feature_extractor_small = Feature_Extractor(nb_class = num_classes, device=device, early_exit=36, args=args)
+    feature_extractor_small = Feature_Extractor(nb_class = num_classes, device=device, early_exit=[36], args=args)
     feature_extractor_small.load_pretrained(path_pretrained)
 
     linear = nn.Linear(768, 768)
-
-    projector = nn.Sequential(
-        linear,  # todo: cifar100
-        feature_extractor_complete.model.classif
-    )
-
-    projector.to(device)
 
     optimizer = optim.SGD(linear.parameters(), lr=0.01)  # Optimizing only the Linear layer
 
     # Initialize the first layer -> Second one keep it intact
     nn.init.zeros_(linear.bias)
     trunc_normal_(linear.weight, std=.02)
+    linear.to(device)
 
     loss_epochs = []
     for e in range(10):
         loss_epoch = []
         for it, batch in tqdm(enumerate(train_loader), desc=f"Transfer Learning at epoch {e}: "):
-            features_complete, labels, soa_result_complete = feature_extractor_complete.forward_model(it, batch, stop=48)
-            features_small, _, soa_result_small = feature_extractor_complete.forward_model(it, batch, stop=36)
+            features_complete, labels, soa_result_complete, exit_layer = feature_extractor_complete.forward_model(it, batch, step_type = "distill")
+            features_small, _, _, exit_layer_small = feature_extractor_small.forward_model(it, batch, step_type = "distill")
+            
+            linear_output = linear(torch.transpose(features_small, 0, 1).to(torch.float32))
 
-            projection = linear(torch.transpose(features_small, 0, 1).to(torch.float32))
+            tokens_student = feature_extractor_small.model.classif(torch.reshape(linear_output, (1, linear_output.shape[1], linear_output.shape[0])))
 
-            small_head = feature_extractor_complete.model.classif(torch.reshape(projection, (1, projection.shape[1], projection.shape[0])))
+            tokens_teacher = feature_extractor_complete.model.classif[1](features_complete.to(torch.float32))
 
             target_mask = F.one_hot(labels, num_classes).to(device)
 
-            loss = ofa_loss(torch.transpose(small_head[0], 0,1), torch.transpose(soa_result_complete, 0,1), target_mask, 1)
+            loss = ofa_loss(torch.transpose(tokens_student[0], 0, 1), torch.transpose(tokens_teacher, 0, 1), target_mask, eps=0.75)
 
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
-            torch.save(linear.state_dict(), 'linear_weights_32.pth')
+            torch.save(linear.state_dict(), 'linear_weights_36_0.75_normalize.pth')
 
             loss_epoch.append(float(loss.cpu()))
         loss_at_epoch = np.mean(np.array(loss_epoch))

@@ -38,6 +38,8 @@ class Segmenter(nn.Module):
         # Classification layer
         self.classif = nn.Conv1d(feat_channels, nb_class, 1)
 
+        self.early_exit = early_exit
+
     def compress(self):
         self.embed.compress()
         self.waffleiron.compress()
@@ -55,4 +57,10 @@ class Segmenter(nn.Module):
         norm_feat = self.classif[0](tokens)
         soa_pred = self.classif[1](norm_feat)
 
-        return tokens_1, norm_feat, soa_pred, exit_layer
+        if step_type == "distill" and self.early_exit != [48]:
+
+            return tokens_1, tokens, soa_pred, exit_layer
+
+        else:
+
+            return tokens_1, norm_feat, soa_pred, exit_layer

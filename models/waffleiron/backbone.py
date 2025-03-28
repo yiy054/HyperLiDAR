@@ -201,20 +201,40 @@ class WaffleIron(nn.Module):
             ]
         )
         try:
-            self.early_exit = [0] + early_exit
+            self.early_exit = early_exit
         except:
             self.early_exit = [48]
         self.cka_module = CKALoss()
         #cropped_model = zip(self.spatial_mix, self.channel_mix)
         #self.cropped_model = list(cropped_model)[:stop]
 
-        self.cka_losses = {24: [], 36: []}
+        self.cka_losses = {}
+        try:
+            for l in early_exit:
+                cka_losses[l] = {}
+        except:
+            pass
+
         self.threshold = {}
 
     def compress(self):
         for d in range(self.depth):
             self.channel_mix[d].compress()
             self.spatial_mix[d].compress()
+
+    def separate_model(self):
+        self.channel_mix_sep = []
+        self.spatial_mix_sep = []
+        prev = 0
+        for d in range(self.depth):
+            if d in self.early_exit:
+                print(f"Seperate model {prev}:{d}")
+                self.channel_mix_sep.append(self.channel_mix[prev:d])
+                self.spatial_mix_sep.append(self.spatial_mix[prev:d])
+                prev = d
+        self.channel_mix_sep.append(self.channel_mix[prev:])
+        self.spatial_mix_sep.append(self.spatial_mix[prev:])
+        self.early_exit = [0] + self.early_exit
     
     def set_exit_threshold(self, layer, threshold):
         self.threshold[int(layer)] = threshold
@@ -228,10 +248,18 @@ class WaffleIron(nn.Module):
             occupied_cell, tokens.device, self.grids_shape,
         )
 
-        prev_gram = None
+        tokens, d = self.tokenize(0, tokens, step_type)
+        return tokens, d
 
-        for d, (smix, cmix) in enumerate(zip(self.spatial_mix, self.channel_mix)):
-            if d in self.early_exit and step_type == 'retrain': # step_type != None:
+    def tokenize(self, iter_crop, tokens, step_type):
+
+        spatial_mix = self.spatial_mix_sep[iter_crop]
+        channel_mix = self.channel_mix_sep[iter_crop]
+
+        for d, (smix, cmix) in enumerate(zip(spatial_mix, channel_mix)):
+
+            ### CKA attempt
+            """if d in self.early_exit and step_type == 'exp': # step_type != None:
                 ## Check CKA
                 tokens_max = tokens[0][:, torch.argmax(tokens[0], dim=1)]
                 tokens_single = F.normalize(tokens_max)
@@ -240,7 +268,7 @@ class WaffleIron(nn.Module):
                     cka_loss = self.cka_module.cka(gram_current, prev_gram) # Similarity
 
                     # Check if cka is bigger than value...
-                    if step_type == "retrain":
+                    if step_type == "exp":
                         self.cka_losses[d].append(cka_loss)
                     else:
                         #if cka_loss > self.threshold[d]:
@@ -248,9 +276,10 @@ class WaffleIron(nn.Module):
                         pass
 
                 ## Update prev_tokens
-                prev_gram = gram_current
-                
-            tokens = smix(tokens, self.sp_mat[d % len(self.sp_mat)])
+                prev_gram = gram_current"""
+            
+            #print(self.early_exit[iter_crop] + d)
+            tokens = smix(tokens, self.sp_mat[(self.early_exit[iter_crop] + d) % len(self.sp_mat)])
             tokens = cmix(tokens)
             #print(tokens.shape)
         #tokens = F.normalize(tokens)
