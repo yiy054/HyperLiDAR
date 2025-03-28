@@ -24,6 +24,7 @@ import torchhd
 from torchhd.models import Centroid
 from torchhd import embeddings
 
+
 import matplotlib.pyplot as plt
 
 class Encoder(nn.Module):
@@ -266,7 +267,7 @@ class HD_Model:
         self.compensation = True
     
     def sample_to_encode(self, it, batch, step_type="train"):
-        features, labels, soa_result, exit_layer = self.feature_extractor.forward_model(it, batch, step_type=step_type) # Everything for what hasn't been dropped
+        features, labels, soa_labels, exit_layer = self.feature_extractor.forward_model(it, batch, step_type=step_type) # Everything for what hasn't been dropped
         features = torch.transpose(features, 0, 1).to(dtype=torch.float32, device = self.device, non_blocking=True)
         labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
 
@@ -730,7 +731,7 @@ if __name__ == "__main__":
     ####### HD Model ##########
     hd_model = HD_Model(FEAT_SIZE, DIMENSIONS, num_classes, path_pretrained, device=device, args=args)
     hd_model.set_loaders(train_loader=train_loader, val_loader=val_loader)
-    hd_model.set_compensation({12: 'linear_weights_12.pth', 24: 'linear_weights_24_ep_0.75.pth', 36: 'linear_weights_36_0.75.pth'} )
+    hd_model.set_compensation({12: 'linear_weights_12.pth', 24: 'linear_weights_24_0.75.pth', 36: 'linear_weights_36_ep_0.75.pth'} )
 
     if args.wandb_run:
         run = wandb.init(
