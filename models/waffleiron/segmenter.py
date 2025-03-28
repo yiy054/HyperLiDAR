@@ -44,6 +44,20 @@ class Segmenter(nn.Module):
         self.embed.compress()
         self.waffleiron.compress()
 
+    def set_compensation(self, inter_weights_path):
+
+        """Load all the paths for every exit"""
+
+        self.linear_weights = {}
+
+        for layer, path in inter_weights_path.items():
+            self.linear_weights[layer] = nn.Linear(768, 768)
+            state_dict = torch.load(path)
+            self.linear_weights[layer].load_state_dict(state_dict)
+            self.linear_weights[layer] = self.linear_weights[layer].to(self.device)
+        self.compensation = True
+        print("Compensation values updated")
+
     def forward(self, feats, cell_ind, occupied_cell, neighbors, step_type=None):
 
         tokens_1 = self.embed(feats, neighbors) # radius can change based on the local density 
@@ -54,13 +68,30 @@ class Segmenter(nn.Module):
         #    return tokens_1, tokens, self.classif(tokens[-1])
         #else:
 
+        self.exit(tokens_1, tokens, exit_layer)
+
+    def continue_forward(self, tokens_init, iteration, step_type):
+        tokens, exit_layer = self.waffleiron.tokenize(iteration, tokens_init, step_type)
+
+        #if all_features:
+        #    return tokens_1, tokens, self.classif(tokens[-1])
+        #else:
+        self.exit(tokens_init, tokens, exit_layer)
+
+    def exit(tokens, exit_layer):
+
+        if exit_layer != 47 and step_type != "distill":
+            tokens = self.linear_weights[exit_layer+1](tokens)
+
         norm_feat = self.classif[0](tokens)
         soa_pred = self.classif[1](norm_feat)
 
-        if step_type == "distill" and self.early_exit != [48]:
-
-            return tokens_1, tokens, soa_pred, exit_layer
+        if step_type == "distill":
+            if self.early_exit != [48]:
+                return tokens_1, tokens, soa_pred, exit_layer
+            else:
+                return tokens_1, norm_feat, soa_pred, exit_layer
 
         else:
 
-            return tokens_1, norm_feat, soa_pred, exit_layer
+            return tokens_1, tokens, norm_feat, soa_pred, exit_layer

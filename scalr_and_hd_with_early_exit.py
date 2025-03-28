@@ -84,6 +84,9 @@ class Feature_Extractor:
         self.num_classes = nb_class
         self.early_exit = early_exit
         self.kwargs = kwargs
+
+        if early_exit != [48]:
+            self.model.waffleiron.separate_model()
     
     def load_pretrained(self, path):
         # Load pretrained model
@@ -136,7 +139,7 @@ class Feature_Extractor:
                 # Logits
                 with torch.no_grad():
                     out = self.model(*net_inputs, step_type)
-                    encode, tokens, out, exit_layer = out[0], out[1], out[2], out[3]
+                    encode, tokens, tokens_norm, out, exit_layer = out[0], out[1], out[2], out[3], out[4]
                     pred_label = out.max(1)[1]
 
                     # Only return samples that are not noise
@@ -146,13 +149,13 @@ class Feature_Extractor:
         else:
             with torch.no_grad():
                 out = self.model(*net_inputs, step_type)
-                encode, tokens, out, exit_layer = out[0], out[1], out[2], out[3]
+                encode, tokens, tokens_norm, out, exit_layer = out[0], out[1], out[2], out[3], out[4]
                 pred_label = out.max(1)[1]
 
                 # Only return samples that are not noise
                 where = labels != 255
 
-        return tokens[0,:,where], labels[where], pred_label[0, where], exit_layer
+        return tokens_norm[0,:,where], labels[where], pred_label[0, where], exit_layer
 
     def test(self, loader, total_voxels):        
         # Metric
@@ -215,7 +218,6 @@ class HD_Model:
         self.max_samples = kwargs['args'].number_samples
         self.test_max_samples = kwargs['args'].test_number_samples
         self.kwargs = kwargs
-        self.compensation = None
         self.debug_sim = []
 
     def normalize(self, samples):
@@ -252,27 +254,11 @@ class HD_Model:
                 setattr(self, attr, getattr(self, attr) + (labels != 255).sum().item())
 
         print("Finished loading data loaders")
-
-    def set_compensation(self, inter_weights_path):
-
-        """Load all the paths for every exit"""
-
-        self.linear_weights = {}
-
-        for layer, path in inter_weights_path.items():
-            self.linear_weights[layer] = nn.Linear(768, 768)
-            state_dict = torch.load(path)
-            self.linear_weights[layer].load_state_dict(state_dict)
-            self.linear_weights[layer] = self.linear_weights[layer].to(self.device)
-        self.compensation = True
     
     def sample_to_encode(self, it, batch, step_type="train"):
         features, labels, soa_labels, exit_layer = self.feature_extractor.forward_model(it, batch, step_type=step_type) # Everything for what hasn't been dropped
         features = torch.transpose(features, 0, 1).to(dtype=torch.float32, device = self.device, non_blocking=True)
         labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
-
-        if self.compensation and exit_layer != 47:
-            features = self.linear_weights[exit_layer](features)
 
         #features = self.normalize(features) # Z1 score seems to work
 
@@ -731,7 +717,7 @@ if __name__ == "__main__":
     ####### HD Model ##########
     hd_model = HD_Model(FEAT_SIZE, DIMENSIONS, num_classes, path_pretrained, device=device, args=args)
     hd_model.set_loaders(train_loader=train_loader, val_loader=val_loader)
-    hd_model.set_compensation({12: 'linear_weights_12.pth', 24: 'linear_weights_24_0.75.pth', 36: 'linear_weights_36_ep_0.75.pth'} )
+    hd_model.model.set_compensation({12: '/home/HyperLiDAR/linear_weights_12.pth', 24: '/home/HyperLiDAR/linear_weights_24_0.75.pth', 36: '/home/HyperLiDAR/linear_weights_36_ep_0.75.pth'} )
 
     if args.wandb_run:
         run = wandb.init(
