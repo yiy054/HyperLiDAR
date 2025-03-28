@@ -132,30 +132,44 @@ class Feature_Extractor:
             cell_ind = cell_ind.cuda(0, non_blocking=True)
             occupied_cell = occupied_cell.cuda(0, non_blocking=True)
             neighbors_emb = neighbors_emb.cuda(0, non_blocking=True)
-        net_inputs = (feat, cell_ind, occupied_cell, neighbors_emb)
+        self.net_input = (feat, cell_ind, occupied_cell, neighbors_emb)
+        self.where = labels != 255
+        self.labels = labels[self.where]
 
-        if self.device_string != 'cpu':
-            with torch.autocast("cuda", enabled=True):
-                # Logits
+        return self.continue_with_model(step_type, flag = 'new_iter')
+
+    def continue_with_model(self, step_type, flag='new_iter', tokens = None):
+
+        if flag == 'new_iter':
+            self.step = 0
+            if self.device_string != 'cpu':
+                with torch.autocast("cuda", enabled=True):
+                    # Logits
+                    with torch.no_grad():
+                        out = self.model(*self.net_input, step_type)
+                        _, tokens, tokens_norm, out, exit_layer = out[0], out[1], out[2], out[3], out[4]
+            else:
                 with torch.no_grad():
-                    out = self.model(*net_inputs, step_type)
-                    encode, tokens, tokens_norm, out, exit_layer = out[0], out[1], out[2], out[3], out[4]
-                    pred_label = out.max(1)[1]
+                    out = self.model(*self.net_input, step_type)
+                    _, tokens, tokens_norm, out, exit_layer = out[0], out[1], out[2], out[3], out[4]
+        
+        if flag == 'continue_iter':
+            if self.device_string != 'cpu':
+                with torch.autocast("cuda", enabled=True):
+                    # Logits
+                    with torch.no_grad():
+                        out = self.model.continue_forward(tokens, self.step, step_type)
+                        _, tokens, tokens_norm, out, exit_layer = out[0], out[1], out[2], out[3], out[4]
+            else:
+                with torch.no_grad():
+                    out = self.model.continue_forward(tokens, self.step, step_type)
+                    _, tokens, tokens_norm, out, exit_layer = out[0], out[1], out[2], out[3], out[4]
 
-                    # Only return samples that are not noise
-                    #torch.cuda.synchronize(device=self.device)
-                    where = labels != 255
-                    #torch.cuda.synchronize(device=self.device)
-        else:
-            with torch.no_grad():
-                out = self.model(*net_inputs, step_type)
-                encode, tokens, tokens_norm, out, exit_layer = out[0], out[1], out[2], out[3], out[4]
-                pred_label = out.max(1)[1]
+        self.step += 1
 
-                # Only return samples that are not noise
-                where = labels != 255
+        pred_label = out.max(1)[1]
 
-        return tokens_norm[0,:,where], labels[where], pred_label[0, where], exit_layer
+        return tokens, tokens_norm[0,:,self.where], pred_label[0, self.where], exit_layer
 
     def test(self, loader, total_voxels):        
         # Metric
@@ -218,7 +232,9 @@ class HD_Model:
         self.max_samples = kwargs['args'].number_samples
         self.test_max_samples = kwargs['args'].test_number_samples
         self.kwargs = kwargs
-        self.debug_sim = []
+        self.threshold = {}
+        for i in kwargs['args'].layers:
+            self.threshold[int(i)] = 1
 
     def normalize(self, samples):
 
@@ -256,16 +272,30 @@ class HD_Model:
         print("Finished loading data loaders")
     
     def sample_to_encode(self, it, batch, step_type="train"):
-        features, labels, soa_labels, exit_layer = self.feature_extractor.forward_model(it, batch, step_type=step_type) # Everything for what hasn't been dropped
+        tokens, tokens_norm, soa_labels, exit_layer = self.feature_extractor.forward_model(it, batch, step_type=step_type) # Everything for what hasn't been dropped
+        samples_hv = self.encode(tokens_norm)
+
+        ### Check if we need to do another iteration:
+        while exit_layer != 47:
+            if check_early_exit(samples_hv) > self.threshold[exit_layer]:
+                continue
+            else:
+                break
+            tokens, tokens_norm, soa_labels, exit_layer = self.feature_extractor.continue_with_model(step_type=step_type, flag='continue_iter', tokens = tokens)
+
+        labels = self.feature_extractor.labels
         features = torch.transpose(features, 0, 1).to(dtype=torch.float32, device = self.device, non_blocking=True)
         labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
 
         #features = self.normalize(features) # Z1 score seems to work
 
-        # HD training
-        samples_hv = self.encode(features)
-
         return samples_hv, labels, soa_labels
+
+    def check_early_exit(self, samples_hv):
+        self.classify.weight[:] = F.normalize(self.classify_weights)
+        logits = self.classify(F.normalize(samples_hv))
+        max_dist = torch.max(logits, axis=1).values
+        return torch.mean(max_dist)
     
     def train(self, weights=None):
 
@@ -276,7 +306,7 @@ class HD_Model:
         with torch.no_grad():
             for it, batch in tqdm(enumerate(self.train_loader), desc="Training"):
     
-                samples_hv, labels, _ = self.sample_to_encode(it, batch, step_type="train")
+                samples_hv, labels, _, tokens = self.sample_to_encode(it, batch, step_type="train")
                 
                 for b in range(0, samples_hv.shape[0], self.point_per_iter):
                     end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
@@ -307,17 +337,6 @@ class HD_Model:
             # EDIT - normalize classify_weights for filling in self.classify.weight. 
             # Note, they are different! The first is the unnormalized, the 2nd is the normalized
             self.classify.weight[:] = F.normalize(self.classify_weights)
-
-        threshold_values = []
-
-        ## Get the threshold values
-        for layer in self.stop:
-            np_cka = np.array([i.cpu() for i in self.feature_extractor.model.waffleiron.cka_losses[int(layer)]])
-            mean_cka = np.mean(np_cka)
-            std_cka = np.std(np_cka)
-            threshold = mean_cka - std_cka
-            print("Threshold = ", threshold)
-            self.feature_extractor.model.waffleiron.set_exit_threshold(layer = layer, threshold = threshold)
 
     def retrain(self, epochs, weights=None):
         
@@ -717,7 +736,9 @@ if __name__ == "__main__":
     ####### HD Model ##########
     hd_model = HD_Model(FEAT_SIZE, DIMENSIONS, num_classes, path_pretrained, device=device, args=args)
     hd_model.set_loaders(train_loader=train_loader, val_loader=val_loader)
-    hd_model.model.set_compensation({12: '/home/HyperLiDAR/linear_weights_12.pth', 24: '/home/HyperLiDAR/linear_weights_24_0.75.pth', 36: '/home/HyperLiDAR/linear_weights_36_ep_0.75.pth'} )
+    hd_model.feature_extractor.model.set_compensation({12: '/home/HyperLiDAR/overcompensation_layer/linear_weights_12_0.75_normalize.pth', 
+        24: '/home/HyperLiDAR/overcompensation_layer/linear_weights_24_0.75_normalize.pth', 
+        36: '/home/HyperLiDAR/overcompensation_layer/linear_weights_36_0.75_normalize.pth'}, device=device)
 
     if args.wandb_run:
         run = wandb.init(

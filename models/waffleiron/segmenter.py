@@ -14,6 +14,7 @@
 
 
 import torch.nn as nn
+import torch
 from .backbone import WaffleIron
 from .embedding import Embedding
 
@@ -44,7 +45,7 @@ class Segmenter(nn.Module):
         self.embed.compress()
         self.waffleiron.compress()
 
-    def set_compensation(self, inter_weights_path):
+    def set_compensation(self, inter_weights_path, device):
 
         """Load all the paths for every exit"""
 
@@ -54,11 +55,13 @@ class Segmenter(nn.Module):
             self.linear_weights[layer] = nn.Linear(768, 768)
             state_dict = torch.load(path)
             self.linear_weights[layer].load_state_dict(state_dict)
-            self.linear_weights[layer] = self.linear_weights[layer].to(self.device)
+            self.linear_weights[layer] = self.linear_weights[layer].to(device)
         self.compensation = True
         print("Compensation values updated")
 
     def forward(self, feats, cell_ind, occupied_cell, neighbors, step_type=None):
+
+        ## If there is only one iter this should run only ###
 
         tokens_1 = self.embed(feats, neighbors) # radius can change based on the local density 
         # Node classification -> self and its neighbors
@@ -68,17 +71,22 @@ class Segmenter(nn.Module):
         #    return tokens_1, tokens, self.classif(tokens[-1])
         #else:
 
-        self.exit(tokens_1, tokens, exit_layer)
+        return self.exit(tokens_1, tokens, exit_layer, step_type)
 
     def continue_forward(self, tokens_init, iteration, step_type):
+
+        ### If there is more than one stop ###
+
         tokens, exit_layer = self.waffleiron.tokenize(iteration, tokens_init, step_type)
 
         #if all_features:
         #    return tokens_1, tokens, self.classif(tokens[-1])
         #else:
-        self.exit(tokens_init, tokens, exit_layer)
+        return self.exit(tokens_init, tokens, exit_layer, step_type)
 
-    def exit(tokens, exit_layer):
+    def exit(self, tokens_1, tokens, exit_layer, step_type):
+
+        ### Final normalization ###
 
         if exit_layer != 47 and step_type != "distill":
             tokens = self.linear_weights[exit_layer+1](tokens)
