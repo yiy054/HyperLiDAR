@@ -283,8 +283,8 @@ class HD_Model:
                 tokens, tokens_norm, soa_labels, exit_layer = self.feature_extractor.continue_with_model(step_type=step_type, flag='continue_iter', tokens = tokens)
                 samples_hv = self.encode(torch.transpose(tokens_norm, 0, 1).float())
 
-            labels = self.feature_extractor.labels
-            labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
+        labels = self.feature_extractor.labels
+        labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
 
         #features = self.normalize(features) # Z1 score seems to work
 
