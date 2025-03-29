@@ -283,4 +283,4 @@ class WaffleIron(nn.Module):
             tokens = cmix(tokens)
             #print(tokens.shape)
         #tokens = F.normalize(tokens)
-        return tokens, d
+        return tokens, self.early_exit[iter_crop] + d

@@ -273,18 +273,16 @@ class HD_Model:
     
     def sample_to_encode(self, it, batch, step_type="train"):
         tokens, tokens_norm, soa_labels, exit_layer = self.feature_extractor.forward_model(it, batch, step_type=step_type) # Everything for what hasn't been dropped
-        samples_hv = self.encode(tokens_norm)
-
+        samples_hv = self.encode(torch.transpose(tokens_norm, 0, 1).float())
+    
         ### Check if we need to do another iteration:
         while exit_layer != 47:
-            if check_early_exit(samples_hv) > self.threshold[exit_layer]:
-                continue
-            else:
+            if self.check_early_exit(samples_hv) > self.threshold[exit_layer+1]:
                 break
             tokens, tokens_norm, soa_labels, exit_layer = self.feature_extractor.continue_with_model(step_type=step_type, flag='continue_iter', tokens = tokens)
+            samples_hv = self.encode(torch.transpose(tokens_norm, 0, 1).float())
 
         labels = self.feature_extractor.labels
-        features = torch.transpose(features, 0, 1).to(dtype=torch.float32, device = self.device, non_blocking=True)
         labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
 
         #features = self.normalize(features) # Z1 score seems to work
@@ -295,7 +293,9 @@ class HD_Model:
         self.classify.weight[:] = F.normalize(self.classify_weights)
         logits = self.classify(F.normalize(samples_hv))
         max_dist = torch.max(logits, axis=1).values
-        return torch.mean(max_dist)
+        print("Val early exit: ", torch.min(max_dist))
+        x = input()
+        return torch.min(max_dist)
     
     def train(self, weights=None):
 
@@ -306,7 +306,7 @@ class HD_Model:
         with torch.no_grad():
             for it, batch in tqdm(enumerate(self.train_loader), desc="Training"):
     
-                samples_hv, labels, _, tokens = self.sample_to_encode(it, batch, step_type="train")
+                samples_hv, labels, soa_labels = self.sample_to_encode(it, batch, step_type="train")
                 
                 for b in range(0, samples_hv.shape[0], self.point_per_iter):
                     end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]

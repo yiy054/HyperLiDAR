@@ -89,7 +89,8 @@ class Segmenter(nn.Module):
         ### Final normalization ###
 
         if exit_layer != 47 and step_type != "distill":
-            tokens = self.linear_weights[exit_layer+1](tokens)
+            tokens = self.linear_weights[exit_layer+1](torch.transpose(tokens[0], 0, 1).to(torch.float32))
+            tokens = torch.reshape(tokens, (1, tokens.shape[1], tokens.shape[0]))
 
         norm_feat = self.classif[0](tokens)
         soa_pred = self.classif[1](norm_feat)
