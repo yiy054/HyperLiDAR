@@ -276,14 +276,15 @@ class HD_Model:
         samples_hv = self.encode(torch.transpose(tokens_norm, 0, 1).float())
     
         ### Check if we need to do another iteration:
-        while exit_layer != 47:
-            if self.check_early_exit(samples_hv) > self.threshold[exit_layer+1]:
-                break
-            tokens, tokens_norm, soa_labels, exit_layer = self.feature_extractor.continue_with_model(step_type=step_type, flag='continue_iter', tokens = tokens)
-            samples_hv = self.encode(torch.transpose(tokens_norm, 0, 1).float())
+        if step_type == 'retrain' or step_type == 'test':
+            while exit_layer != 47:
+                if self.check_early_exit(samples_hv) > self.threshold[exit_layer+1]:
+                    break
+                tokens, tokens_norm, soa_labels, exit_layer = self.feature_extractor.continue_with_model(step_type=step_type, flag='continue_iter', tokens = tokens)
+                samples_hv = self.encode(torch.transpose(tokens_norm, 0, 1).float())
 
-        labels = self.feature_extractor.labels
-        labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
+            labels = self.feature_extractor.labels
+            labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
 
         #features = self.normalize(features) # Z1 score seems to work
 
@@ -292,10 +293,12 @@ class HD_Model:
     def check_early_exit(self, samples_hv):
         self.classify.weight[:] = F.normalize(self.classify_weights)
         logits = self.classify(F.normalize(samples_hv))
+        print(logits)
+        print(logits.max())
+        print(logits.min())
         max_dist = torch.max(logits, axis=1).values
-        print("Val early exit: ", torch.min(max_dist))
-        x = input()
-        return torch.min(max_dist)
+        print("Val early exit: ", torch.mean(max_dist))
+        return torch.mean(max_dist)
     
     def train(self, weights=None):
 
@@ -352,7 +355,7 @@ class HD_Model:
                 count = 0
                 for it, batch in tqdm(enumerate(self.train_loader), desc=f"Retraining epoch {e}"):
                     
-                    samples_hv, labels, _ = self.sample_to_encode(it, batch)
+                    samples_hv, labels, _ = self.sample_to_encode(it, batch, step_type='retrain')
                     is_wrong_count = 0
 
                     for b in range(0, samples_hv.shape[0], self.point_per_iter):
@@ -447,7 +450,7 @@ class HD_Model:
         with torch.no_grad():
             for it, batch in tqdm(enumerate(loader), desc="Validation:"):
         
-                samples_hv, labels, soa_labels = self.sample_to_encode(it, batch) # Only return the features that haven't been dropped
+                samples_hv, labels, soa_labels = self.sample_to_encode(it, batch, step_type='test') # Only return the features that haven't been dropped
                 
                 for b in range(0, samples_hv.shape[0], self.point_per_iter):
                     end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
