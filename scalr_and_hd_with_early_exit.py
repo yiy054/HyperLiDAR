@@ -85,8 +85,7 @@ class Feature_Extractor:
         self.early_exit = early_exit
         self.kwargs = kwargs
 
-        if early_exit != [48]:
-            self.model.waffleiron.separate_model()
+        self.model.waffleiron.separate_model()
     
     def load_pretrained(self, path):
         # Load pretrained model
@@ -274,11 +273,14 @@ class HD_Model:
     def sample_to_encode(self, it, batch, step_type="train"):
         tokens, tokens_norm, soa_labels, exit_layer = self.feature_extractor.forward_model(it, batch, step_type=step_type) # Everything for what hasn't been dropped
         samples_hv = self.encode(torch.transpose(tokens_norm, 0, 1).float())
+        self.classify.weight[:] = F.normalize(self.classify_weights)
+        logits = None
     
         ### Check if we need to do another iteration:
         if step_type == 'retrain' or step_type == 'test':
             while exit_layer != 47:
-                if self.check_early_exit(samples_hv) > self.threshold[exit_layer+1]:
+                val, logits = self.check_early_exit(samples_hv)
+                if  val < self.threshold[exit_layer+1]:
                     break
                 tokens, tokens_norm, soa_labels, exit_layer = self.feature_extractor.continue_with_model(step_type=step_type, flag='continue_iter', tokens = tokens)
                 samples_hv = self.encode(torch.transpose(tokens_norm, 0, 1).float())
@@ -287,18 +289,12 @@ class HD_Model:
         labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
 
         #features = self.normalize(features) # Z1 score seems to work
-
-        return samples_hv, labels, soa_labels
+        return samples_hv, labels, soa_labels, logits
 
     def check_early_exit(self, samples_hv):
-        self.classify.weight[:] = F.normalize(self.classify_weights)
         logits = self.classify(F.normalize(samples_hv))
-        print(logits)
-        print(logits.max())
-        print(logits.min())
         max_dist = torch.max(logits, axis=1).values
-        print("Val early exit: ", torch.mean(max_dist))
-        return torch.mean(max_dist)
+        return torch.mean(max_dist), logits
     
     def train(self, weights=None):
 
@@ -309,7 +305,7 @@ class HD_Model:
         with torch.no_grad():
             for it, batch in tqdm(enumerate(self.train_loader), desc="Training"):
     
-                samples_hv, labels, soa_labels = self.sample_to_encode(it, batch, step_type="train")
+                samples_hv, labels, soa_labels, _ = self.sample_to_encode(it, batch, step_type="train")
                 
                 for b in range(0, samples_hv.shape[0], self.point_per_iter):
                     end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
@@ -355,24 +351,28 @@ class HD_Model:
                 count = 0
                 for it, batch in tqdm(enumerate(self.train_loader), desc=f"Retraining epoch {e}"):
                     
-                    samples_hv, labels, _ = self.sample_to_encode(it, batch, step_type='retrain')
+                    samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type='retrain')
                     is_wrong_count = 0
 
                     for b in range(0, samples_hv.shape[0], self.point_per_iter):
                         end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
                         samples_hv_here = samples_hv[b:end]
                         labels_here = labels[b:end]
+                        if logits != None:
+                            logits_here = logits[b:end]
                         
                         #sim = self.model(samples_hv_here, dot=True)
                         #pred_hd = sim.argmax(1).data
 
                         # EDIT - normalize classify_weights for filling in self.classify.weight. 
                         # Need to do normalization right before the classification during retraining!
-                        self.classify.weight[:] = F.normalize(self.classify_weights)
+                        #self.classify.weight[:] = F.normalize(self.classify_weights)
 
                         # EDIT - with new classify
-                        logits = self.classify(F.normalize(samples_hv_here))
-                        pred_hd = torch.argmax(logits, axis=1)
+                        if logits == None:
+                            self.classify.weight[:] = F.normalize(self.classify_weights)
+                            logits_here = self.classify(F.normalize(samples_hv_here))
+                        pred_hd = torch.argmax(logits_here, axis=1)
 
                         is_wrong = labels_here != pred_hd
                         is_wrong_count += is_wrong.sum().item()
@@ -450,13 +450,15 @@ class HD_Model:
         with torch.no_grad():
             for it, batch in tqdm(enumerate(loader), desc="Validation:"):
         
-                samples_hv, labels, soa_labels = self.sample_to_encode(it, batch, step_type='test') # Only return the features that haven't been dropped
+                samples_hv, labels, soa_labels, logits = self.sample_to_encode(it, batch, step_type='test') # Only return the features that haven't been dropped
                 
                 for b in range(0, samples_hv.shape[0], self.point_per_iter):
                     end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
                     samples_hv_here = samples_hv[b:end]
                     labels_here = labels[b:end]
                     soa_here = soa_labels[b:end]  # EDIT: Add soa results
+                    if logits != None:
+                        logits_here = logits[b:end]
 
                     #torch.cuda.synchronize(device=self.device)
                 
@@ -467,9 +469,12 @@ class HD_Model:
                     #torch.cuda.synchronize(device=self.device)
 
                     ## EDIT - new classify
-                    logits = self.classify(F.normalize(samples_hv_here))
+                    #logits = self.classify(F.normalize(samples_hv_here))
 
-                    pred_hd = torch.argmax(logits, axis=1)
+                    if logits == None:
+                        logits_here = self.classify(F.normalize(samples_hv_here))
+
+                    pred_hd = torch.argmax(logits_here, axis=1)
                     #torch.cuda.synchronize(device=self.device)
 
                     #print("Labels: ", labels.shape[0])

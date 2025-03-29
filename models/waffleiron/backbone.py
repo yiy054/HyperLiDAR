@@ -200,9 +200,9 @@ class WaffleIron(nn.Module):
                 for d in range(depth)
             ]
         )
-        try:
+        if early_exit != None:
             self.early_exit = early_exit
-        except:
+        else:
             self.early_exit = [48]
         self.cka_module = CKALoss()
         #cropped_model = zip(self.spatial_mix, self.channel_mix)
@@ -252,9 +252,13 @@ class WaffleIron(nn.Module):
         return tokens, d
 
     def tokenize(self, iter_crop, tokens, step_type):
-
-        spatial_mix = self.spatial_mix_sep[iter_crop]
-        channel_mix = self.channel_mix_sep[iter_crop]
+        
+        try:
+            spatial_mix = self.spatial_mix_sep[iter_crop]
+            channel_mix = self.channel_mix_sep[iter_crop]
+        except:
+            spatial_mix = self.spatial_mix
+            channel_mix = self.channel_mix
 
         for d, (smix, cmix) in enumerate(zip(spatial_mix, channel_mix)):
 
