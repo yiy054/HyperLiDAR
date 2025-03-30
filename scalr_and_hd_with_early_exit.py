@@ -135,12 +135,11 @@ class Feature_Extractor:
         self.where = labels != 255
         self.labels = labels[self.where]
 
-        return self.continue_with_model(step_type, flag = 'new_iter')
+        return self.continue_with_model(step_type, flag = 'new_iter', step = 0)
 
-    def continue_with_model(self, step_type, flag='new_iter', tokens = None):
+    def continue_with_model(self, step_type, flag='new_iter', tokens = None, step=0):
 
         if flag == 'new_iter':
-            self.step = 0
             if self.device_string != 'cpu':
                 with torch.autocast("cuda", enabled=True):
                     # Logits
@@ -157,14 +156,12 @@ class Feature_Extractor:
                 with torch.autocast("cuda", enabled=True):
                     # Logits
                     with torch.no_grad():
-                        out = self.model.continue_forward(tokens, self.step, step_type)
+                        out = self.model.continue_forward(tokens_init = tokens, iteration = step, step_type = step_type)
                         _, tokens, tokens_norm, out, exit_layer = out[0], out[1], out[2], out[3], out[4]
             else:
                 with torch.no_grad():
-                    out = self.model.continue_forward(tokens, self.step, step_type)
+                    out = self.model.continue_forward(tokens_init = tokens, iteration = step, step_type = step_type)
                     _, tokens, tokens_norm, out, exit_layer = out[0], out[1], out[2], out[3], out[4]
-
-        self.step += 1
 
         pred_label = out.max(1)[1]
 
@@ -234,6 +231,10 @@ class HD_Model:
         self.threshold = {}
         for i in kwargs['args'].layers:
             self.threshold[int(i)] = 1
+        self.threshold[48] = 1
+        self.alpha_exp_average = 0.05
+        self.update = True
+        self.past_update = self.threshold
 
     def normalize(self, samples):
 
@@ -277,13 +278,51 @@ class HD_Model:
         logits = None
     
         ### Check if we need to do another iteration:
+        steps = 1
         if step_type == 'retrain' or step_type == 'test':
+            #print(self.threshold)
+            #x = input()
+
             while exit_layer != 47:
                 val, logits = self.check_early_exit(samples_hv)
-                if  val < self.threshold[exit_layer+1]:
+                #print("Exit layer: ", exit_layer)
+                #print("Value: ", val)
+                #x = input()
+
+                if val > self.threshold[exit_layer+1] - 0.05:
                     break
-                tokens, tokens_norm, soa_labels, exit_layer = self.feature_extractor.continue_with_model(step_type=step_type, flag='continue_iter', tokens = tokens)
-                samples_hv = self.encode(torch.transpose(tokens_norm, 0, 1).float())
+
+                # Update threshold
+                if self.update:
+                    self.threshold[exit_layer+1] = ((1-self.alpha_exp_average)*self.threshold[exit_layer+1]) + (self.alpha_exp_average*val)
+
+                tokens, tokens_norm, soa_labels, exit_layer = self.feature_extractor.continue_with_model(step_type=step_type, flag='continue_iter', tokens = tokens, step = steps)
+                samples_hv_next = self.encode(torch.transpose(tokens_norm, 0, 1).float())
+                samples_hv = torchhd.bundle(samples_hv_next, samples_hv)
+                steps += 1
+
+            if exit_layer != 47 and not self.update:
+                self.threshold[exit_layer+1] = ((1-self.alpha_exp_average)*self.threshold[exit_layer+1]) + (self.alpha_exp_average*val)
+
+            if it % 10 == 9 and self.update:
+                if self.past_update.values == self.threshold.values:
+                    self.update = False
+                    print("Update stop!!!")
+                else:
+                    self.past_update = self.threshold
+                    print(self.past_update)
+            #(self.alpha_exp_average*val) + ((1-self.alpha_exp_average)*self.threshold[exit_layer+1])
+
+        if step_type == 'train':
+            while exit_layer != 47:
+                tokens, tokens_norm, soa_labels, exit_layer = self.feature_extractor.continue_with_model(step_type=step_type, flag='continue_iter', tokens = tokens, step = steps)
+                samples_hv_next = self.encode(torch.transpose(tokens_norm, 0, 1).float())
+                samples_hv = torchhd.bundle(samples_hv_next, samples_hv)
+                steps += 1
+
+        if exit_layer == 47:
+            logits = self.classify(F.normalize(samples_hv))
+            # Last update
 
         labels = self.feature_extractor.labels
         labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
@@ -746,7 +785,7 @@ if __name__ == "__main__":
     hd_model.set_loaders(train_loader=train_loader, val_loader=val_loader)
     hd_model.feature_extractor.model.set_compensation({12: '/home/HyperLiDAR/overcompensation_layer/linear_weights_12_0.75_normalize.pth', 
         24: '/home/HyperLiDAR/overcompensation_layer/linear_weights_24_0.75_normalize.pth', 
-        36: '/home/HyperLiDAR/overcompensation_layer/linear_weights_36_0.75_normalize.pth'}, device=device)
+        36: '/home/HyperLiDAR/overcompensation_layer/linear_weights_36_1.75_normalize_2.pth'}, device=device)
 
     if args.wandb_run:
         run = wandb.init(
