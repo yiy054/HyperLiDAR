@@ -223,7 +223,7 @@ class HD_Model:
                                                    args=kwargs['args'])
         self.feature_extractor.load_pretrained(path_pretrained)
         self.stop = kwargs['args'].layers
-        self.point_per_iter = kwargs['args'].number_samples
+        self.point_per_iter = kwargs['args'].batch_points
         self.num_classes = num_classes
         self.max_samples = kwargs['args'].number_samples
         self.test_max_samples = kwargs['args'].test_number_samples
