@@ -212,7 +212,7 @@ def parse_arguments():
     parser.add_argument("--seed", default=None, type=int, help="Seed for initializing training")
     #parser.add_argument("--add_lr", action="store_true", default=False, help='Add lr to help class imbalance')
     parser.add_argument("--dataset", choices=['nuscenes', 'semantic_kitti', 'tls'], default='nuscenes', help='Which dataset to train and test on?')
-    parser.add_argument("--data_path", type=str, default='./root/main/dataset/', help='data dir path')
+    parser.add_argument("--data_path", type=str, default='/mnt/data/', help='data dir path')
     parser.add_argument("--result_path", type=str, default='./results', help='result dir path')
 
     parser.add_argument("--wandb_run", action="store_true", default=False, help='Pass values to WandDB')
@@ -383,20 +383,22 @@ if __name__ == "__main__":
             features_small, _, _, exit_layer_small = feature_extractor_small.forward_model(it, batch, step_type = "distill")
             
             linear_output = linear(torch.transpose(features_small, 0, 1).to(torch.float32))
+            linear_output = torch.reshape(linear_output, (1, linear_output.shape[1], linear_output.shape[0]))
 
-            tokens_student = feature_extractor_small.model.classif(torch.reshape(linear_output, (1, linear_output.shape[1], linear_output.shape[0])))
+            tokens_student = feature_extractor_small.model.classif(linear_output)
 
-            tokens_teacher = feature_extractor_complete.model.classif[1](features_complete.to(torch.float32))
+            features_complete = torch.reshape(features_complete, (1, features_complete.shape[0], features_complete.shape[1])).to(torch.float32)
+            tokens_teacher = feature_extractor_complete.model.classif(features_complete)
 
             target_mask = F.one_hot(labels, num_classes).to(device)
 
-            loss = ofa_loss(torch.transpose(tokens_student[0], 0, 1), torch.transpose(tokens_teacher, 0, 1), target_mask, eps=0.75)
+            loss = ofa_loss(torch.transpose(tokens_student[0], 0, 1), torch.transpose(tokens_teacher[0], 0, 1), target_mask, eps=1.75)
 
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
-            torch.save(linear.state_dict(), 'linear_weights_36_0.75_normalize.pth')
+            torch.save(linear.state_dict(), 'linear_weights_36_1.75_normalize_2.pth')
 
             loss_epoch.append(float(loss.cpu()))
         loss_at_epoch = np.mean(np.array(loss_epoch))
