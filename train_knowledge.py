@@ -163,7 +163,7 @@ class Feature_Extractor:
                 # Only return samples that are not noise
                 where = labels != 255
 
-        return tokens[0,:,where], labels[where], pred_label[0, where], exit_layer
+        return tokens[0,:,where], labels[where], out[0,:,where], exit_layer
             
 
     def test(self, loader, total_voxels):        
@@ -385,14 +385,11 @@ if __name__ == "__main__":
             linear_output = linear(torch.transpose(features_small, 0, 1).to(torch.float32))
             linear_output = torch.reshape(linear_output, (1, linear_output.shape[1], linear_output.shape[0]))
 
-            tokens_student = feature_extractor_small.model.classif(linear_output)
-
-            features_complete = torch.reshape(features_complete, (1, features_complete.shape[0], features_complete.shape[1])).to(torch.float32)
-            tokens_teacher = feature_extractor_complete.model.classif(features_complete)
+            tokens_student = feature_extractor_small.model.classif[1](linear_output)
 
             target_mask = F.one_hot(labels, num_classes).to(device)
 
-            loss = ofa_loss(torch.transpose(tokens_student[0], 0, 1), torch.transpose(tokens_teacher[0], 0, 1), target_mask, eps=1.75)
+            loss = ofa_loss(torch.transpose(tokens_student[0], 0, 1), torch.transpose(soa_result_complete, 0, 1), target_mask, eps=0.6)
 
             optimizer.zero_grad()
             loss.backward()
