@@ -290,8 +290,7 @@ class HD_Model:
                 #x = input()
                 print("Exit layer: ", exit_layer)
                 print("Value: ", val)
-                print("Threshold: ", self.threshold[exit_layer+1])
-                print("Logits: ", logits)
+                print("Before Threshold: ", self.threshold)
                 print("Steps: ", steps)
                 if val > self.threshold[exit_layer+1] - 0.05:
                     break
@@ -316,6 +315,7 @@ class HD_Model:
                     self.past_update = self.threshold
                     print(self.past_update)
             #(self.alpha_exp_average*val) + ((1-self.alpha_exp_average)*self.threshold[exit_layer+1])
+            print("After Threshold: ", self.threshold)
 
         if step_type == 'train':
             while exit_layer != 47:
