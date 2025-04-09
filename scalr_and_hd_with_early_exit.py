@@ -288,10 +288,8 @@ class HD_Model:
                 #print("Exit layer: ", exit_layer)
                 #print("Value: ", val)
                 #x = input()
-                print("Exit layer: ", exit_layer)
-                print("Value: ", val)
-                print("Before Threshold: ", self.threshold)
-                print("Steps: ", steps)
+                # print("Before Threshold: ", self.threshold)
+                # print("Steps: ", steps)
                 if val > self.threshold[exit_layer+1] - 0.05:
                     break
 
@@ -315,7 +313,7 @@ class HD_Model:
                     self.past_update = self.threshold
                     print(self.past_update)
             #(self.alpha_exp_average*val) + ((1-self.alpha_exp_average)*self.threshold[exit_layer+1])
-            print("After Threshold: ", self.threshold)
+            # print("After Threshold: ", self.threshold)
 
         if step_type == 'train':
             while exit_layer != 47:
@@ -819,9 +817,11 @@ if __name__ == "__main__":
     hd_model.train(weights=weights)
 
     print("Testing")
+    hd_model.update = False
     init_acc = hd_model.test_hd()
 
     print("Retraining")
+    hd_model.update = True
     acc_results, misclassified_cnts = hd_model.retrain(epochs=args.epochs, weights=weights)
     
     print("Testing")
