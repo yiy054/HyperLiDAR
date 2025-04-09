@@ -290,7 +290,8 @@ class HD_Model:
                 #x = input()
                 # print("Before Threshold: ", self.threshold)
                 # print("Steps: ", steps)
-                if val > self.threshold[exit_layer+1] - 0.05:
+                if val > self.threshold[exit_layer+1]:
+                    print("Exit layer: ", exit_layer)
                     break
 
                 # Update threshold
