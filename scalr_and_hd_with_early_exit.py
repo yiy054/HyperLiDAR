@@ -335,7 +335,8 @@ class HD_Model:
     def check_early_exit(self, samples_hv):
         logits = self.classify(F.normalize(samples_hv))
         max_dist = torch.max(logits, axis=1).values
-        return torch.mean(max_dist), logits
+        val = torch.quantile(max_dist, 0.95)
+        return val, logits
     
     def train(self, weights=None):
 
