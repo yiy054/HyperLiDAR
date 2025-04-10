@@ -292,7 +292,7 @@ class HD_Model:
                 # print("Before Threshold: ", self.threshold)
                 # print("Steps: ", steps)
                 if val > self.threshold[exit_layer+1] - 0.05:
-                    print("Exit layer: ", exit_layer)
+                    # print("Exit layer: ", exit_layer)
                     self.exit_counter[exit_layer+1] += 1
                     break
 
