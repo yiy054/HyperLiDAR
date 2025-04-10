@@ -481,8 +481,10 @@ class HD_Model:
 
             # Retraining test
             #if (e + 1) % 2 == 0:
+            hd_model.update = False
             avg_acc = self.test_hd()
             acc_results.append(avg_acc)
+            hd_model.update = True
 
         return acc_results, misclassified_cnts
 
