@@ -313,10 +313,10 @@ class HD_Model:
             if it % 10 == 9 and self.update:
                 if self.past_update.values == self.threshold.values:
                     self.update = False
-                    print("Update stop!!!")
+                    print(it, "Update stop!!!")
                 else:
                     self.past_update = self.threshold
-                    print(self.past_update)
+                    # print(self.past_update)
             #(self.alpha_exp_average*val) + ((1-self.alpha_exp_average)*self.threshold[exit_layer+1])
             # print("After Threshold: ", self.threshold)
 
@@ -401,8 +401,10 @@ class HD_Model:
                 for it, batch in tqdm(enumerate(self.train_loader), desc=f"Retraining epoch {e}"):
                     
                     if self.start_early_exit:
+                        print("Early exit started")
                         samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type='retrain')
                     else:
+                        print("Early exit not started")
                         samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type="train")
                         
                     is_wrong_count = 0
