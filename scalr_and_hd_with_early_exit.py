@@ -572,11 +572,11 @@ class HD_Model:
         print(f'avg acc: {avg_acc}')
         print(f"Total exit_counter for test: ", self.exit_counter)
 
-        if abs(avg_acc - self.past_acc) < 0.1 and self.start_early_exit == False:
-            self.start_early_exit = True
-            print("Start early exit")
-        else:
-            self.past_acc = avg_acc
+        # if abs(avg_acc - self.past_acc) < 0.1 and self.start_early_exit == False:
+        #     self.start_early_exit = True
+        #     print("Start early exit")
+        # else:
+        #     self.past_acc = avg_acc
         if args.wandb_run:
             log_data = {f"Training class_{i}_IoU": c for i, c in enumerate(accuracy)}
             log_data["Retraining epoch"] = avg_acc
