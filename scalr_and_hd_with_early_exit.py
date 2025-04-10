@@ -559,7 +559,7 @@ class HD_Model:
         print(f'accuracy: {accuracy}')
         print(f'avg acc: {avg_acc}')
 
-        if avg_acc < self.past_acc:
+        if abs(avg_acc - self.past_acc) < 0.1 and self.start_early_exit == False:
             self.start_early_exit = True
             print("Start early exit")
         if args.wandb_run:
