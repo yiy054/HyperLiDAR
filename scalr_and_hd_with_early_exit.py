@@ -306,8 +306,7 @@ class HD_Model:
                 samples_hv_next = self.encode(torch.transpose(tokens_norm, 0, 1).float())
                 samples_hv = torchhd.bundle(samples_hv_next, samples_hv)
                 steps += 1
-            self.exit_counter[exit_layer+1] += 1
-
+            
             if exit_layer != 47 and not self.update:
                 self.threshold[exit_layer+1] = ((1-self.alpha_exp_average)*self.threshold[exit_layer+1]) + (self.alpha_exp_average*val)
 
@@ -331,7 +330,8 @@ class HD_Model:
         if exit_layer == 47:
             logits = self.classify(F.normalize(samples_hv))
             # Last update
-
+        
+        self.exit_counter[exit_layer+1] += 1
         labels = self.feature_extractor.labels
         labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
 
