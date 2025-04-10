@@ -229,15 +229,16 @@ class HD_Model:
         self.test_max_samples = kwargs['args'].test_number_samples
         self.kwargs = kwargs
         self.threshold = {}
+        self.exit_val_dict = {}
         for i in kwargs['args'].layers:
             self.threshold[int(i)] = 1
+            self.exit_val_dict[int(i)] = []
         self.threshold[48] = 1
         self.alpha_exp_average = 0.05
         self.update = True
         self.past_update = self.threshold
         self.exit_counter = {12: 0, 24: 0, 36: 0, 48: 0}
-        self.start_early_exit = False
-        self.past_acc = 0
+
 
     def normalize(self, samples):
 
@@ -288,14 +289,13 @@ class HD_Model:
 
             while exit_layer != 47:
                 val, logits = self.check_early_exit(samples_hv)
+                self.exit_val_dict[exit_layer].append(val.item())
                 #print("Exit layer: ", exit_layer)
                 #print("Value: ", val)
                 #x = input()
                 # print("Before Threshold: ", self.threshold)
                 # print("Steps: ", steps)
-                if val > self.threshold[exit_layer+1] - 0.05:
-                    # print("Exit layer: ", exit_layer)
-                    # self.exit_counter[exit_layer+1] += 1
+                if val > self.threshold[exit_layer+1] and step_type == 'test':
                     break
 
                 # Update threshold
@@ -405,7 +405,14 @@ class HD_Model:
                     #     samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type='retrain')
                     # else:
                         # print("Early exit not started")
-                    samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type="train")
+                    if e == 9:
+                        samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type="retrain")
+                        for layer, vals in self.exit_val_dict.items():
+                            new_threshold = np.percentile(vals, 95)
+                            self.threshold[layer] = new_threshold
+                            print(f"New threshold for layer {layer}: {new_threshold:.4f}")
+                    else:
+                        samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type="train")
                         
                     is_wrong_count = 0
                     for b in range(0, samples_hv.shape[0], self.point_per_iter):
@@ -506,6 +513,7 @@ class HD_Model:
         soa_pred = torch.empty((num_vox+1000), dtype=torch.int64, device=self.device)
         
         start_idx = 0
+        self.exit_counter = {12: 0, 24: 0, 36: 0, 48: 0}
         with torch.no_grad():
             for it, batch in tqdm(enumerate(loader), desc="Validation:"):
         
@@ -562,6 +570,7 @@ class HD_Model:
         avg_acc = torch.mean(accuracy)
         print(f'accuracy: {accuracy}')
         print(f'avg acc: {avg_acc}')
+        print(f"Total exit_counter for retraining epoch {e}: ", self.exit_counter)
 
         if abs(avg_acc - self.past_acc) < 0.1 and self.start_early_exit == False:
             self.start_early_exit = True
