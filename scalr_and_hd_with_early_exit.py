@@ -289,7 +289,7 @@ class HD_Model:
 
             while exit_layer != 47:
                 val, logits = self.check_early_exit(samples_hv)
-                self.exit_val_dict[exit_layer].append(val.item())
+                self.exit_val_dict[exit_layer+1].append(val.item())
                 #print("Exit layer: ", exit_layer)
                 #print("Value: ", val)
                 #x = input()
