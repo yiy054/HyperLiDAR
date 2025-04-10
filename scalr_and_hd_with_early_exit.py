@@ -400,12 +400,12 @@ class HD_Model:
                 count = 0
                 for it, batch in tqdm(enumerate(self.train_loader), desc=f"Retraining epoch {e}"):
                     
-                    if self.start_early_exit:
-                        print("Early exit started")
-                        samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type='retrain')
-                    else:
-                        print("Early exit not started")
-                        samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type="train")
+                    # if self.start_early_exit:
+                    #     # print("Early exit started")
+                    #     samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type='retrain')
+                    # else:
+                        # print("Early exit not started")
+                    samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type="train")
                         
                     is_wrong_count = 0
                     for b in range(0, samples_hv.shape[0], self.point_per_iter):
