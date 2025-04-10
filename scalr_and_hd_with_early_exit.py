@@ -236,6 +236,8 @@ class HD_Model:
         self.update = True
         self.past_update = self.threshold
         self.exit_counter = {12: 0, 24: 0, 36: 0, 48: 0}
+        self.start_early_exit = False
+        self.past_acc = 0
 
     def normalize(self, samples):
 
@@ -293,7 +295,7 @@ class HD_Model:
                 # print("Steps: ", steps)
                 if val > self.threshold[exit_layer+1] - 0.05:
                     # print("Exit layer: ", exit_layer)
-                    self.exit_counter[exit_layer+1] += 1
+                    # self.exit_counter[exit_layer+1] += 1
                     break
 
                 # Update threshold
@@ -304,6 +306,7 @@ class HD_Model:
                 samples_hv_next = self.encode(torch.transpose(tokens_norm, 0, 1).float())
                 samples_hv = torchhd.bundle(samples_hv_next, samples_hv)
                 steps += 1
+            self.exit_counter[exit_layer+1] += 1
 
             if exit_layer != 47 and not self.update:
                 self.threshold[exit_layer+1] = ((1-self.alpha_exp_average)*self.threshold[exit_layer+1]) + (self.alpha_exp_average*val)
@@ -397,9 +400,12 @@ class HD_Model:
                 count = 0
                 for it, batch in tqdm(enumerate(self.train_loader), desc=f"Retraining epoch {e}"):
                     
-                    samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type='retrain')
+                    if self.start_early_exit:
+                        samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type='retrain')
+                    else:
+                        samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type="train")
+                        
                     is_wrong_count = 0
-
                     for b in range(0, samples_hv.shape[0], self.point_per_iter):
                         end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
                         samples_hv_here = samples_hv[b:end]
@@ -553,6 +559,9 @@ class HD_Model:
         print(f'accuracy: {accuracy}')
         print(f'avg acc: {avg_acc}')
 
+        if avg_acc < self.past_acc:
+            self.start_early_exit = True
+            print("Start early exit")
         if args.wandb_run:
             log_data = {f"Training class_{i}_IoU": c for i, c in enumerate(accuracy)}
             log_data["Retraining epoch"] = avg_acc
