@@ -570,7 +570,7 @@ class HD_Model:
         avg_acc = torch.mean(accuracy)
         print(f'accuracy: {accuracy}')
         print(f'avg acc: {avg_acc}')
-        print(f"Total exit_counter for retraining epoch {e}: ", self.exit_counter)
+        print(f"Total exit_counter for test: ", self.exit_counter)
 
         if abs(avg_acc - self.past_acc) < 0.1 and self.start_early_exit == False:
             self.start_early_exit = True
