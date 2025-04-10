@@ -235,6 +235,7 @@ class HD_Model:
         self.alpha_exp_average = 0.05
         self.update = True
         self.past_update = self.threshold
+        self.exit_counter = {12: 0, 24: 0, 36: 0, 48: 0}
 
     def normalize(self, samples):
 
@@ -290,8 +291,9 @@ class HD_Model:
                 #x = input()
                 # print("Before Threshold: ", self.threshold)
                 # print("Steps: ", steps)
-                if val > self.threshold[exit_layer+1]:
+                if val > self.threshold[exit_layer+1] - 0.05:
                     print("Exit layer: ", exit_layer)
+                    self.exit_counter[exit_layer+1] += 1
                     break
 
                 # Update threshold
@@ -461,6 +463,9 @@ class HD_Model:
                 # Print total misclassified samples in the current retraining epoch
                 print("###########################")
                 print(f"Total misclassified for retraining epoch {e}: ", count)
+                print(f"Total exit_counter for retraining epoch {e}: ", self.exit_counter)
+                print("###########################")
+                self.exit_counter = {12: 0, 24: 0, 36: 0, 48: 0}
 
                 misclassified_cnts.append(count)
 
