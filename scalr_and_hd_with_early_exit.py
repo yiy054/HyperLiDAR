@@ -303,24 +303,24 @@ class HD_Model:
                     break
 
                 # Update threshold
-                if self.update:
-                    self.threshold[exit_layer+1] = ((1-self.alpha_exp_average)*self.threshold[exit_layer+1]) + (self.alpha_exp_average*torch.quantile(max_dist, self.quantile))
+                # if self.update:
+                #     self.threshold[exit_layer+1] = ((1-self.alpha_exp_average)*self.threshold[exit_layer+1]) + (self.alpha_exp_average*torch.quantile(max_dist, self.quantile))
 
                 tokens, tokens_norm, soa_labels, exit_layer = self.feature_extractor.continue_with_model(step_type=step_type, flag='continue_iter', tokens = tokens, step = steps)
                 samples_hv_next = self.encode(torch.transpose(tokens_norm, 0, 1).float())
                 samples_hv = torchhd.bundle(samples_hv_next, samples_hv)
                 steps += 1
             
-            if exit_layer != 47 and not self.update:
-                self.threshold[exit_layer+1] = ((1-self.alpha_exp_average)*self.threshold[exit_layer+1]) + (self.alpha_exp_average*torch.quantile(max_dist, self.quantile))
+            # if exit_layer != 47 and not self.update:
+            #     self.threshold[exit_layer+1] = ((1-self.alpha_exp_average)*self.threshold[exit_layer+1]) + (self.alpha_exp_average*torch.quantile(max_dist, self.quantile))
 
-            if it % 10 == 9 and self.update:
-                if self.past_update.values == self.threshold.values:
-                    self.update = False
-                    print(it, "Update stop!!!")
-                else:
-                    self.past_update = self.threshold
-                    print(self.past_update)
+            # if it % 10 == 9 and self.update:
+            #     if self.past_update.values == self.threshold.values:
+            #         self.update = False
+            #         print(it, "Update stop!!!")
+            #     else:
+            #         self.past_update = self.threshold
+            #         print(self.past_update)
             # (self.alpha_exp_average*val) + ((1-self.alpha_exp_average)*self.threshold[exit_layer+1])
             # print("After Threshold: ", self.threshold)
 
