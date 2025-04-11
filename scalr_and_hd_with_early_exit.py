@@ -240,6 +240,7 @@ class HD_Model:
         self.update = True
         self.past_update = self.threshold
         self.exit_counter = {12: 0, 24: 0, 36: 0, 48: 0}
+        self.quantile = kwargs['args'].quantile
 
 
     def normalize(self, samples):
@@ -290,7 +291,8 @@ class HD_Model:
             #x = input()
 
             while exit_layer != 47:
-                val, logits = self.check_early_exit(samples_hv)
+                max_dist, logits = self.check_early_exit(samples_hv)
+                val = torch.mean(max_dist)
                 self.exit_val_dict[exit_layer+1].append(val.item())
                 #print("Exit layer: ", exit_layer)
                 #print("Value: ", val)
@@ -302,7 +304,7 @@ class HD_Model:
 
                 # Update threshold
                 if self.update:
-                    self.threshold[exit_layer+1] = ((1-self.alpha_exp_average)*self.threshold[exit_layer+1]) + (self.alpha_exp_average*val)
+                    self.threshold[exit_layer+1] = ((1-self.alpha_exp_average)*self.threshold[exit_layer+1]) + (self.alpha_exp_average*torch.quantile(max_dist, self.quantile))
 
                 tokens, tokens_norm, soa_labels, exit_layer = self.feature_extractor.continue_with_model(step_type=step_type, flag='continue_iter', tokens = tokens, step = steps)
                 samples_hv_next = self.encode(torch.transpose(tokens_norm, 0, 1).float())
@@ -310,7 +312,7 @@ class HD_Model:
                 steps += 1
             
             if exit_layer != 47 and not self.update:
-                self.threshold[exit_layer+1] = ((1-self.alpha_exp_average)*self.threshold[exit_layer+1]) + (self.alpha_exp_average*val)
+                self.threshold[exit_layer+1] = ((1-self.alpha_exp_average)*self.threshold[exit_layer+1]) + (self.alpha_exp_average*torch.quantile(max_dist, self.quantile))
 
             if it % 10 == 9 and self.update:
                 if self.past_update.values == self.threshold.values:
@@ -343,9 +345,9 @@ class HD_Model:
     def check_early_exit(self, samples_hv):
         logits = self.classify(F.normalize(samples_hv))
         max_dist = torch.max(logits, axis=1).values
-        val = torch.quantile(max_dist, 0.95)
+        # val = torch.quantile(max_dist, self.quantile)
         # return val, logits
-        return val, logits
+        return max_dist, logits
     
     def train(self, weights=None):
 
@@ -477,7 +479,7 @@ class HD_Model:
                     plot_exit_val_histogram(self.exit_val_dict, 'exit_val_hist.png')
                     layer = self.stop[len(self.stop) - epochs + e]
                     vals_tensor = torch.tensor(self.exit_val_dict[layer])
-                    new_threshold = torch.quantile(vals_tensor, 0.80)
+                    new_threshold = torch.quantile(vals_tensor, self.quantile)
                     self.threshold[layer] = new_threshold
                     print(f"New threshold for layer {layer}: {new_threshold:.4f}")
                     self.exit_val_dict = {}
@@ -629,6 +631,7 @@ def parse_arguments():
     parser.add_argument('--dim', type=int, help='fality of Hypervectors', default=10000)
     parser.add_argument('--batch_points', type=int, help='Number of points to process per scan', default=20000)
     parser.add_argument("--imbalance", action="store_true", default=False, help='Use imbalance weights')
+    parser.add_argument("--quantile", type=int, default=0.8, help='Setup the quantile for the threshold')
     #parser.add_argument('-val', '--val', action="store_true", default=False, help='Train with validation for each scan')
     args = parser.parse_args()
     return args
