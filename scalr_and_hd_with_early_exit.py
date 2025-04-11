@@ -407,7 +407,7 @@ class HD_Model:
                     #     samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type='retrain')
                     # else:
                         # print("Early exit not started")
-                    if e == 9:
+                    if e >= epochs - 3:
                         samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type="retrain")
                     else:
                         samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type="train")
@@ -472,14 +472,13 @@ class HD_Model:
                     ########## End of one scan
 
                 ######### End of all scans
-                if e == epochs - 1:  # only after the LAST epoch
+                if e >= epochs - 3:  # only after the LAST epoch
                     print("Plotting exit value distribution after last epoch...")
                     plot_exit_val_histogram(self.exit_val_dict, 'exit_val_hist.png')
-                    for layer, vals in self.exit_val_dict.items():
-                        # new_threshold = np.percentile(vals, 80)
-                        vals_tensor = torch.tensor(vals)
-                        new_threshold = torch.quantile(vals_tensor, 0.90)
-                        self.threshold[layer] = new_threshold
+                    layer = self.stop[3 - epochs + e]
+                    vals_tensor = torch.tensor(self.exit_val_dict[layer])
+                    new_threshold = torch.quantile(vals_tensor, 0.80)
+                    self.threshold[layer] = new_threshold
                     print(f"New threshold for layer {layer}: {new_threshold:.4f}")
                     self.exit_val_dict = {}
                     for i in self.stop:
