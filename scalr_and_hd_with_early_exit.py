@@ -241,7 +241,6 @@ class HD_Model:
         self.past_update = self.threshold
         self.exit_counter = {12: 0, 24: 0, 36: 0, 48: 0}
         self.quantile = kwargs['args'].quantile
-        self.early_exit = kwargs['args'].early_exit
 
 
     def normalize(self, samples):
@@ -342,16 +341,7 @@ class HD_Model:
 
         #features = self.normalize(features) # Z1 score seems to work
         return samples_hv, labels, soa_labels, logits
-    
-    def sample_to_encode_wo_early_exit(self, it, batch, stop_layer=48):
-        features, labels, soa_labels, _ = self.feature_extractor.forward_model(it, batch, stop_layer) # Everything for what hasn't been dropped
-        samples_hv = self.encode(torch.transpose(labels, 0, 1).float())
-        features = torch.transpose(features, 0, 1).to(dtype=torch.float32, device = self.device, non_blocking=True)
-        labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
-        logits = self.classify(F.normalize(samples_hv))
 
-        return samples_hv, labels, soa_labels, logits
-    
     def check_early_exit(self, samples_hv):
         logits = self.classify(F.normalize(samples_hv))
         max_dist = torch.max(logits, axis=1).values
@@ -367,11 +357,8 @@ class HD_Model:
 
         with torch.no_grad():
             for it, batch in tqdm(enumerate(self.train_loader), desc="Training"):
-                
-                if self.early_exit:
-                    samples_hv, labels, soa_labels, _ = self.sample_to_encode(it, batch, step_type="train")
-                else:
-                    samples_hv, labels, _, _ = self.sample_to_encode_wo_early_exit(it, batch)
+    
+                samples_hv, labels, soa_labels, _ = self.sample_to_encode(it, batch, step_type="train")
                 
                 for b in range(0, samples_hv.shape[0], self.point_per_iter):
                     end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
@@ -422,14 +409,11 @@ class HD_Model:
                     #     samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type='retrain')
                     # else:
                         # print("Early exit not started")
-                    if self.early_exit:
-                        if e >= epochs - len(self.stop):
-                            samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type="retrain")
-                        else:
-                            samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type="train")
+                    if e >= epochs - len(self.stop):
+                        samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type="retrain")
                     else:
-                        samples_hv, labels, _, logits = self.sample_to_encode_wo_early_exit(it, batch)
-                    
+                        samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type="train")
+                        
                     is_wrong_count = 0
                     for b in range(0, samples_hv.shape[0], self.point_per_iter):
                         end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
@@ -490,26 +474,26 @@ class HD_Model:
                     ########## End of one scan
 
                 ######### End of all scans
-                if e >= epochs - len(self.stop) and self.early_exit:  # only after the LAST epoch
+                if e >= epochs - len(self.stop):  # only after the LAST epoch
                     print("Plotting exit value distribution after last epoch...")
                     plot_exit_val_histogram(self.exit_val_dict, 'exit_val_hist.png')
                     layer = self.stop[len(self.stop) - epochs + e]
                     vals_tensor = torch.tensor(self.exit_val_dict[layer])
                     new_threshold = torch.quantile(vals_tensor, self.quantile)
                     self.threshold[layer] = new_threshold
-                    print(f"New threshold for layer {layer} in retraining epoch {e}: ", self.threshold)
-                    print(f"Total exit_counter for retraining epoch {e}: ", self.exit_counter)
+                    print(f"New threshold for layer {layer}: {new_threshold:.4f}")
                     self.exit_val_dict = {}
-                    self.exit_counter = {}
                     for i in self.stop:
                         self.exit_val_dict[int(i)] = []
-                        self.exit_counter[int(i)] = 0
 
 
                 # Print total misclassified samples in the current retraining epoch
                 print("###########################")
                 print(f"Total misclassified for retraining epoch {e}: ", count)
+                print(f"Total exit_counter for retraining epoch {e}: ", self.exit_counter)
+                print(f"Threshold for retraining epoch {e}: ", self.threshold)
                 print("###########################")
+                self.exit_counter = {12: 0, 24: 0, 36: 0, 48: 0}
 
                 misclassified_cnts.append(count)
 
@@ -542,13 +526,12 @@ class HD_Model:
         soa_pred = torch.empty((num_vox+1000), dtype=torch.int64, device=self.device)
         
         start_idx = 0
+        self.exit_counter = {12: 0, 24: 0, 36: 0, 48: 0}
         with torch.no_grad():
             for it, batch in tqdm(enumerate(loader), desc="Validation:"):
-                if self.early_exit:
-                    samples_hv, labels, soa_labels, logits = self.sample_to_encode(it, batch, step_type='test') # Only return the features that haven't been dropped
-                else:
-                    samples_hv, labels, soa_labels, logits = self.sample_to_encode(it, batch, step_type='train') # Used same features as training
-
+        
+                samples_hv, labels, soa_labels, logits = self.sample_to_encode(it, batch, step_type='test') # Only return the features that haven't been dropped
+                
                 for b in range(0, samples_hv.shape[0], self.point_per_iter):
                     end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
                     samples_hv_here = samples_hv[b:end]
@@ -592,16 +575,11 @@ class HD_Model:
         soa_pred = soa_pred[:start_idx]
 
         print("================================")
-        if self.early_exit:
-            print("Plotting exit value distribution on test...")
-            plot_exit_val_histogram(self.exit_val_dict, 'test_exit_val_hist.png')
-            print(f"Threshold under test: ", self.threshold)
-            print(f"Total exit_counter for test: ", self.exit_counter)
-            self.exit_val_dict = {}
-            self.exit_counter = {}
-            for i in self.stop:
-                self.exit_val_dict[int(i)] = []
-                self.exit_counter[int(i)] = 0
+        print("Plotting exit value distribution on test...")
+        plot_exit_val_histogram(self.exit_val_dict, 'test_exit_val_hist.png')
+        self.exit_val_dict = {}
+        for i in self.stop:
+            self.exit_val_dict[int(i)] = []
 
         #print('pred_ts', pred_ts)
         print('pred_hd', final_pred, "\tShape: ", final_pred.shape)
@@ -610,6 +588,8 @@ class HD_Model:
         avg_acc = torch.mean(accuracy)
         print(f'accuracy: {accuracy}')
         print(f'avg acc: {avg_acc}')
+        print(f"Total exit_counter for test: ", self.exit_counter)
+        print(f"Threshold under test: ", self.threshold)
 
         # if abs(avg_acc - self.past_acc) < 0.1 and self.start_early_exit == False:
         #     self.start_early_exit = True
@@ -652,7 +632,6 @@ def parse_arguments():
     parser.add_argument('--batch_points', type=int, help='Number of points to process per scan', default=20000)
     parser.add_argument("--imbalance", action="store_true", default=False, help='Use imbalance weights')
     parser.add_argument("--quantile", type=int, default=0.8, help='Setup the quantile for the threshold')
-    parser.add_argument("--early_exit", action="store_true", default=True, help='Initially use early exit')
     #parser.add_argument('-val', '--val', action="store_true", default=False, help='Train with validation for each scan')
     args = parser.parse_args()
     return args
@@ -892,13 +871,13 @@ if __name__ == "__main__":
                 "hd_dim": DIMENSIONS,
                 "training_samples":args.number_samples,
             },
-            id=f"{args.dataset}_training_layers_{args.layers}_norm_dim_{DIMENSIONS}_OFA_early_exit{int(args.early_exit)}",
+            id=f"{args.dataset}_training_layers_{args.layers}_norm_dim_{DIMENSIONS}_OFA_early_exit",
         )
     ####### Results dir setup ##########
     if not os.path.exists(args.result_path):
         os.mkdir(args.result_path)
     model_name = f"{args.dataset}_{args.subset}_{args.number_samples}_{args.test_number_samples}_nn{args.layers}_" \
-                 f"hd{FEAT_SIZE}_{DIMENSIONS}_{args.epochs}_{args.batch_points}_imb{int(args.imbalance)}_ee{int(args.early_exit)}" \
+                 f"hd{FEAT_SIZE}_{DIMENSIONS}_{args.epochs}_{args.batch_points}_imb{int(args.imbalance)}_" \
                  f"seed{args.seed}"
     output_path = os.path.join(args.result_path, model_name)
     if not os.path.exists(output_path):
