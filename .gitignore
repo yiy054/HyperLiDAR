@@ -162,3 +162,6 @@ cython_debug/
 #.idea/
 saved_models/ckpt_last_scalr.pth
 saved_models/scalr_model.pth
+*.png
+*.png
+exit_val_hist.png

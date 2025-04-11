@@ -479,6 +479,10 @@ class HD_Model:
                         new_threshold = np.percentile(vals, 80)
                         self.threshold[layer] = new_threshold
                     print(f"New threshold for layer {layer}: {new_threshold:.4f}")
+                    self.exit_val_dict = {}
+                    for i in self.stop:
+                        self.exit_val_dict[int(i)] = []
+
 
                 # Print total misclassified samples in the current retraining epoch
                 print("###########################")
@@ -568,6 +572,11 @@ class HD_Model:
         soa_pred = soa_pred[:start_idx]
 
         print("================================")
+        print("Plotting exit value distribution on test...")
+        plot_exit_val_histogram(self.exit_val_dict, 'test_exit_val_hist.png')
+        self.exit_val_dict = {}
+        for i in self.stop:
+            self.exit_val_dict[int(i)] = []
 
         #print('pred_ts', pred_ts)
         print('pred_hd', final_pred, "\tShape: ", final_pred.shape)
