@@ -230,9 +230,11 @@ class HD_Model:
         self.kwargs = kwargs
         self.threshold = {}
         self.exit_val_dict = {}
+        self.test_val_dict = {}
         for i in kwargs['args'].layers:
             self.threshold[int(i)] = 1
             self.exit_val_dict[int(i)] = []
+            self.test_val_dict[int(i)] = []
         self.threshold[48] = 1
         self.alpha_exp_average = 0.05
         self.update = True
@@ -407,10 +409,6 @@ class HD_Model:
                         # print("Early exit not started")
                     if e == 9:
                         samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type="retrain")
-                        for layer, vals in self.exit_val_dict.items():
-                            new_threshold = np.percentile(vals, 95)
-                            self.threshold[layer] = new_threshold
-                            print(f"New threshold for layer {layer}: {new_threshold:.4f}")
                     else:
                         samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type="train")
                         
@@ -474,11 +472,19 @@ class HD_Model:
                     ########## End of one scan
 
                 ######### End of all scans
+                if e == epochs - 1:  # only after the LAST epoch
+                    print("Plotting exit value distribution after last epoch...")
+                    plot_exit_val_histogram(self.exit_val_dict, 'exit_val_hist.png')
+                    for layer, vals in self.exit_val_dict.items():
+                        new_threshold = np.percentile(vals, 95)
+                        self.threshold[layer] = new_threshold
+                    print(f"New threshold for layer {layer}: {new_threshold:.4f}")
 
                 # Print total misclassified samples in the current retraining epoch
                 print("###########################")
                 print(f"Total misclassified for retraining epoch {e}: ", count)
                 print(f"Total exit_counter for retraining epoch {e}: ", self.exit_counter)
+                print(f"Threshold for retraining epoch {e}: ", self.threshold)
                 print("###########################")
                 self.exit_counter = {12: 0, 24: 0, 36: 0, 48: 0}
 
@@ -571,6 +577,7 @@ class HD_Model:
         print(f'accuracy: {accuracy}')
         print(f'avg acc: {avg_acc}')
         print(f"Total exit_counter for test: ", self.exit_counter)
+        print(f"Threshold under test: ", self.threshold)
 
         # if abs(avg_acc - self.past_acc) < 0.1 and self.start_early_exit == False:
         #     self.start_early_exit = True
@@ -654,6 +661,24 @@ def plot(acc_points, acc_results, misclassified_cnts, output_path):
     plt.tight_layout()
     #plt.show()
     plt.savefig(os.path.join(output_path, 'retraining.png'), dpi=300)
+
+def plot_exit_val_histogram(exit_val_dict, save_path):
+    plt.figure(figsize=(15, 4))
+    for i, layer in enumerate(sorted(exit_val_dict.keys())):
+        plt.subplot(1, 3, i+1)
+        plt.hist(exit_val_dict[layer], bins=50, alpha=0.7)
+        plt.title(f'Exit Layer {layer} Val Distribution')
+        plt.xlabel('Confidence / Similarity Value')
+        plt.ylabel('Count')
+        plt.grid(True)
+        if len(exit_val_dict[layer]) > 0:
+            percentile_95 = np.percentile(exit_val_dict[layer], 95)
+            plt.axvline(percentile_95, color='red', linestyle='dashed', linewidth=1.5)
+            plt.text(percentile_95, plt.ylim()[1]*0.9, f'95%: {percentile_95:.2f}', color='red', rotation=90)
+
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300)
+    print(f"Saved exit value distribution histogram at {save_path}")
 
 
 if __name__ == "__main__":
@@ -857,6 +882,7 @@ if __name__ == "__main__":
     acc_results, misclassified_cnts = hd_model.retrain(epochs=args.epochs, weights=weights)
     
     print("Testing")
+    hd_model.update = False
     final_acc = hd_model.test_hd()
 
     plot((init_acc, final_acc), acc_results, misclassified_cnts, output_path)
