@@ -475,7 +475,7 @@ class HD_Model:
                 if e >= epochs - 3:  # only after the LAST epoch
                     print("Plotting exit value distribution after last epoch...")
                     plot_exit_val_histogram(self.exit_val_dict, 'exit_val_hist.png')
-                    layer = self.stop[2 - epochs + e]
+                    layer = self.stop[3 - epochs + e]
                     vals_tensor = torch.tensor(self.exit_val_dict[layer])
                     new_threshold = torch.quantile(vals_tensor, 0.80)
                     self.threshold[layer] = new_threshold
