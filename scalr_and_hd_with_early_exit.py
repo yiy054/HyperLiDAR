@@ -476,7 +476,8 @@ class HD_Model:
                     print("Plotting exit value distribution after last epoch...")
                     plot_exit_val_histogram(self.exit_val_dict, 'exit_val_hist.png')
                     for layer, vals in self.exit_val_dict.items():
-                        new_threshold = np.percentile(vals, 80)
+                        # new_threshold = np.percentile(vals, 80)
+                        new_threshold = torch.quantile(vals, 0.90)
                         self.threshold[layer] = new_threshold
                     print(f"New threshold for layer {layer}: {new_threshold:.4f}")
                     self.exit_val_dict = {}
@@ -681,7 +682,8 @@ def plot_exit_val_histogram(exit_val_dict, save_path):
         plt.ylabel('Count')
         plt.grid(True)
         if len(exit_val_dict[layer]) > 0:
-            percentile_95 = np.percentile(exit_val_dict[layer], 95)
+            # percentile_95 = np.percentile(exit_val_dict[layer], 95)
+            percentile_95 = torch.quantile(exit_val_dict[layer], 0.95)
             plt.axvline(percentile_95, color='red', linestyle='dashed', linewidth=1.5)
             plt.text(percentile_95, plt.ylim()[1]*0.9, f'95%: {percentile_95:.2f}', color='red', rotation=90)
 
