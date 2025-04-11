@@ -301,23 +301,23 @@ class HD_Model:
                     break
 
                 # Update threshold
-                if self.update:
-                    self.threshold[exit_layer+1] = ((1-self.alpha_exp_average)*self.threshold[exit_layer+1]) + (self.alpha_exp_average*val)
+                # if self.update:
+                #     self.threshold[exit_layer+1] = ((1-self.alpha_exp_average)*self.threshold[exit_layer+1]) + (self.alpha_exp_average*val)
 
                 tokens, tokens_norm, soa_labels, exit_layer = self.feature_extractor.continue_with_model(step_type=step_type, flag='continue_iter', tokens = tokens, step = steps)
                 samples_hv_next = self.encode(torch.transpose(tokens_norm, 0, 1).float())
                 samples_hv = torchhd.bundle(samples_hv_next, samples_hv)
                 steps += 1
             
-            if exit_layer != 47 and not self.update:
-                self.threshold[exit_layer+1] = ((1-self.alpha_exp_average)*self.threshold[exit_layer+1]) + (self.alpha_exp_average*val)
+            # if exit_layer != 47 and not self.update:
+            #     self.threshold[exit_layer+1] = ((1-self.alpha_exp_average)*self.threshold[exit_layer+1]) + (self.alpha_exp_average*val)
 
-            if it % 10 == 9 and self.update:
-                if self.past_update.values == self.threshold.values:
-                    self.update = False
-                    print(it, "Update stop!!!")
-                else:
-                    self.past_update = self.threshold
+            # if it % 10 == 9 and self.update:
+            #     if self.past_update.values == self.threshold.values:
+            #         self.update = False
+            #         print(it, "Update stop!!!")
+            #     else:
+            #         self.past_update = self.threshold
                     # print(self.past_update)
             #(self.alpha_exp_average*val) + ((1-self.alpha_exp_average)*self.threshold[exit_layer+1])
             # print("After Threshold: ", self.threshold)
@@ -407,7 +407,7 @@ class HD_Model:
                     #     samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type='retrain')
                     # else:
                         # print("Early exit not started")
-                    if e >= epochs - 3:
+                    if e >= epochs - 2:
                         samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type="retrain")
                     else:
                         samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type="train")
@@ -472,10 +472,10 @@ class HD_Model:
                     ########## End of one scan
 
                 ######### End of all scans
-                if e >= epochs - 3:  # only after the LAST epoch
+                if e >= epochs - 2:  # only after the LAST epoch
                     print("Plotting exit value distribution after last epoch...")
                     plot_exit_val_histogram(self.exit_val_dict, 'exit_val_hist.png')
-                    layer = self.stop[3 - epochs + e]
+                    layer = self.stop[2 - epochs + e]
                     vals_tensor = torch.tensor(self.exit_val_dict[layer])
                     new_threshold = torch.quantile(vals_tensor, 0.80)
                     self.threshold[layer] = new_threshold
