@@ -407,7 +407,7 @@ class HD_Model:
                     #     samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type='retrain')
                     # else:
                         # print("Early exit not started")
-                    if e >= epochs - 2:
+                    if e >= epochs - 3:
                         samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type="retrain")
                     else:
                         samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type="train")
@@ -472,7 +472,7 @@ class HD_Model:
                     ########## End of one scan
 
                 ######### End of all scans
-                if e >= epochs - 2:  # only after the LAST epoch
+                if e >= epochs - 3:  # only after the LAST epoch
                     print("Plotting exit value distribution after last epoch...")
                     plot_exit_val_histogram(self.exit_val_dict, 'exit_val_hist.png')
                     layer = self.stop[2 - epochs + e]
