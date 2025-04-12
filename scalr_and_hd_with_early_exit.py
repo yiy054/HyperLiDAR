@@ -350,7 +350,7 @@ class HD_Model:
         features, labels, soa_labels, exit_layer = self.feature_extractor.forward_model(it, batch, step_type=None)
         samples_hv = self.encode(torch.transpose(labels, 0, 1).float())
         features = torch.transpose(features, 0, 1).to(dtype=torch.float32, device = self.device, non_blocking=True)
-        # labels = self.feature_extractor.labels
+        labels = self.feature_extractor.labels
         labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
         logits = self.classify(F.normalize(samples_hv))
         # print("Exit layer: ", exit_layer)
