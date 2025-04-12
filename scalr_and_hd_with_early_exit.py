@@ -231,6 +231,7 @@ class HD_Model:
         self.threshold = {}
         self.exit_val_dict = {}
         self.test_val_dict = {}
+        self.exit_counter = {}
         for i in kwargs['args'].layers:
             self.threshold[int(i)] = 1
             self.exit_val_dict[int(i)] = []
