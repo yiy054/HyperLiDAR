@@ -657,7 +657,7 @@ def parse_arguments():
     parser.add_argument('--batch_points', type=int, help='Number of points to process per scan', default=20000)
     parser.add_argument("--imbalance", action="store_true", default=False, help='Use imbalance weights')
     parser.add_argument("--quantile", type=int, default=0.8, help='Setup the quantile for the threshold')
-    parser.add_argument("--early_exit", action="store_true", default=True, help='Initially use early exit')
+    parser.add_argument("--early_exit", action="store_true", default=False, help='Initially use early exit')
     #parser.add_argument('-val', '--val', action="store_true", default=False, help='Train with validation for each scan')
     args = parser.parse_args()
     return args
