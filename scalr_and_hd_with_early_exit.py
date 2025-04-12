@@ -235,11 +235,12 @@ class HD_Model:
             self.threshold[int(i)] = 1
             self.exit_val_dict[int(i)] = []
             self.test_val_dict[int(i)] = []
+            self.exit_counter[int(i)] = 0
         self.threshold[48] = 1
+        self.exit_counter[48] = 0
         self.alpha_exp_average = 0.05
         self.update = True
         self.past_update = self.threshold
-        self.exit_counter = {12: 0, 24: 0, 36: 0, 48: 0}
         self.quantile = kwargs['args'].quantile
         self.early_exit = kwargs['args'].early_exit
 
@@ -505,6 +506,7 @@ class HD_Model:
                     for i in self.stop:
                         self.exit_val_dict[int(i)] = []
                         self.exit_counter[int(i)] = 0
+                    self.exit_counter[48] = 0
 
 
                 # Print total misclassified samples in the current retraining epoch
@@ -603,6 +605,7 @@ class HD_Model:
             for i in self.stop:
                 self.exit_val_dict[int(i)] = []
                 self.exit_counter[int(i)] = 0
+            self.exit_counter[48] = 0
 
         #print('pred_ts', pred_ts)
         print('pred_hd', final_pred, "\tShape: ", final_pred.shape)
