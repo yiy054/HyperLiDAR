@@ -344,7 +344,8 @@ class HD_Model:
         return samples_hv, labels, soa_labels, logits
     
     def sample_to_encode_wo_early_exit(self, it, batch, stop_layer=48):
-        features, labels, soa_labels, _ = self.feature_extractor.forward_model(it, batch, stop_layer) # Everything for what hasn't been dropped
+        # features, labels, soa_labels, _ = self.feature_extractor.forward_model(it, batch, stop_layer) # Everything for what hasn't been dropped
+        features, labels, soa_labels, _ = self.feature_extractor.forward_model(it, batch, step_type=None)
         samples_hv = self.encode(torch.transpose(labels, 0, 1).float())
         features = torch.transpose(features, 0, 1).to(dtype=torch.float32, device = self.device, non_blocking=True)
         labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
