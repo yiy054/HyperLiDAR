@@ -742,20 +742,19 @@ def plot_3d_graph(mean_confidences, correct_percentages, save_path="confidence_a
     # Convert X and Y to 2D lists for plotting
     X = np.array(X).reshape((num_epochs, max_iterations))
     Y = np.array(Y).reshape((num_epochs, max_iterations))
-    
+
     # Plot Mean Confidence
     fig = plt.figure(figsize=(12, 8))
 
     ax1 = fig.add_subplot(121, projection='3d')
-    ax1.plot_surface(X, Y, mean_confidences, cmap='coolwarm')
-    ax1.set_xlabel('Iteration')
+    ax1.contour3D(X, Y, mean_confidences, 50, cmap='binary')
     ax1.set_ylabel('Epoch')
     ax1.set_zlabel('Mean Confidence')
     ax1.set_title('Mean Confidence per Iteration and Epoch')
 
     # Plot Correct Percentage
     ax2 = fig.add_subplot(122, projection='3d')
-    ax2.plot_surface(X, Y, correct_percentages, cmap='coolwarm')
+    ax2.contour3D(X, Y, correct_percentages, 50, cmap='binary')
     ax2.set_xlabel('Iteration')
     ax2.set_ylabel('Epoch')
     ax2.set_zlabel('Correct Percentage')
