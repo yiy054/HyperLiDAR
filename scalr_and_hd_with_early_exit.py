@@ -232,6 +232,7 @@ class HD_Model:
         self.exit_val_dict = {}
         self.test_val_dict = {}
         self.exit_counter = {}
+        self.conf_corr_distribution = {}
         for i in kwargs['args'].layers:
             self.threshold[int(i)] = 1
             self.exit_val_dict[int(i)] = []
@@ -244,6 +245,8 @@ class HD_Model:
         self.past_update = self.threshold
         self.quantile = kwargs['args'].quantile
         self.early_exit = kwargs['args'].early_exit
+        self.mean_confidences = [[] for _ in range(self.kwargs['args'].epochs)]
+        self.correct_percentages = [[] for _ in range(self.kwargs['args'].epochs)]
 
 
     def normalize(self, samples):
@@ -486,6 +489,8 @@ class HD_Model:
                             self.classify_weights.index_add_(0, pred_hd, -samples_hv_here)
                     
                     num_wrong.append(is_wrong_count)
+                    self.mean_confidences[e].append(torch.mean(logits))
+                    self.correct_percentages[e].append(is_wrong_count/len(logits))
 
                     #torch.cuda.synchronize(device=self.device)
 
@@ -722,6 +727,33 @@ def plot_exit_val_histogram(exit_val_dict, save_path):
     plt.savefig(save_path, dpi=300)
     print(f"Saved exit value distribution histogram at {save_path}")
 
+def plot_3d_graph(mean_confidences, correct_percentages, save_path="confidence_accuracy_3d.png"):
+    # Create the figure and 3D axis
+    fig = plt.figure(figsize=(12, 8))
+    max_iterations = mean_confidences.shape[1]
+    num_epochs = mean_confidences.shape[0]
+    
+    # Plot Mean Confidence
+    ax1 = fig.add_subplot(121, projection='3d')
+    X, Y = np.meshgrid(np.arange(max_iterations), np.arange(num_epochs))
+    ax1.plot_surface(X, Y, mean_confidences, cmap='coolwarm')
+    ax1.set_xlabel('Iteration')
+    ax1.set_ylabel('Epoch')
+    ax1.set_zlabel('Mean Confidence')
+    ax1.set_title('Mean Confidence per Iteration and Epoch')
+
+    # Plot Correct Percentage
+    ax2 = fig.add_subplot(122, projection='3d')
+    ax2.plot_surface(X, Y, correct_percentages, cmap='coolwarm')
+    ax2.set_xlabel('Iteration')
+    ax2.set_ylabel('Epoch')
+    ax2.set_zlabel('Correct Percentage')
+    ax2.set_title('Correct Percentage per Iteration and Epoch')
+
+    # Show and save the plot
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300)
+    plt.show()
 
 if __name__ == "__main__":
     
@@ -922,6 +954,8 @@ if __name__ == "__main__":
     print("Retraining")
     hd_model.update = True
     acc_results, misclassified_cnts = hd_model.retrain(epochs=args.epochs, weights=weights)
+
+    plot_3d_graph(hd_model.mean_confidences, hd_model.correct_percentages, save_path=os.path.join(output_path, 'confidence_accuracy_3d.png'))
     
     print("Testing")
     hd_model.update = False
