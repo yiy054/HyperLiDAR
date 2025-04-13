@@ -247,8 +247,8 @@ class HD_Model:
         self.early_exit = kwargs['args'].early_exit
         # self.mean_confidences = [[] for _ in range(self.kwargs['args'].epochs)]
         # self.correct_percentages = [[] for _ in range(self.kwargs['args'].epochs)]
-        self.mean_confidences = np.zeros((kwargs['args'].epochs, len(self.train_loader)))
-        self.correct_percentages = np.zeros((kwargs['args'].epochs, len(self.train_loader)))
+        # self.mean_confidences = np.zeros((kwargs['args'].epochs, len(self.train_loader)))
+        # self.correct_percentages = np.zeros((kwargs['args'].epochs, len(self.train_loader)))
 
     def normalize(self, samples):
 
@@ -284,6 +284,8 @@ class HD_Model:
                 setattr(self, attr, getattr(self, attr) + (labels != 255).sum().item())
 
         print("Finished loading data loaders")
+        self.mean_confidences = np.zeros((kwargs['args'].epochs, len(self.train_loader)))
+        self.correct_percentages = np.zeros((kwargs['args'].epochs, len(self.train_loader)))
     
     def sample_to_encode(self, it, batch, step_type="train"):
         tokens, tokens_norm, soa_labels, exit_layer = self.feature_extractor.forward_model(it, batch, step_type=step_type) # Everything for what hasn't been dropped
