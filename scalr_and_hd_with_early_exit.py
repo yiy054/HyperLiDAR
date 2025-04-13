@@ -761,6 +761,7 @@ def plot_3d_graph(mean_confidences, correct_percentages, save_path="confidence_a
     plt.tight_layout()
     plt.savefig(save_path, dpi=300)
     plt.show()
+    print(f"Saved 3D graph at {save_path}")
 
 
 
