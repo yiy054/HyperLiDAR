@@ -742,17 +742,7 @@ def plot_3d_graph(mean_confidences, correct_percentages, save_path="confidence_a
     # Convert X and Y to 2D lists for plotting
     X = np.array(X).reshape((num_epochs, max_iterations))
     Y = np.array(Y).reshape((num_epochs, max_iterations))
-
-    # Convert the lists to NumPy arrays for plotting (after transferring them to CPU if they are on CUDA)
-    mean_confidences = np.array(mean_confidences)  # Assuming this is a list of lists
-    correct_percentages = np.array(correct_percentages)  # Assuming this is a list of lists
     
-    # Check if tensors are on GPU, move them to CPU first before plotting
-    if isinstance(mean_confidences, torch.Tensor):
-        mean_confidences = mean_confidences.cpu().numpy()  # Move to CPU if on CUDA
-    if isinstance(correct_percentages, torch.Tensor):
-        correct_percentages = correct_percentages.cpu().numpy()  # Move to CPU if on CUDA
-
     # Plot Mean Confidence
     fig = plt.figure(figsize=(12, 8))
 
