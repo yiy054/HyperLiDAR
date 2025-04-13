@@ -743,12 +743,21 @@ def plot_3d_graph(mean_confidences, correct_percentages, save_path="confidence_a
     X = np.array(X).reshape((num_epochs, max_iterations))
     Y = np.array(Y).reshape((num_epochs, max_iterations))
 
+    # Convert the lists to NumPy arrays for plotting (after transferring them to CPU if they are on CUDA)
+    mean_confidences = np.array(mean_confidences)  # Assuming this is a list of lists
+    correct_percentages = np.array(correct_percentages)  # Assuming this is a list of lists
+    
+    # Check if tensors are on GPU, move them to CPU first before plotting
+    if isinstance(mean_confidences, torch.Tensor):
+        mean_confidences = mean_confidences.cpu().numpy()  # Move to CPU if on CUDA
+    if isinstance(correct_percentages, torch.Tensor):
+        correct_percentages = correct_percentages.cpu().numpy()  # Move to CPU if on CUDA
+
     # Plot Mean Confidence
     fig = plt.figure(figsize=(12, 8))
 
     ax1 = fig.add_subplot(121, projection='3d')
-    Z = np.array(mean_confidences)  # Convert the list to a 2D array for plotting
-    ax1.plot_surface(X, Y, Z, cmap='coolwarm')
+    ax1.plot_surface(X, Y, mean_confidences, cmap='coolwarm')
     ax1.set_xlabel('Iteration')
     ax1.set_ylabel('Epoch')
     ax1.set_zlabel('Mean Confidence')
@@ -756,8 +765,7 @@ def plot_3d_graph(mean_confidences, correct_percentages, save_path="confidence_a
 
     # Plot Correct Percentage
     ax2 = fig.add_subplot(122, projection='3d')
-    Z = np.array(correct_percentages)  # Convert the list to a 2D array for plotting
-    ax2.plot_surface(X, Y, Z, cmap='coolwarm')
+    ax2.plot_surface(X, Y, correct_percentages, cmap='coolwarm')
     ax2.set_xlabel('Iteration')
     ax2.set_ylabel('Epoch')
     ax2.set_zlabel('Correct Percentage')
@@ -767,6 +775,7 @@ def plot_3d_graph(mean_confidences, correct_percentages, save_path="confidence_a
     plt.tight_layout()
     plt.savefig(save_path, dpi=300)
     plt.show()
+
 
 if __name__ == "__main__":
     
