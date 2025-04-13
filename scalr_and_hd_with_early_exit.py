@@ -248,9 +248,7 @@ class HD_Model:
         # self.mean_confidences = [[] for _ in range(self.kwargs['args'].epochs)]
         # self.correct_percentages = [[] for _ in range(self.kwargs['args'].epochs)]
         self.mean_confidences = np.zeros((kwargs['args'].epochs, len(self.train_loader)))
-        self.correct_percentages = np.zeros((kwargs['args'].epochs, len(self.train_loader))
-
-
+        self.correct_percentages = np.zeros((kwargs['args'].epochs, len(self.train_loader)))
 
     def normalize(self, samples):
 
