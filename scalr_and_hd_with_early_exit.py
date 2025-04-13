@@ -728,15 +728,27 @@ def plot_exit_val_histogram(exit_val_dict, save_path):
     print(f"Saved exit value distribution histogram at {save_path}")
 
 def plot_3d_graph(mean_confidences, correct_percentages, save_path="confidence_accuracy_3d.png"):
-    # Create the figure and 3D axis
-    fig = plt.figure(figsize=(12, 8))
-    max_iterations = mean_confidences.shape[1]
-    num_epochs = mean_confidences.shape[0]
-    
+    # Get the dimensions of the lists
+    num_epochs = len(mean_confidences)  # Number of epochs
+    max_iterations = len(mean_confidences[0]) if num_epochs > 0 else 0  # Number of iterations per epoch
+
+    # Create a meshgrid for the iterations and epochs
+    X, Y = [], []
+    for epoch in range(num_epochs):
+        for iteration in range(max_iterations):
+            X.append(iteration)
+            Y.append(epoch)
+
+    # Convert X and Y to 2D lists for plotting
+    X = np.array(X).reshape((num_epochs, max_iterations))
+    Y = np.array(Y).reshape((num_epochs, max_iterations))
+
     # Plot Mean Confidence
+    fig = plt.figure(figsize=(12, 8))
+
     ax1 = fig.add_subplot(121, projection='3d')
-    X, Y = np.meshgrid(np.arange(max_iterations), np.arange(num_epochs))
-    ax1.plot_surface(X, Y, mean_confidences, cmap='coolwarm')
+    Z = np.array(mean_confidences)  # Convert the list to a 2D array for plotting
+    ax1.plot_surface(X, Y, Z, cmap='coolwarm')
     ax1.set_xlabel('Iteration')
     ax1.set_ylabel('Epoch')
     ax1.set_zlabel('Mean Confidence')
@@ -744,7 +756,8 @@ def plot_3d_graph(mean_confidences, correct_percentages, save_path="confidence_a
 
     # Plot Correct Percentage
     ax2 = fig.add_subplot(122, projection='3d')
-    ax2.plot_surface(X, Y, correct_percentages, cmap='coolwarm')
+    Z = np.array(correct_percentages)  # Convert the list to a 2D array for plotting
+    ax2.plot_surface(X, Y, Z, cmap='coolwarm')
     ax2.set_xlabel('Iteration')
     ax2.set_ylabel('Epoch')
     ax2.set_zlabel('Correct Percentage')
