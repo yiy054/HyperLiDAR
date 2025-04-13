@@ -245,8 +245,11 @@ class HD_Model:
         self.past_update = self.threshold
         self.quantile = kwargs['args'].quantile
         self.early_exit = kwargs['args'].early_exit
-        self.mean_confidences = [[] for _ in range(self.kwargs['args'].epochs)]
-        self.correct_percentages = [[] for _ in range(self.kwargs['args'].epochs)]
+        # self.mean_confidences = [[] for _ in range(self.kwargs['args'].epochs)]
+        # self.correct_percentages = [[] for _ in range(self.kwargs['args'].epochs)]
+        self.mean_confidences = np.zeros((kwargs['args'].epochs, len(self.train_loader)))
+        self.correct_percentages = np.zeros((kwargs['args'].epochs, len(self.train_loader))
+
 
 
     def normalize(self, samples):
@@ -489,8 +492,8 @@ class HD_Model:
                             self.classify_weights.index_add_(0, pred_hd, -samples_hv_here)
                     
                     num_wrong.append(is_wrong_count)
-                    self.mean_confidences[e].append(torch.mean(logits))
-                    self.correct_percentages[e].append(is_wrong_count/len(logits))
+                    self.mean_confidences[e, it] = torch.mean(logits)
+                    self.correct_percentages[e, it] = is_wrong_count/len(logits)
 
                     #torch.cuda.synchronize(device=self.device)
 
@@ -728,33 +731,26 @@ def plot_exit_val_histogram(exit_val_dict, save_path):
     print(f"Saved exit value distribution histogram at {save_path}")
 
 def plot_3d_graph(mean_confidences, correct_percentages, save_path="confidence_accuracy_3d.png"):
-    # Get the dimensions of the lists
-    num_epochs = len(mean_confidences)  # Number of epochs
-    max_iterations = len(mean_confidences[0]) if num_epochs > 0 else 0  # Number of iterations per epoch
+    # Get the dimensions of the arrays
+    num_epochs = mean_confidences.shape[0]  # Number of epochs
+    max_iterations = mean_confidences.shape[1]  # Number of iterations per epoch
 
     # Create a meshgrid for the iterations and epochs
-    X, Y = [], []
-    for epoch in range(num_epochs):
-        for iteration in range(max_iterations):
-            X.append(iteration)
-            Y.append(epoch)
-
-    # Convert X and Y to 2D lists for plotting
-    X = np.array(X).reshape((num_epochs, max_iterations))
-    Y = np.array(Y).reshape((num_epochs, max_iterations))
+    X, Y = np.meshgrid(np.arange(max_iterations), np.arange(num_epochs))
 
     # Plot Mean Confidence
     fig = plt.figure(figsize=(12, 8))
 
     ax1 = fig.add_subplot(121, projection='3d')
-    ax1.contour3D(X, Y, mean_confidences, 50, cmap='binary')
+    ax1.plot_surface(X, Y, mean_confidences, cmap='coolwarm')
+    ax1.set_xlabel('Iteration')
     ax1.set_ylabel('Epoch')
     ax1.set_zlabel('Mean Confidence')
     ax1.set_title('Mean Confidence per Iteration and Epoch')
 
     # Plot Correct Percentage
     ax2 = fig.add_subplot(122, projection='3d')
-    ax2.contour3D(X, Y, correct_percentages, 50, cmap='binary')
+    ax2.plot_surface(X, Y, correct_percentages, cmap='coolwarm')
     ax2.set_xlabel('Iteration')
     ax2.set_ylabel('Epoch')
     ax2.set_zlabel('Correct Percentage')
@@ -764,6 +760,7 @@ def plot_3d_graph(mean_confidences, correct_percentages, save_path="confidence_a
     plt.tight_layout()
     plt.savefig(save_path, dpi=300)
     plt.show()
+
 
 
 if __name__ == "__main__":
