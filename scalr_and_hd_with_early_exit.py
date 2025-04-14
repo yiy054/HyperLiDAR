@@ -871,9 +871,9 @@ if __name__ == "__main__":
                                                     lengths=[subset_len, len(dataset_val) - subset_len])
 
     # Temporal edits - all use training dataset
-    #subset_len = int(len(dataset_train) * 0.8)
-    #dataset_train, dataset_val = torch.utils.data.random_split(dataset=dataset_train,
-    #                                                           lengths=[subset_len, len(dataset_train) - subset_len])
+    subset_len = int(len(dataset_train) * 0.8)
+    dataset_train, dataset_val = torch.utils.data.random_split(dataset=dataset_train,
+                                                              lengths=[subset_len, len(dataset_train) - subset_len])
         
     print(f'train dataset length: {len(dataset_train)}')
     print(f'val dataset length: {len(dataset_val)}')
