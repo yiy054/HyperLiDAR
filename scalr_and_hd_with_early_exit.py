@@ -926,9 +926,9 @@ if __name__ == "__main__":
     ####### HD Model ##########
     hd_model = HD_Model(FEAT_SIZE, DIMENSIONS, num_classes, path_pretrained, device=device, args=args)
     hd_model.set_loaders(train_loader=train_loader, val_loader=val_loader)
-    hd_model.feature_extractor.model.set_compensation({12: '/home/HyperLiDAR/overcompensation_layer/linear_weights_12_0.75_normalize.pth', 
-        24: '/home/HyperLiDAR/overcompensation_layer/linear_weights_24_0.75_normalize.pth', 
-        36: '/home/HyperLiDAR/overcompensation_layer/linear_weights_36_1.75_normalize_2.pth'}, device=device)
+    # hd_model.feature_extractor.model.set_compensation({12: '/home/HyperLiDAR/overcompensation_layer/linear_weights_12_0.75_normalize.pth', 
+        # 24: '/home/HyperLiDAR/overcompensation_layer/linear_weights_24_0.75_normalize.pth', 
+        # 36: '/home/HyperLiDAR/overcompensation_layer/linear_weights_36_1.75_normalize_2.pth'}, device=device)
 
     if args.wandb_run:
         run = wandb.init(
