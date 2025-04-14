@@ -784,7 +784,7 @@ if __name__ == "__main__":
     print("Using {} device".format(device))
     device_string = "cuda:0" if (torch.cuda.is_available() and args.device == 'gpu') else "cpu"
 
-    if args.early_exit and args.layer == 48:
+    if args.early_exit and args.layers == [48]:
         args.early_exit = False
         print("Early exit is not supported for layer 48, switch back to not using early exit")
 
