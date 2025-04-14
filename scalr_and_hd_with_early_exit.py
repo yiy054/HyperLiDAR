@@ -31,8 +31,8 @@ class Encoder(nn.Module):
     def __init__(self, hd_dim, size):
         super(Encoder, self).__init__()
         self.flatten = torch.nn.Flatten()
-        #self.projection = embeddings.Projection(size, hd_dim)
-        self.projection = embeddings.Sinusoid(size, hd_dim)
+        self.projection = embeddings.Projection(size, hd_dim)
+        # self.projection = embeddings.Sinusoid(size, hd_dim)
 
         ## EDIT - remove this line, not sure what's the point
         #self.projection.weight = nn.Parameter(torchhd.normalize(self.projection.weight), requires_grad=False) # Binary
@@ -230,13 +230,10 @@ class HD_Model:
         self.kwargs = kwargs
         self.threshold = {}
         self.exit_val_dict = {}
-        self.test_val_dict = {}
         self.exit_counter = {}
-        self.conf_corr_distribution = {}
         for i in kwargs['args'].layers:
             self.threshold[int(i)] = 1
             self.exit_val_dict[int(i)] = []
-            self.test_val_dict[int(i)] = []
             self.exit_counter[int(i)] = 0
         self.threshold[48] = 1
         self.exit_counter[48] = 0
@@ -285,8 +282,8 @@ class HD_Model:
                 setattr(self, attr, getattr(self, attr) + (labels != 255).sum().item())
 
         print("Finished loading data loaders")
-        self.mean_confidences = np.zeros((self.epochs, len(self.train_loader)))
-        self.correct_percentages = np.zeros((self.epochs, len(self.train_loader)))
+        # self.mean_confidences = np.zeros((self.epochs, len(self.train_loader)))
+        # self.correct_percentages = np.zeros((self.epochs, len(self.train_loader)))
     
     def sample_to_encode(self, it, batch, step_type="train"):
         tokens, tokens_norm, soa_labels, exit_layer = self.feature_extractor.forward_model(it, batch, step_type=step_type) # Everything for what hasn't been dropped
@@ -493,8 +490,8 @@ class HD_Model:
                             self.classify_weights.index_add_(0, pred_hd, -samples_hv_here)
                     
                     num_wrong.append(is_wrong_count)
-                    self.mean_confidences[e, it] = torch.mean(logits)
-                    self.correct_percentages[e, it] = is_wrong_count/len(logits)
+                    # self.mean_confidences[e, it] = torch.mean(logits)
+                    # self.correct_percentages[e, it] = is_wrong_count/len(logits)
 
                     #torch.cuda.synchronize(device=self.device)
 
@@ -504,8 +501,8 @@ class HD_Model:
 
                 ######### End of all scans
                 if e >= epochs - len(self.stop) and self.early_exit:  # only after the LAST epoch
-                    print("Plotting exit value distribution after last epoch...")
-                    plot_exit_val_histogram(self.exit_val_dict, 'exit_val_hist.png')
+                    # print("Plotting exit value distribution after last epoch...")
+                    plot_exit_val_histogram(self.exit_val_dict, f'exit_val_hist{e}.png')
                     layer = self.stop[len(self.stop) - epochs + e]
                     vals_tensor = torch.tensor(self.exit_val_dict[layer])
                     new_threshold = torch.quantile(vals_tensor, self.quantile)
@@ -518,7 +515,6 @@ class HD_Model:
                         self.exit_val_dict[int(i)] = []
                         self.exit_counter[int(i)] = 0
                     self.exit_counter[48] = 0
-
 
                 # Print total misclassified samples in the current retraining epoch
                 print("###########################")
@@ -788,6 +784,10 @@ if __name__ == "__main__":
     print("Using {} device".format(device))
     device_string = "cuda:0" if (torch.cuda.is_available() and args.device == 'gpu') else "cpu"
 
+    if args.early_exit and args.layer == 48:
+        args.early_exit = False
+        print("Early exit is not supported for layer 48, switch back to not using early exit")
+
     # Modify the path for each of the folders
 
     if args.dataset == 'nuscenes':
@@ -965,7 +965,7 @@ if __name__ == "__main__":
     hd_model.update = True
     acc_results, misclassified_cnts = hd_model.retrain(epochs=args.epochs, weights=weights)
 
-    plot_3d_graph(hd_model.mean_confidences, hd_model.correct_percentages, save_path=os.path.join(output_path, 'confidence_accuracy_3d.png'))
+    # plot_3d_graph(hd_model.mean_confidences, hd_model.correct_percentages, save_path='confidence_accuracy_3d.png')
     
     print("Testing")
     hd_model.update = False
