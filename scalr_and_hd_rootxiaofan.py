@@ -248,7 +248,7 @@ class HD_Model:
         print("Finished loading data loaders")
     
     def sample_to_encode(self, it, batch):
-        features, labels, soa_labels = self.feature_extractor.forward_model(it, batch, stop=self.stop_layer) # Everything for what hasn't been dropped
+        features, labels, soa_labels = self.feature_extractor.forward_model(it, batch, stop=self.stop) # Everything for what hasn't been dropped
         features = torch.transpose(features, 0, 1).to(dtype=torch.float32, device = self.device, non_blocking=True)
         labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
 
