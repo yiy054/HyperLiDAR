@@ -250,7 +250,7 @@ class HD_Model:
     
     def sample_to_encode(self, it, batch, stop_layer=48):
         # features, labels, soa_labels, exit_layer = self.feature_extractor.forward_model(it, batch, stop_layer) # Everything for what hasn't been dropped
-        features, labels, soa_labels, exit_layer = self.feature_extractor.forward_model(it, batch, step_type="train")
+        features, labels, soa_labels, exit_layer = self.feature_extractor.forward_model(it, batch)
         features = torch.transpose(features, 0, 1).to(dtype=torch.float32, device = self.device, non_blocking=True)
         labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
 
