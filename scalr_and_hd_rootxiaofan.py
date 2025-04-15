@@ -300,7 +300,6 @@ class HD_Model:
             # Note, they are different! The first is the unnormalized, the 2nd is the normalized
             self.classify.weight[:] = F.normalize(self.classify_weights)
 
-
     def retrain(self, epochs, weights=None):
         
         """ Retrain with misclassified samples (also substract)"""
@@ -475,7 +474,7 @@ class HD_Model:
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-stops', '--layers', nargs='+', type=int, help='how many layers deep', default=[48])
+    parser.add_argument('--layers', nargs='+', type=int, help='how many layers deep', default=[48])
     parser.add_argument('--confidence', type=float, help="Confidence threshold", default=1.0)
     #parser.add_argument('-soa', '--soa', action="store_true", default=False, help='Plot SOA')
     parser.add_argument('-number_samples', '--number_samples', type=int, help='how many scans to train', default=500)
