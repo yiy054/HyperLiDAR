@@ -203,7 +203,7 @@ class HD_Model:
         self.device = device
         self.feature_extractor = Feature_Extractor(nb_class = num_classes, device=self.device, early_exit=kwargs['args'].layers, args=kwargs['args'])
         self.feature_extractor.load_pretrained(path_pretrained)
-        self.stop = kwargs['args'].layers[0]
+        self.stop = kwargs['args'].layers
         self.point_per_iter = kwargs['args'].number_samples
         self.num_classes = num_classes
         self.max_samples = kwargs['args'].number_samples
@@ -247,8 +247,8 @@ class HD_Model:
 
         print("Finished loading data loaders")
     
-    def sample_to_encode(self, it, batch):
-        features, labels, soa_labels = self.feature_extractor.forward_model(it, batch, stop=self.stop) # Everything for what hasn't been dropped
+    def sample_to_encode(self, it, batch, stop_layer=48):
+        features, labels, soa_labels = self.feature_extractor.forward_model(it, batch, stop_layer) # Everything for what hasn't been dropped
         features = torch.transpose(features, 0, 1).to(dtype=torch.float32, device = self.device, non_blocking=True)
         labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
 
