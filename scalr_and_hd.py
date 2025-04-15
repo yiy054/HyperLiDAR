@@ -23,6 +23,7 @@ from sklearn.metrics import confusion_matrix
 import torchhd
 from torchhd.models import Centroid
 from torchhd import embeddings
+import matplotlib.pyplot as plt
 
 class Encoder(nn.Module):
     def __init__(self, hd_dim, size):
@@ -128,7 +129,7 @@ class Feature_Extractor:
             with torch.autocast("cuda", enabled=True):
                 # Logits
                 with torch.no_grad():
-                    out = self.model(*net_inputs, stop=stop)
+                    out = self.model(*net_inputs)
                     encode, tokens, out = out[0], out[1], out[2]
                     pred_label = out.max(1)[1]
 
@@ -138,7 +139,7 @@ class Feature_Extractor:
                     #torch.cuda.synchronize(device=self.device)
         else:
             with torch.no_grad():
-                out = self.model(*net_inputs, stop=stop)
+                out = self.model(*net_inputs)
                 encode, tokens, out = out[0], out[1], out[2]
                 pred_label = out.max(1)[1]
 
@@ -490,6 +491,46 @@ def parse_arguments():
     args = parser.parse_args()
     return args
 
+def plot(acc_points, acc_results, misclassified_cnts, output_path):
+    init_acc, final_acc = acc_points
+    print(acc_results, misclassified_cnts)
+
+    plt.figure()
+    # Create the figure and the first axis
+    fig, ax1 = plt.subplots()
+
+    # Plot the first curve on the left y-axis
+    x = np.arange(len(acc_results)+1)
+    y1 = [init_acc] + acc_results
+    ax1.plot(x, y1, 'b-*', label='mIoU', color='blue')
+    ax1.set_xlabel('Retraining epochs')
+    ax1.set_ylabel('mIoU', color='blue')
+    ax1.tick_params(axis='y', labelcolor='blue')
+
+    # Annotate the points on the first curve
+    for i in range(len(x)):
+        ax1.text(x[i], y1[i], f'{y1[i]:.2f}', color='blue', ha='center', va='bottom')
+
+    # Create a second axis sharing the same x-axis
+    ax2 = ax1.twinx()
+
+    # Plot the second curve on the right y-axis
+    x = np.arange(1, len(acc_results)+1)
+    y2 = misclassified_cnts
+    ax2.plot(x, y2, 'r-^', label='Misclassified Cnt', color='red')
+    ax2.set_ylabel('Misclassified Cnt', color='red')
+    ax2.tick_params(axis='y', labelcolor='red')
+
+    # Annotate the points on the second curve
+    for i in range(len(x)):
+        ax2.text(x[i], y2[i], f'{y2[i]:.2f}', color='red', ha='center', va='top')
+
+    # Show the plot
+    plt.tight_layout()
+    #plt.show()
+    plt.savefig(os.path.join(output_path, 'retraining.png'), dpi=300)
+
+
 if __name__ == "__main__":
     
     args = parse_arguments()
@@ -675,7 +716,7 @@ if __name__ == "__main__":
     print("Testing")
     hd_model.test_hd()
 
-
+    plot((init_acc, final_acc), acc_results, misclassified_cnts, output_path)
     ####### SOA results ##########
     #print("SoA results")
 
