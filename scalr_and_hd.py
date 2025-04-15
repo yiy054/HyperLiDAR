@@ -444,10 +444,10 @@ class HD_Model:
         print(f'avg acc: {avg_acc}')
 
         ## EDIT: Report soa accuracy
-        accuracy = miou(soa_pred, final_labels)
-        avg_acc = torch.mean(accuracy)
-        print(f'soa accuracy: {accuracy}')
-        print(f'avg soa acc: {avg_acc}')
+        # accuracy = miou(soa_pred, final_labels)
+        # avg_acc = torch.mean(accuracy)
+        # print(f'soa accuracy: {accuracy}')
+        # print(f'avg soa acc: {avg_acc}')
 
         if args.wandb_run:
             log_data = {f"Training class_{i}_IoU": c for i, c in enumerate(accuracy)}
