@@ -107,7 +107,7 @@ class Feature_Extractor:
 
         self.model.eval()
 
-    def forward_model(self, it, batch, start=0, stop=48):
+    def forward_model(self, it, batch, step_type = None):
 
         # Checking all of the parameters needed for feature extractor
         # Obj: only pass what you need
@@ -126,13 +126,15 @@ class Feature_Extractor:
             occupied_cell = occupied_cell.cuda(0, non_blocking=True)
             neighbors_emb = neighbors_emb.cuda(0, non_blocking=True)
         net_inputs = (feat, cell_ind, occupied_cell, neighbors_emb)
+        self.where = labels != 255
+        self.labels = labels[self.where]
 
         if self.device_string != 'cpu':
             with torch.autocast("cuda", enabled=True):
                 # Logits
                 with torch.no_grad():
-                    out = self.model(*net_inputs)
-                    encode, tokens, out = out[0], out[1], out[2]
+                    out = self.model(*net_inputs, step_type)
+                    _, tokens, tokens_norm, out, exit_layer = out[0], out[1], out[2], out[3], out[4]
                     pred_label = out.max(1)[1]
 
                     # Only return samples that are not noise
@@ -141,14 +143,14 @@ class Feature_Extractor:
                     #torch.cuda.synchronize(device=self.device)
         else:
             with torch.no_grad():
-                out = self.model(*net_inputs)
-                encode, tokens, out = out[0], out[1], out[2]
+                out = self.model(*net_inputs, step_type)
+                _, tokens, tokens_norm, out, exit_layer = out[0], out[1], out[2], out[3], out[4]
                 pred_label = out.max(1)[1]
 
                 # Only return samples that are not noise
                 where = labels != 255
 
-        return tokens[0,:,where], labels[where], pred_label[0, where]
+        return tokens, tokens_norm[0,:,where], pred_label[0, where], exit_layer
 
     def test(self, loader, total_voxels):        
         # Metric
