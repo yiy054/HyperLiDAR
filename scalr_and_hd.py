@@ -50,7 +50,6 @@ class Feature_Extractor:
             nb_class=nb_class, # class for prediction
             #drop_path_prob=config["waffleiron"]["drop_path"],
             layer_norm=layer_norm,
-            early_exit=early_exit,
         )
 
         classif = torch.nn.Conv1d(
