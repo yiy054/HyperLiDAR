@@ -23,7 +23,7 @@ from sklearn.metrics import confusion_matrix
 import torchhd
 from torchhd.models import Centroid
 from torchhd import embeddings
-
+import time
 
 import matplotlib.pyplot as plt
 
@@ -164,7 +164,7 @@ class Feature_Extractor:
                     _, tokens, tokens_norm, out, exit_layer = out[0], out[1], out[2], out[3], out[4]
 
         pred_label = out.max(1)[1]
-        print("Exit layer: ", exit_layer)
+
         return tokens, tokens_norm[0,:,self.where], pred_label[0, self.where], exit_layer
 
     def test(self, loader, total_voxels):        
@@ -238,7 +238,7 @@ class HD_Model:
         self.threshold[48] = 1
         self.exit_counter[48] = 0
         self.alpha_exp_average = 0.05
-        self.update = True
+        # self.update = True
         self.past_update = self.threshold
         self.quantile = kwargs['args'].quantile
         self.early_exit = kwargs['args'].early_exit
@@ -376,10 +376,7 @@ class HD_Model:
         with torch.no_grad():
             for it, batch in tqdm(enumerate(self.train_loader), desc="Training"):
                 
-                if self.early_exit:
-                    samples_hv, labels, soa_labels, _ = self.sample_to_encode(it, batch, step_type="train")
-                else:
-                    samples_hv, labels, _, _ = self.sample_to_encode_wo_early_exit(it, batch)
+                samples_hv, labels, soa_labels, _ = self.sample_to_encode(it, batch, step_type="train")
                 
                 for b in range(0, samples_hv.shape[0], self.point_per_iter):
                     end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
@@ -430,13 +427,10 @@ class HD_Model:
                     #     samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type='retrain')
                     # else:
                         # print("Early exit not started")
-                    if self.early_exit:
-                        if e >= epochs - len(self.stop):
-                            samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type="retrain")
-                        else:
-                            samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type="train")
+                    if e >= epochs - len(self.stop):
+                        samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type="retrain")
                     else:
-                        samples_hv, labels, _, logits = self.sample_to_encode_wo_early_exit(it, batch)
+                        samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type="train")
                     
                     is_wrong_count = 0
                     for b in range(0, samples_hv.shape[0], self.point_per_iter):
@@ -527,10 +521,10 @@ class HD_Model:
 
             # Retraining test
             #if (e + 1) % 2 == 0:
-            hd_model.update = False
+            # hd_model.update = False
             avg_acc = self.test_hd()
             acc_results.append(avg_acc)
-            hd_model.update = True
+            # hd_model.update = True
 
         return acc_results, misclassified_cnts
 
@@ -554,11 +548,7 @@ class HD_Model:
         start_idx = 0
         with torch.no_grad():
             for it, batch in tqdm(enumerate(loader), desc="Validation:"):
-                if self.early_exit:
-                    samples_hv, labels, soa_labels, logits = self.sample_to_encode(it, batch, step_type='test') # Only return the features that haven't been dropped
-                else:
-                    samples_hv, labels, soa_labels, logits = self.sample_to_encode(it, batch, step_type='train') # Used same features as training
-
+                samples_hv, labels, soa_labels, logits = self.sample_to_encode(it, batch, step_type='test') # Only return the features that haven't been dropped
                 for b in range(0, samples_hv.shape[0], self.point_per_iter):
                     end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
                     samples_hv_here = samples_hv[b:end]
@@ -663,7 +653,6 @@ def parse_arguments():
     parser.add_argument('--batch_points', type=int, help='Number of points to process per scan', default=20000)
     parser.add_argument("--imbalance", action="store_true", default=False, help='Use imbalance weights')
     parser.add_argument("--quantile", type=int, default=0.8, help='Setup the quantile for the threshold')
-    parser.add_argument("--early_exit", action="store_true", default=False, help='Initially use early exit')
     #parser.add_argument('-val', '--val', action="store_true", default=False, help='Train with validation for each scan')
     args = parser.parse_args()
     return args
@@ -783,10 +772,6 @@ if __name__ == "__main__":
     device = torch.device("cuda" if (torch.cuda.is_available() and args.device == 'gpu') else "cpu")
     print("Using {} device".format(device))
     device_string = "cuda:0" if (torch.cuda.is_available() and args.device == 'gpu') else "cpu"
-
-    if args.early_exit and (len(args.layers) == 1 and args.layers[0] == 48):
-        args.early_exit = False
-        print("Early exit is not supported for layer 48, switch back to not using early exit")
 
     # Modify the path for each of the folders
 
@@ -955,21 +940,35 @@ if __name__ == "__main__":
     ####### HD Pipeline ##########
 
     print("Initial Training")
+    start = time.time()
     hd_model.train(weights=weights)
+    end = time.time()
+    fps = (end-start) / args.number_samples
+    print(f"Training FPS: {fps}")
 
     print("Testing")
-    hd_model.update = False
+    start = time.time()
     init_acc = hd_model.test_hd()
+    end = time.time()
+    fps = (end-start) / args.test_number_samples
+    print(f"Testing FPS: {fps}")
 
     print("Retraining")
-    hd_model.update = True
+    # hd_model.update = True
+    start = time.time()
     acc_results, misclassified_cnts = hd_model.retrain(epochs=args.epochs, weights=weights)
+    end = time.time()
+    fps = (end-start) / args.number_samples
+    print(f"Retraining FPS: {fps}")
 
     # plot_3d_graph(hd_model.mean_confidences, hd_model.correct_percentages, save_path='confidence_accuracy_3d.png')
     
     print("Testing")
-    hd_model.update = False
+    start = time.time()
     final_acc = hd_model.test_hd()
+    end = time.time()
+    fps = (end-start) / args.test_number_samples
+    print(f"Testing FPS: {fps}")
 
     plot((init_acc, final_acc), acc_results, misclassified_cnts, output_path)
 
