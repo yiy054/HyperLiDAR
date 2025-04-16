@@ -164,7 +164,7 @@ class Feature_Extractor:
                     _, tokens, tokens_norm, out, exit_layer = out[0], out[1], out[2], out[3], out[4]
 
         pred_label = out.max(1)[1]
-
+        print("Exit layer: ", exit_layer)
         return tokens, tokens_norm[0,:,self.where], pred_label[0, self.where], exit_layer
 
     def test(self, loader, total_voxels):        
