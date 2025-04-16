@@ -146,7 +146,8 @@ class Feature_Extractor:
 
                 # Only return samples that are not noise
                 where = labels != 255
-
+        print(f"[DEBUG] Model output structure: {[type(o) for o in out]}")
+        print(f"[DEBUG] Output shapes: {[o.shape if hasattr(o, 'shape') else type(o) for o in out]}")
         return tokens[0,:,where], labels[where], pred_label[0, where], exit_layer
 
     def test(self, loader, total_voxels):        
