@@ -41,7 +41,7 @@ class Encoder(nn.Module):
 class Feature_Extractor:
     def __init__(self, input_channels=5, feat_channels=768, depth=48, 
                  grid_shape=[[256, 256], [256, 32], [256, 32]], nb_class=16, layer_norm=True, 
-                 device=torch.device("cpu"), early_exit = 48, **kwargs):
+                 device=torch.device("cpu"), early_exit = 36, **kwargs):
         self.model = Segmenter(
             input_channels=input_channels,
             feat_channels=feat_channels,
@@ -131,7 +131,7 @@ class Feature_Extractor:
                 # Logits
                 with torch.no_grad():
                     out = self.model(*net_inputs)
-                    encode, tokens, out = out[0], out[1], out[2]
+                    encode, tokens, out, exit_layer = out[0], out[1], out[2], out[4]
                     pred_label = out.max(1)[1]
 
                     # Only return samples that are not noise
@@ -141,13 +141,13 @@ class Feature_Extractor:
         else:
             with torch.no_grad():
                 out = self.model(*net_inputs)
-                encode, tokens, out = out[0], out[1], out[2]
+                encode, tokens, out, exit_layer = out[0], out[1], out[2], out[4]
                 pred_label = out.max(1)[1]
 
                 # Only return samples that are not noise
                 where = labels != 255
 
-        return tokens[0,:,where], labels[where], pred_label[0, where]
+        return tokens[0,:,where], labels[where], pred_label[0, where], exit_layer
 
     def test(self, loader, total_voxels):        
         # Metric
@@ -246,7 +246,7 @@ class HD_Model:
     
     def sample_to_encode(self, it, batch, stop_layer=48):
         # features, labels, soa_labels, exit_layer = self.feature_extractor.forward_model(it, batch, stop_layer) # Everything for what hasn't been dropped
-        features, labels, soa_labels = self.feature_extractor.forward_model(it, batch)
+        features, labels, soa_labels, exit_layer = self.feature_extractor.forward_model(it, batch)
         features = torch.transpose(features, 0, 1).to(dtype=torch.float32, device = self.device, non_blocking=True)
         labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
 
@@ -255,7 +255,7 @@ class HD_Model:
         # HD training
         samples_hv = self.encode(features)
 
-        return samples_hv, labels, soa_labels
+        return samples_hv, labels, soa_labels, exit_layer
     
     def train(self, weights=None):
 
@@ -266,7 +266,7 @@ class HD_Model:
         with torch.no_grad():
             for it, batch in tqdm(enumerate(self.train_loader), desc="Training"):
     
-                samples_hv, labels, _ = self.sample_to_encode(it, batch)
+                samples_hv, labels, _ , exit_layer = self.sample_to_encode(it, batch)
                 
                 for b in range(0, samples_hv.shape[0], self.point_per_iter):
                     end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
@@ -298,7 +298,6 @@ class HD_Model:
             # Note, they are different! The first is the unnormalized, the 2nd is the normalized
             self.classify.weight[:] = F.normalize(self.classify_weights)
 
-
     def retrain(self, epochs, weights=None):
         
         """ Retrain with misclassified samples (also substract)"""
@@ -310,7 +309,8 @@ class HD_Model:
                 count = 0
                 for it, batch in tqdm(enumerate(self.train_loader), desc=f"Retraining epoch {e}"):
                     
-                    samples_hv, labels, _ = self.sample_to_encode(it, batch)
+                    samples_hv, labels, _, exit_layer = self.sample_to_encode(it, batch)
+                    print("exit_layer local: ", exit_layer)
 
                     for b in range(0, samples_hv.shape[0], self.point_per_iter):
                         end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
@@ -367,6 +367,7 @@ class HD_Model:
                 # Print total misclassified samples in the current retraining epoch
                 print("###########################")
                 print(f"Total misclassified for retraining epoch {e}: ", count)
+                print("###########################")
 
             ######## End of one retraining epoch
 
@@ -395,7 +396,7 @@ class HD_Model:
         with torch.no_grad():
             for it, batch in tqdm(enumerate(loader), desc="Validation:"):
         
-                samples_hv, labels, soa_labels = self.sample_to_encode(it, batch) # Only return the features that haven't been dropped
+                samples_hv, labels, soa_labels, exit_layer = self.sample_to_encode(it, batch) # Only return the features that haven't been dropped
                 
                 for b in range(0, samples_hv.shape[0], self.point_per_iter):
                     end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
@@ -718,7 +719,7 @@ if __name__ == "__main__":
     print("Testing")
     hd_model.test_hd()
 
-    plot((init_acc, final_acc), acc_results, misclassified_cnts, output_path)
+    # plot((init_acc, final_acc), acc_results, misclassified_cnts, output_path)
     ####### SOA results ##########
     #print("SoA results")
 
