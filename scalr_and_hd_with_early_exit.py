@@ -84,8 +84,7 @@ class Feature_Extractor:
         self.num_classes = nb_class
         self.early_exit = early_exit
         self.kwargs = kwargs
-        if kwargs['args'].early_exit:
-            self.model.waffleiron.separate_model()
+        self.model.waffleiron.separate_model()
     
     def load_pretrained(self, path):
         # Load pretrained model
@@ -241,7 +240,6 @@ class HD_Model:
         # self.update = True
         self.past_update = self.threshold
         self.quantile = kwargs['args'].quantile
-        self.early_exit = kwargs['args'].early_exit
         self.epochs = kwargs['args'].epochs
         # self.mean_confidences = [[] for _ in range(self.kwargs['args'].epochs)]
         # self.correct_percentages = [[] for _ in range(self.kwargs['args'].epochs)]
@@ -347,17 +345,6 @@ class HD_Model:
         labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
 
         #features = self.normalize(features) # Z1 score seems to work
-        return samples_hv, labels, soa_labels, logits
-    
-    def sample_to_encode_wo_early_exit(self, it, batch, stop_layer=48):
-        # features, labels, soa_labels, _ = self.feature_extractor.forward_model(it, batch, stop_layer) # Everything for what hasn't been dropped
-        features, labels, soa_labels, exit_layer = self.feature_extractor.forward_model(it, batch, step_type=None)
-        samples_hv = self.encode(torch.transpose(labels, 0, 1).float())
-        features = torch.transpose(features, 0, 1).to(dtype=torch.float32, device = self.device, non_blocking=True)
-        labels = self.feature_extractor.labels
-        labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
-        logits = self.classify(F.normalize(samples_hv))
-        # print("Exit layer: ", exit_layer)
         return samples_hv, labels, soa_labels, logits
     
     def check_early_exit(self, samples_hv):
@@ -494,7 +481,7 @@ class HD_Model:
                     ########## End of one scan
 
                 ######### End of all scans
-                if e >= epochs - len(self.stop) and self.early_exit:  # only after the LAST epoch
+                if e >= epochs - len(self.stop):  # only after the LAST epoch
                     # print("Plotting exit value distribution after last epoch...")
                     plot_exit_val_histogram(self.exit_val_dict, f'exit_val_hist{e}.png')
                     layer = self.stop[len(self.stop) - epochs + e]
@@ -592,17 +579,16 @@ class HD_Model:
         soa_pred = soa_pred[:start_idx]
 
         print("================================")
-        if self.early_exit:
-            print("Plotting exit value distribution on test...")
-            plot_exit_val_histogram(self.exit_val_dict, 'test_exit_val_hist.png')
-            print(f"Threshold under test: ", self.threshold)
-            print(f"Total exit_counter for test: ", self.exit_counter)
-            self.exit_val_dict = {}
-            self.exit_counter = {}
-            for i in self.stop:
-                self.exit_val_dict[int(i)] = []
-                self.exit_counter[int(i)] = 0
-            self.exit_counter[48] = 0
+        print("Plotting exit value distribution on test...")
+        plot_exit_val_histogram(self.exit_val_dict, 'test_exit_val_hist.png')
+        print(f"Threshold under test: ", self.threshold)
+        print(f"Total exit_counter for test: ", self.exit_counter)
+        self.exit_val_dict = {}
+        self.exit_counter = {}
+        for i in self.stop:
+            self.exit_val_dict[int(i)] = []
+            self.exit_counter[int(i)] = 0
+        self.exit_counter[48] = 0
 
         #print('pred_ts', pred_ts)
         print('pred_hd', final_pred, "\tShape: ", final_pred.shape)
@@ -925,13 +911,13 @@ if __name__ == "__main__":
                 "hd_dim": DIMENSIONS,
                 "training_samples":args.number_samples,
             },
-            id=f"{args.dataset}_training_layers_{args.layers}_norm_dim_{DIMENSIONS}_OFA_early_exit{int(args.early_exit)}",
+            id=f"{args.dataset}_training_layers_{args.layers}_norm_dim_{DIMENSIONS}_OFA_early_exit",
         )
     ####### Results dir setup ##########
     if not os.path.exists(args.result_path):
         os.mkdir(args.result_path)
     model_name = f"{args.dataset}_{args.subset}_{args.number_samples}_{args.test_number_samples}_nn{args.layers}_" \
-                 f"hd{FEAT_SIZE}_{DIMENSIONS}_{args.epochs}_{args.batch_points}_imb{int(args.imbalance)}_ee{int(args.early_exit)}" \
+                 f"hd{FEAT_SIZE}_{DIMENSIONS}_{args.epochs}_{args.batch_points}_imb{int(args.imbalance)}_ee" \
                  f"seed{args.seed}"
     output_path = os.path.join(args.result_path, model_name)
     if not os.path.exists(output_path):
