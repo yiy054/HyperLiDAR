@@ -130,7 +130,7 @@ class Feature_Extractor:
                 # Logits
                 with torch.no_grad():
                     out = self.model(*net_inputs)
-                    encode, tokens, out, _, exit_layer = out[0], out[1], out[2], out[3], out[4]
+                    encode, tokens, out, _ = out[0], out[1], out[2], out[3]
                     pred_label = out.max(1)[1]
 
                     # Only return samples that are not noise
@@ -140,13 +140,13 @@ class Feature_Extractor:
         else:
             with torch.no_grad():
                 out = self.model(*net_inputs)
-                encode, tokens, out, _, exit_layer = out[0], out[1], out[2], out[3], out[4]
+                encode, tokens, out, _ = out[0], out[1], out[2], out[3]
                 pred_label = out.max(1)[1]
 
                 # Only return samples that are not noise
                 where = labels != 255
 
-        return tokens[0,:,where], labels[where], pred_label[0, where], exit_layer
+        return tokens[0,:,where], labels[where], pred_label[0, where]
 
     def test(self, loader, total_voxels):        
         # Metric
@@ -309,7 +309,7 @@ class HD_Model:
                 for it, batch in tqdm(enumerate(self.train_loader), desc=f"Retraining epoch {e}"):
                     
                     samples_hv, labels, _, exit_layer = self.sample_to_encode(it, batch)
-                    print("exit_layer local: ", exit_layer)
+                    # print("exit_layer local: ", exit_layer)
 
                     for b in range(0, samples_hv.shape[0], self.point_per_iter):
                         end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
