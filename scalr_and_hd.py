@@ -130,7 +130,7 @@ class Feature_Extractor:
                 # Logits
                 with torch.no_grad():
                     out = self.model(*net_inputs)
-                    encode, tokens, out, _ = out[0], out[1], out[2], out[3]
+                    encode, tokens, out, _ = out[0], out[1], out[2], out[3] 
                     pred_label = out.max(1)[1]
 
                     # Only return samples that are not noise
