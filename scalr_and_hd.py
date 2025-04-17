@@ -245,7 +245,7 @@ class HD_Model:
     
     def sample_to_encode(self, it, batch, stop_layer=48):
         # features, labels, soa_labels, exit_layer = self.feature_extractor.forward_model(it, batch, stop_layer) # Everything for what hasn't been dropped
-        features, labels, soa_labels, exit_layer = self.feature_extractor.forward_model(it, batch)
+        features, labels, soa_labels = self.feature_extractor.forward_model(it, batch)
         features = torch.transpose(features, 0, 1).to(dtype=torch.float32, device = self.device, non_blocking=True)
         labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
 
@@ -254,7 +254,7 @@ class HD_Model:
         # HD training
         samples_hv = self.encode(features)
 
-        return samples_hv, labels, soa_labels, exit_layer
+        return samples_hv, labels, soa_labels
     
     def train(self, weights=None):
 
@@ -265,7 +265,7 @@ class HD_Model:
         with torch.no_grad():
             for it, batch in tqdm(enumerate(self.train_loader), desc="Training"):
     
-                samples_hv, labels, _ , exit_layer = self.sample_to_encode(it, batch)
+                samples_hv, labels, _ = self.sample_to_encode(it, batch)
                 
                 for b in range(0, samples_hv.shape[0], self.point_per_iter):
                     end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
@@ -308,7 +308,7 @@ class HD_Model:
                 count = 0
                 for it, batch in tqdm(enumerate(self.train_loader), desc=f"Retraining epoch {e}"):
                     
-                    samples_hv, labels, _, exit_layer = self.sample_to_encode(it, batch)
+                    samples_hv, labels, _ = self.sample_to_encode(it, batch)
                     # print("exit_layer local: ", exit_layer)
 
                     for b in range(0, samples_hv.shape[0], self.point_per_iter):
@@ -395,7 +395,7 @@ class HD_Model:
         with torch.no_grad():
             for it, batch in tqdm(enumerate(loader), desc="Validation:"):
         
-                samples_hv, labels, soa_labels, exit_layer = self.sample_to_encode(it, batch) # Only return the features that haven't been dropped
+                samples_hv, labels, soa_labels = self.sample_to_encode(it, batch) # Only return the features that haven't been dropped
                 
                 for b in range(0, samples_hv.shape[0], self.point_per_iter):
                     end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
