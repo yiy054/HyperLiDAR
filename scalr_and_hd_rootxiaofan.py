@@ -23,6 +23,7 @@ from sklearn.metrics import confusion_matrix
 import torchhd
 from torchhd.models import Centroid
 from torchhd import embeddings
+
 import matplotlib.pyplot as plt
 
 class Encoder(nn.Module):
@@ -50,6 +51,7 @@ class Feature_Extractor:
             nb_class=nb_class, # class for prediction
             #drop_path_prob=config["waffleiron"]["drop_path"],
             layer_norm=layer_norm,
+            early_exit=early_exit,
         )
 
         classif = torch.nn.Conv1d(
@@ -105,7 +107,7 @@ class Feature_Extractor:
 
         self.model.eval()
 
-    def forward_model(self, it, batch, start=0, stop=48):
+    def forward_model(self, it, batch, step_type = None):
 
         # Checking all of the parameters needed for feature extractor
         # Obj: only pass what you need
@@ -124,13 +126,15 @@ class Feature_Extractor:
             occupied_cell = occupied_cell.cuda(0, non_blocking=True)
             neighbors_emb = neighbors_emb.cuda(0, non_blocking=True)
         net_inputs = (feat, cell_ind, occupied_cell, neighbors_emb)
+        self.where = labels != 255
+        self.labels = labels[self.where]
 
         if self.device_string != 'cpu':
             with torch.autocast("cuda", enabled=True):
                 # Logits
                 with torch.no_grad():
-                    out = self.model(*net_inputs)
-                    encode, tokens, out, _ = out[0], out[1], out[2], out[3] 
+                    out = self.model(*net_inputs, step_type)
+                    _, tokens, tokens_norm, out, exit_layer = out[0], out[1], out[2], out[3], out[4]
                     pred_label = out.max(1)[1]
 
                     # Only return samples that are not noise
@@ -139,14 +143,14 @@ class Feature_Extractor:
                     #torch.cuda.synchronize(device=self.device)
         else:
             with torch.no_grad():
-                out = self.model(*net_inputs)
-                encode, tokens, out, _ = out[0], out[1], out[2], out[3]
+                out = self.model(*net_inputs, step_type)
+                _, tokens, tokens_norm, out, exit_layer = out[0], out[1], out[2], out[3], out[4]
                 pred_label = out.max(1)[1]
 
                 # Only return samples that are not noise
                 where = labels != 255
 
-        return tokens[0,:,where], labels[where], pred_label[0, where]
+        return tokens, tokens_norm[0,:,where], pred_label[0, where], exit_layer
 
     def test(self, loader, total_voxels):        
         # Metric
@@ -206,6 +210,7 @@ class HD_Model:
         self.point_per_iter = kwargs['args'].number_samples
         self.num_classes = num_classes
         self.max_samples = kwargs['args'].number_samples
+        self.test_max_samples = kwargs['args'].test_number_samples
         self.kwargs = kwargs
 
     def normalize(self, samples):
@@ -225,21 +230,23 @@ class HD_Model:
         self.num_vox_train = 0
         self.num_vox_val = 0
 
-        for loader, desc, attr in [(self.train_loader, "Training loader", "num_vox_train"),
-                           (self.val_loader, "Validation loader", "num_vox_val")]:
-            for batch in tqdm(loader, desc=desc):
-                labels = batch["labels_orig"]
+        for batch in tqdm(self.train_loader, desc="Training loader: "):
+            labels = batch["labels_orig"]
+            if self.device == torch.device("cuda:0"):
+                labels = labels.cuda(0, non_blocking=True)
+            #torch.cuda.synchronize(device=self.device)
+            where = labels != 255
+            #torch.cuda.synchronize(device=self.device)
+            self.num_vox_train += labels[where].shape[0]
 
-                # Ensure labels are tensors
-                if isinstance(labels, list):
-                    labels = torch.stack(labels)  # Convert list of tensors to a single tensor
-                
-                # Move to GPU if applicable
-                if self.device.type == "cuda":
-                    labels = labels.cuda(non_blocking=True)
-
-                # Compute the number of valid voxels
-                setattr(self, attr, getattr(self, attr) + (labels != 255).sum().item())
+        for batch in tqdm(self.val_loader, desc="Validation loader: "):
+            labels = batch["labels_orig"]
+            if self.device == torch.device("cuda:0"):
+                labels = labels.cuda(0, non_blocking=True)
+            #torch.cuda.synchronize(device=self.device)
+            where = labels != 255
+            #torch.cuda.synchronize(device=self.device)
+            self.num_vox_val += labels[where].shape[0]
 
         print("Finished loading data loaders")
     
@@ -254,7 +261,7 @@ class HD_Model:
         # HD training
         samples_hv = self.encode(features)
 
-        return samples_hv, labels, soa_labels, exit_layer
+        return samples_hv, labels, soa_labels
     
     def train(self, weights=None):
 
@@ -265,7 +272,7 @@ class HD_Model:
         with torch.no_grad():
             for it, batch in tqdm(enumerate(self.train_loader), desc="Training"):
     
-                samples_hv, labels, _ , exit_layer = self.sample_to_encode(it, batch)
+                samples_hv, labels, _ = self.sample_to_encode(it, batch)
                 
                 for b in range(0, samples_hv.shape[0], self.point_per_iter):
                     end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
@@ -300,6 +307,9 @@ class HD_Model:
     def retrain(self, epochs, weights=None):
         
         """ Retrain with misclassified samples (also substract)"""
+
+        misclassified_cnts = []
+        acc_results = []
         
         for e in range(epochs):
             #self.scramble = np.random.permutation(len(self.im_idx))
@@ -308,8 +318,7 @@ class HD_Model:
                 count = 0
                 for it, batch in tqdm(enumerate(self.train_loader), desc=f"Retraining epoch {e}"):
                     
-                    samples_hv, labels, _, exit_layer = self.sample_to_encode(it, batch)
-                    # print("exit_layer local: ", exit_layer)
+                    samples_hv, labels, _ = self.sample_to_encode(it, batch)
 
                     for b in range(0, samples_hv.shape[0], self.point_per_iter):
                         end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
@@ -333,7 +342,7 @@ class HD_Model:
                         if is_wrong.sum().item() == 0:
                             continue
 
-                        count += is_wrong.sum().item()
+                        count += int(is_wrong.sum().item())
                         #print(f'Wrong predictions: {is_wrong.sum().item()}')
 
                         # only update wrongly predicted inputs
@@ -366,13 +375,17 @@ class HD_Model:
                 # Print total misclassified samples in the current retraining epoch
                 print("###########################")
                 print(f"Total misclassified for retraining epoch {e}: ", count)
-                print("###########################")
+
+                misclassified_cnts.append(count)
 
             ######## End of one retraining epoch
 
             # Retraining test
-            if (e + 1) % 2 == 0:
-                self.test_hd()
+            #if (e + 1) % 2 == 0:
+            avg_acc = self.test_hd()
+            acc_results.append(avg_acc)
+
+        return acc_results, misclassified_cnts
 
     def test_hd(self, loader='val'):
 
@@ -395,7 +408,7 @@ class HD_Model:
         with torch.no_grad():
             for it, batch in tqdm(enumerate(loader), desc="Validation:"):
         
-                samples_hv, labels, soa_labels, exit_layer = self.sample_to_encode(it, batch) # Only return the features that haven't been dropped
+                samples_hv, labels, soa_labels = self.sample_to_encode(it, batch) # Only return the features that haven't been dropped
                 
                 for b in range(0, samples_hv.shape[0], self.point_per_iter):
                     end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
@@ -427,7 +440,7 @@ class HD_Model:
 
                     start_idx += shape_sample
 
-                if it == self.max_samples:
+                if it == self.test_max_samples:
                     break
 
         final_labels = final_labels[:start_idx]
@@ -445,10 +458,10 @@ class HD_Model:
         print(f'avg acc: {avg_acc}')
 
         ## EDIT: Report soa accuracy
-        # accuracy = miou(soa_pred, final_labels)
-        # avg_acc = torch.mean(accuracy)
-        # print(f'soa accuracy: {accuracy}')
-        # print(f'avg soa acc: {avg_acc}')
+        soa_accuracy = miou(soa_pred, final_labels)
+        avg_soa_acc = torch.mean(soa_accuracy)
+        print(f'soa accuracy: {soa_accuracy}')
+        print(f'avg soa acc: {avg_soa_acc}')
 
         if args.wandb_run:
             log_data = {f"Training class_{i}_IoU": c for i, c in enumerate(accuracy)}
@@ -461,25 +474,20 @@ class HD_Model:
 
         print("================================")
 
+        return avg_acc.item()
+
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-stops', '--layers', nargs='+', type=int, help='how many layers deep', default=[48])
+    parser.add_argument('--layers', nargs='+', type=int, help='how many layers deep', default=[48])
     parser.add_argument('--confidence', type=float, help="Confidence threshold", default=1.0)
     #parser.add_argument('-soa', '--soa', action="store_true", default=False, help='Plot SOA')
     parser.add_argument('-number_samples', '--number_samples', type=int, help='how many scans to train', default=500)
-    parser.add_argument(
-            "--seed", default=None, type=int, help="Seed for initializing training"
-        )
-    parser.add_argument(
-            "--add_lr", action="store_true", default=False, help='Add lr to help class imbalance'
-        )
-    parser.add_argument(
-            "--dataset", choices=['nuscenes', 'semantic_kitti', 'tls'], default='nuscenes', help='Which dataset to train and test on?'
-        )
-    parser.add_argument(
-            "--data_path", type=str, default='./root/main/dataset/', help='data dir path'
-        )
-    parser.add_argument("--imbalance", action="store_true", default=False, help='Use imbalance weights')
+    parser.add_argument('-test_number_samples', '--test_number_samples', type=int, help='how many scans to test', default=400)
+    parser.add_argument("--seed", default=None, type=int, help="Seed for initializing training")
+    #parser.add_argument("--add_lr", action="store_true", default=False, help='Add lr to help class imbalance')
+    parser.add_argument("--dataset", choices=['nuscenes', 'semantic_kitti', 'tls'], default='nuscenes', help='Which dataset to train and test on?')
+    parser.add_argument("--data_path", type=str, default='./root/main/dataset/', help='data dir path')
+    parser.add_argument("--result_path", type=str, default='./results', help='result dir path')
 
     parser.add_argument("--wandb_run", action="store_true", default=False, help='Pass values to WandDB')
     parser.add_argument("--device", choices=['gpu', 'cpu'], default='gpu', help='Which device to use for training')
@@ -489,9 +497,11 @@ def parse_arguments():
     # HD arguments
     parser.add_argument('--dim', type=int, help='Dimensionality of Hypervectors', default=10000)
     parser.add_argument('--batch_points', type=int, help='Number of points to process per scan', default=20000)
+    parser.add_argument("--imbalance", action="store_true", default=False, help='Use imbalance weights')
     #parser.add_argument('-val', '--val', action="store_true", default=False, help='Train with validation for each scan')
     args = parser.parse_args()
     return args
+
 
 def plot(acc_points, acc_results, misclassified_cnts, output_path):
     init_acc, final_acc = acc_points
@@ -628,7 +638,7 @@ if __name__ == "__main__":
     else:
         raise Exception("Dataset Not identified")
     
-    # Temporary edit - use subsets of dataset
+    # Use subsets of dataset
     if args.subset < 1.0 and args.subset > 0:
         subset_len = int(len(dataset_train) * args.subset)
         dataset_train, _ = torch.utils.data.random_split(dataset=dataset_train,
@@ -637,10 +647,14 @@ if __name__ == "__main__":
         subset_len = int(len(dataset_val) * 0.01)
         dataset_val, _ = torch.utils.data.random_split(dataset=dataset_val,
                                                     lengths=[subset_len, len(dataset_val) - subset_len])
+
+    # Temporal edits - all use training dataset
+    subset_len = int(len(dataset_train) * 0.8)
+    dataset_train, dataset_val = torch.utils.data.random_split(dataset=dataset_train,
+                                                               lengths=[subset_len, len(dataset_train) - subset_len])
         
     print(f'train dataset length: {len(dataset_train)}')
     print(f'val dataset length: {len(dataset_val)}')
-
 
     train_loader = torch.utils.data.DataLoader(
         dataset_train,
@@ -655,6 +669,7 @@ if __name__ == "__main__":
     val_loader = torch.utils.data.DataLoader(
         dataset_val,
         batch_size=1,
+        shuffle=True,
         pin_memory=True,
         drop_last=True,
         collate_fn=Collate(device=device),
@@ -703,6 +718,17 @@ if __name__ == "__main__":
             },
             id=f"{args.dataset}_training_layers_{args.layers}_norm_dim_{DIMENSIONS}",
         )
+    
+    ####### Results dir setup ##########
+    if not os.path.exists(args.result_path):
+        os.mkdir(args.result_path)
+    model_name = f"{args.dataset}_{args.subset}_{args.number_samples}_{args.test_number_samples}_nn{args.layers}_" \
+                 f"hd{FEAT_SIZE}_{DIMENSIONS}_{args.epochs}_{args.batch_points}_imb{int(args.imbalance)}_" \
+                 f"seed{args.seed}"
+    output_path = os.path.join(args.result_path, model_name)
+    if not os.path.exists(output_path):
+        os.mkdir(output_path)
+
 
     ####### HD Pipeline ##########
 
@@ -710,15 +736,17 @@ if __name__ == "__main__":
     hd_model.train(weights=weights)
 
     print("Testing")
-    hd_model.test_hd()
+    init_acc = hd_model.test_hd()
 
     print("Retraining")
-    hd_model.retrain(epochs=args.epochs, weights=weights)
+    acc_results, misclassified_cnts = hd_model.retrain(epochs=args.epochs, weights=weights)
     
     print("Testing")
-    hd_model.test_hd()
+    final_acc = hd_model.test_hd()
 
-    # plot((init_acc, final_acc), acc_results, misclassified_cnts, output_path)
+    plot((init_acc, final_acc), acc_results, misclassified_cnts, output_path)
+
+
     ####### SOA results ##########
     #print("SoA results")
 

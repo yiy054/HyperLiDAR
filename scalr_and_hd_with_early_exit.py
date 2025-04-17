@@ -23,7 +23,7 @@ from sklearn.metrics import confusion_matrix
 import torchhd
 from torchhd.models import Centroid
 from torchhd import embeddings
-
+import time
 
 import matplotlib.pyplot as plt
 
@@ -31,8 +31,8 @@ class Encoder(nn.Module):
     def __init__(self, hd_dim, size):
         super(Encoder, self).__init__()
         self.flatten = torch.nn.Flatten()
-        #self.projection = embeddings.Projection(size, hd_dim)
-        self.projection = embeddings.Sinusoid(size, hd_dim)
+        self.projection = embeddings.Projection(size, hd_dim)
+        # self.projection = embeddings.Sinusoid(size, hd_dim)
 
         ## EDIT - remove this line, not sure what's the point
         #self.projection.weight = nn.Parameter(torchhd.normalize(self.projection.weight), requires_grad=False) # Binary
@@ -84,7 +84,6 @@ class Feature_Extractor:
         self.num_classes = nb_class
         self.early_exit = early_exit
         self.kwargs = kwargs
-
         self.model.waffleiron.separate_model()
     
     def load_pretrained(self, path):
@@ -229,12 +228,23 @@ class HD_Model:
         self.test_max_samples = kwargs['args'].test_number_samples
         self.kwargs = kwargs
         self.threshold = {}
+        self.exit_val_dict = {}
+        self.exit_counter = {}
         for i in kwargs['args'].layers:
             self.threshold[int(i)] = 1
+            self.exit_val_dict[int(i)] = []
+            self.exit_counter[int(i)] = 0
         self.threshold[48] = 1
+        self.exit_counter[48] = 0
         self.alpha_exp_average = 0.05
-        self.update = True
+        # self.update = True
         self.past_update = self.threshold
+        self.quantile = kwargs['args'].quantile
+        self.epochs = kwargs['args'].epochs
+        # self.mean_confidences = [[] for _ in range(self.kwargs['args'].epochs)]
+        # self.correct_percentages = [[] for _ in range(self.kwargs['args'].epochs)]
+        # self.mean_confidences = np.zeros((kwargs['args'].epochs, len(self.train_loader)))
+        # self.correct_percentages = np.zeros((kwargs['args'].epochs, len(self.train_loader)))
 
     def normalize(self, samples):
 
@@ -270,6 +280,8 @@ class HD_Model:
                 setattr(self, attr, getattr(self, attr) + (labels != 255).sum().item())
 
         print("Finished loading data loaders")
+        # self.mean_confidences = np.zeros((self.epochs, len(self.train_loader)))
+        # self.correct_percentages = np.zeros((self.epochs, len(self.train_loader)))
     
     def sample_to_encode(self, it, batch, step_type="train"):
         tokens, tokens_norm, soa_labels, exit_layer = self.feature_extractor.forward_model(it, batch, step_type=step_type) # Everything for what hasn't been dropped
@@ -284,38 +296,38 @@ class HD_Model:
             #x = input()
 
             while exit_layer != 47:
-                val, logits = self.check_early_exit(samples_hv)
+                max_dist, logits = self.check_early_exit(samples_hv)
+                val = torch.mean(max_dist)
+                self.exit_val_dict[exit_layer+1].append(val.item())
                 #print("Exit layer: ", exit_layer)
                 #print("Value: ", val)
                 #x = input()
-                print("Exit layer: ", exit_layer)
-                print("Value: ", val)
-                print("Threshold: ", self.threshold[exit_layer+1])
-                print("Logits: ", logits)
-                print("Steps: ", steps)
-                if val > self.threshold[exit_layer+1] - 0.05:
+                # print("Before Threshold: ", self.threshold)
+                # print("Steps: ", steps)
+                if val > self.threshold[exit_layer+1] and step_type == 'test':
                     break
 
                 # Update threshold
-                if self.update:
-                    self.threshold[exit_layer+1] = ((1-self.alpha_exp_average)*self.threshold[exit_layer+1]) + (self.alpha_exp_average*val)
+                # if self.update:
+                #     self.threshold[exit_layer+1] = ((1-self.alpha_exp_average)*self.threshold[exit_layer+1]) + (self.alpha_exp_average*torch.quantile(max_dist, self.quantile))
 
                 tokens, tokens_norm, soa_labels, exit_layer = self.feature_extractor.continue_with_model(step_type=step_type, flag='continue_iter', tokens = tokens, step = steps)
                 samples_hv_next = self.encode(torch.transpose(tokens_norm, 0, 1).float())
                 samples_hv = torchhd.bundle(samples_hv_next, samples_hv)
                 steps += 1
+            
+            # if exit_layer != 47 and not self.update:
+            #     self.threshold[exit_layer+1] = ((1-self.alpha_exp_average)*self.threshold[exit_layer+1]) + (self.alpha_exp_average*torch.quantile(max_dist, self.quantile))
 
-            if exit_layer != 47 and not self.update:
-                self.threshold[exit_layer+1] = ((1-self.alpha_exp_average)*self.threshold[exit_layer+1]) + (self.alpha_exp_average*val)
-
-            if it % 10 == 9 and self.update:
-                if self.past_update.values == self.threshold.values:
-                    self.update = False
-                    print("Update stop!!!")
-                else:
-                    self.past_update = self.threshold
-                    print(self.past_update)
-            #(self.alpha_exp_average*val) + ((1-self.alpha_exp_average)*self.threshold[exit_layer+1])
+            # if it % 10 == 9 and self.update:
+            #     if self.past_update.values == self.threshold.values:
+            #         self.update = False
+            #         print(it, "Update stop!!!")
+            #     else:
+            #         self.past_update = self.threshold
+            #         print(self.past_update)
+            # (self.alpha_exp_average*val) + ((1-self.alpha_exp_average)*self.threshold[exit_layer+1])
+            # print("After Threshold: ", self.threshold)
 
         if step_type == 'train':
             while exit_layer != 47:
@@ -327,17 +339,20 @@ class HD_Model:
         if exit_layer == 47:
             logits = self.classify(F.normalize(samples_hv))
             # Last update
-
+        
+        self.exit_counter[exit_layer+1] += 1
         labels = self.feature_extractor.labels
         labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
 
         #features = self.normalize(features) # Z1 score seems to work
         return samples_hv, labels, soa_labels, logits
-
+    
     def check_early_exit(self, samples_hv):
         logits = self.classify(F.normalize(samples_hv))
         max_dist = torch.max(logits, axis=1).values
-        return torch.mean(max_dist), logits
+        # val = torch.quantile(max_dist, self.quantile)
+        # return val, logits
+        return max_dist, logits
     
     def train(self, weights=None):
 
@@ -347,7 +362,7 @@ class HD_Model:
 
         with torch.no_grad():
             for it, batch in tqdm(enumerate(self.train_loader), desc="Training"):
-    
+                
                 samples_hv, labels, soa_labels, _ = self.sample_to_encode(it, batch, step_type="train")
                 
                 for b in range(0, samples_hv.shape[0], self.point_per_iter):
@@ -394,9 +409,17 @@ class HD_Model:
                 count = 0
                 for it, batch in tqdm(enumerate(self.train_loader), desc=f"Retraining epoch {e}"):
                     
-                    samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type='retrain')
+                    # if self.start_early_exit:
+                    #     # print("Early exit started")
+                    #     samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type='retrain')
+                    # else:
+                        # print("Early exit not started")
+                    if e >= epochs - len(self.stop):
+                        samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type="retrain")
+                    else:
+                        samples_hv, labels, _, logits = self.sample_to_encode(it, batch, step_type="train")
+                    
                     is_wrong_count = 0
-
                     for b in range(0, samples_hv.shape[0], self.point_per_iter):
                         end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
                         samples_hv_here = samples_hv[b:end]
@@ -448,6 +471,8 @@ class HD_Model:
                             self.classify_weights.index_add_(0, pred_hd, -samples_hv_here)
                     
                     num_wrong.append(is_wrong_count)
+                    # self.mean_confidences[e, it] = torch.mean(logits)
+                    # self.correct_percentages[e, it] = is_wrong_count/len(logits)
 
                     #torch.cuda.synchronize(device=self.device)
 
@@ -456,10 +481,26 @@ class HD_Model:
                     ########## End of one scan
 
                 ######### End of all scans
+                if e >= epochs - len(self.stop):  # only after the LAST epoch
+                    # print("Plotting exit value distribution after last epoch...")
+                    plot_exit_val_histogram(self.exit_val_dict, f'exit_val_hist{e}.png')
+                    layer = self.stop[len(self.stop) - epochs + e]
+                    vals_tensor = torch.tensor(self.exit_val_dict[layer])
+                    new_threshold = torch.quantile(vals_tensor, self.quantile)
+                    self.threshold[layer] = new_threshold
+                    print(f"New threshold for layer {layer} in retraining epoch {e}: ", self.threshold)
+                    print(f"Total exit_counter for retraining epoch {e}: ", self.exit_counter)
+                    self.exit_val_dict = {}
+                    self.exit_counter = {}
+                    for i in self.stop:
+                        self.exit_val_dict[int(i)] = []
+                        self.exit_counter[int(i)] = 0
+                    self.exit_counter[48] = 0
 
                 # Print total misclassified samples in the current retraining epoch
                 print("###########################")
                 print(f"Total misclassified for retraining epoch {e}: ", count)
+                print("###########################")
 
                 misclassified_cnts.append(count)
 
@@ -467,8 +508,10 @@ class HD_Model:
 
             # Retraining test
             #if (e + 1) % 2 == 0:
+            # hd_model.update = False
             avg_acc = self.test_hd()
             acc_results.append(avg_acc)
+            # hd_model.update = True
 
         return acc_results, misclassified_cnts
 
@@ -492,9 +535,7 @@ class HD_Model:
         start_idx = 0
         with torch.no_grad():
             for it, batch in tqdm(enumerate(loader), desc="Validation:"):
-        
                 samples_hv, labels, soa_labels, logits = self.sample_to_encode(it, batch, step_type='test') # Only return the features that haven't been dropped
-                
                 for b in range(0, samples_hv.shape[0], self.point_per_iter):
                     end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
                     samples_hv_here = samples_hv[b:end]
@@ -538,6 +579,16 @@ class HD_Model:
         soa_pred = soa_pred[:start_idx]
 
         print("================================")
+        print("Plotting exit value distribution on test...")
+        plot_exit_val_histogram(self.exit_val_dict, 'test_exit_val_hist.png')
+        print(f"Threshold under test: ", self.threshold)
+        print(f"Total exit_counter for test: ", self.exit_counter)
+        self.exit_val_dict = {}
+        self.exit_counter = {}
+        for i in self.stop:
+            self.exit_val_dict[int(i)] = []
+            self.exit_counter[int(i)] = 0
+        self.exit_counter[48] = 0
 
         #print('pred_ts', pred_ts)
         print('pred_hd', final_pred, "\tShape: ", final_pred.shape)
@@ -547,6 +598,11 @@ class HD_Model:
         print(f'accuracy: {accuracy}')
         print(f'avg acc: {avg_acc}')
 
+        # if abs(avg_acc - self.past_acc) < 0.1 and self.start_early_exit == False:
+        #     self.start_early_exit = True
+        #     print("Start early exit")
+        # else:
+        #     self.past_acc = avg_acc
         if args.wandb_run:
             log_data = {f"Training class_{i}_IoU": c for i, c in enumerate(accuracy)}
             log_data["Retraining epoch"] = avg_acc
@@ -582,6 +638,7 @@ def parse_arguments():
     parser.add_argument('--dim', type=int, help='fality of Hypervectors', default=10000)
     parser.add_argument('--batch_points', type=int, help='Number of points to process per scan', default=20000)
     parser.add_argument("--imbalance", action="store_true", default=False, help='Use imbalance weights')
+    parser.add_argument("--quantile", type=int, default=0.8, help='Setup the quantile for the threshold')
     #parser.add_argument('-val', '--val', action="store_true", default=False, help='Train with validation for each scan')
     args = parser.parse_args()
     return args
@@ -624,6 +681,59 @@ def plot(acc_points, acc_results, misclassified_cnts, output_path):
     plt.tight_layout()
     #plt.show()
     plt.savefig(os.path.join(output_path, 'retraining.png'), dpi=300)
+
+def plot_exit_val_histogram(exit_val_dict, save_path):
+    plt.figure(figsize=(15, 4))
+    for i, layer in enumerate(sorted(exit_val_dict.keys())):
+        plt.subplot(1, 3, i+1)
+        plt.hist(exit_val_dict[layer], bins=50, alpha=0.7)
+        plt.title(f'Exit Layer {layer} Val Distribution')
+        plt.xlabel('Confidence / Similarity Value')
+        plt.ylabel('Count')
+        plt.grid(True)
+        if len(exit_val_dict[layer]) > 0:
+            # percentile_95 = np.percentile(exit_val_dict[layer], 95)
+            vals_tensor = torch.tensor(exit_val_dict[layer])
+            percentile_95 = torch.quantile(vals_tensor, 0.95)
+            plt.axvline(percentile_95, color='red', linestyle='dashed', linewidth=1.5)
+            plt.text(percentile_95, plt.ylim()[1]*0.9, f'95%: {percentile_95:.2f}', color='red', rotation=90)
+
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300)
+    print(f"Saved exit value distribution histogram at {save_path}")
+
+def plot_3d_graph(mean_confidences, correct_percentages, save_path="confidence_accuracy_3d.png"):
+    # Get the dimensions of the arrays
+    num_epochs = mean_confidences.shape[0]  # Number of epochs
+    max_iterations = mean_confidences.shape[1]  # Number of iterations per epoch
+
+    # Create a meshgrid for the iterations and epochs
+    X, Y = np.meshgrid(np.arange(max_iterations), np.arange(num_epochs))
+
+    # Plot Mean Confidence
+    fig = plt.figure(figsize=(12, 8))
+
+    ax1 = fig.add_subplot(121, projection='3d')
+    ax1.plot_surface(X, Y, mean_confidences, cmap='coolwarm')
+    ax1.set_xlabel('Iteration')
+    ax1.set_ylabel('Epoch')
+    ax1.set_zlabel('Mean Confidence')
+    ax1.set_title('Mean Confidence per Iteration and Epoch')
+
+    # Plot Correct Percentage
+    ax2 = fig.add_subplot(122, projection='3d')
+    ax2.plot_surface(X, Y, correct_percentages, cmap='coolwarm')
+    ax2.set_xlabel('Iteration')
+    ax2.set_ylabel('Epoch')
+    ax2.set_zlabel('Correct Percentage')
+    ax2.set_title('Correct Percentage per Iteration and Epoch')
+
+    # Show and save the plot
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300)
+    plt.show()
+    print(f"Saved 3D graph at {save_path}")
+
 
 
 if __name__ == "__main__":
@@ -732,9 +842,9 @@ if __name__ == "__main__":
                                                     lengths=[subset_len, len(dataset_val) - subset_len])
 
     # Temporal edits - all use training dataset
-    #subset_len = int(len(dataset_train) * 0.8)
-    #dataset_train, dataset_val = torch.utils.data.random_split(dataset=dataset_train,
-    #                                                           lengths=[subset_len, len(dataset_train) - subset_len])
+    subset_len = int(len(dataset_train) * 0.8)
+    dataset_train, dataset_val = torch.utils.data.random_split(dataset=dataset_train,
+                                                              lengths=[subset_len, len(dataset_train) - subset_len])
         
     print(f'train dataset length: {len(dataset_train)}')
     print(f'val dataset length: {len(dataset_val)}')
@@ -787,9 +897,9 @@ if __name__ == "__main__":
     ####### HD Model ##########
     hd_model = HD_Model(FEAT_SIZE, DIMENSIONS, num_classes, path_pretrained, device=device, args=args)
     hd_model.set_loaders(train_loader=train_loader, val_loader=val_loader)
-    hd_model.feature_extractor.model.set_compensation({12: '/home/HyperLiDAR/overcompensation_layer/linear_weights_12_0.75_normalize.pth', 
-        24: '/home/HyperLiDAR/overcompensation_layer/linear_weights_24_0.75_normalize.pth', 
-        36: '/home/HyperLiDAR/overcompensation_layer/linear_weights_36_1.75_normalize_2.pth'}, device=device)
+    # hd_model.feature_extractor.model.set_compensation({12: '/home/HyperLiDAR/overcompensation_layer/linear_weights_12_0.75_normalize.pth', 
+        # 24: '/home/HyperLiDAR/overcompensation_layer/linear_weights_24_0.75_normalize.pth', 
+        # 36: '/home/HyperLiDAR/overcompensation_layer/linear_weights_36_1.75_normalize_2.pth'}, device=device)
 
     if args.wandb_run:
         run = wandb.init(
@@ -807,7 +917,7 @@ if __name__ == "__main__":
     if not os.path.exists(args.result_path):
         os.mkdir(args.result_path)
     model_name = f"{args.dataset}_{args.subset}_{args.number_samples}_{args.test_number_samples}_nn{args.layers}_" \
-                 f"hd{FEAT_SIZE}_{DIMENSIONS}_{args.epochs}_{args.batch_points}_imb{int(args.imbalance)}_" \
+                 f"hd{FEAT_SIZE}_{DIMENSIONS}_{args.epochs}_{args.batch_points}_imb{int(args.imbalance)}_ee" \
                  f"seed{args.seed}"
     output_path = os.path.join(args.result_path, model_name)
     if not os.path.exists(output_path):
@@ -816,16 +926,35 @@ if __name__ == "__main__":
     ####### HD Pipeline ##########
 
     print("Initial Training")
+    start = time.time()
     hd_model.train(weights=weights)
+    end = time.time()
+    fps = (end-start) / args.number_samples
+    print(f"Training FPS: {fps}")
 
     print("Testing")
+    start = time.time()
     init_acc = hd_model.test_hd()
+    end = time.time()
+    fps = (end-start) / args.test_number_samples
+    print(f"Testing FPS: {fps}")
 
     print("Retraining")
+    # hd_model.update = True
+    start = time.time()
     acc_results, misclassified_cnts = hd_model.retrain(epochs=args.epochs, weights=weights)
+    end = time.time()
+    fps = (end-start) / args.number_samples
+    print(f"Retraining FPS: {fps}")
+
+    # plot_3d_graph(hd_model.mean_confidences, hd_model.correct_percentages, save_path='confidence_accuracy_3d.png')
     
     print("Testing")
+    start = time.time()
     final_acc = hd_model.test_hd()
+    end = time.time()
+    fps = (end-start) / args.test_number_samples
+    print(f"Testing FPS: {fps}")
 
     plot((init_acc, final_acc), acc_results, misclassified_cnts, output_path)
 
