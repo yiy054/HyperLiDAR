@@ -814,13 +814,13 @@ if __name__ == "__main__":
         }
         
         dataset_train = DATASET(
-            phase="specific_train",
+            phase="train",
             **kwargs,
         )
 
         # Validation dataset
         dataset_val = DATASET(
-            phase="val",
+            phase="test",
             **kwargs,
         )
 
@@ -842,9 +842,9 @@ if __name__ == "__main__":
                                                     lengths=[subset_len, len(dataset_val) - subset_len])
 
     # Temporal edits - all use training dataset
-    subset_len = int(len(dataset_train) * 0.8)
-    dataset_train, dataset_val = torch.utils.data.random_split(dataset=dataset_train,
-                                                              lengths=[subset_len, len(dataset_train) - subset_len])
+    # subset_len = int(len(dataset_train) * 0.8)
+    # dataset_train, dataset_val = torch.utils.data.random_split(dataset=dataset_train,
+    #                                                           lengths=[subset_len, len(dataset_train) - subset_len])
         
     print(f'train dataset length: {len(dataset_train)}')
     print(f'val dataset length: {len(dataset_val)}')
@@ -929,23 +929,23 @@ if __name__ == "__main__":
     start = time.time()
     hd_model.train(weights=weights)
     end = time.time()
-    fps = (end-start) / args.number_samples
-    print(f"Training FPS: {fps}")
+    total_time = (end-start)
+    print(f"Training total_time: {total_time}")
 
     print("Testing")
     start = time.time()
     init_acc = hd_model.test_hd()
     end = time.time()
-    fps = (end-start) / args.test_number_samples
-    print(f"Testing FPS: {fps}")
+    total_time = (end-start)
+    print(f"Testing total_time: {total_time}")
 
     print("Retraining")
     # hd_model.update = True
     start = time.time()
     acc_results, misclassified_cnts = hd_model.retrain(epochs=args.epochs, weights=weights)
     end = time.time()
-    fps = (end-start) / args.number_samples
-    print(f"Retraining FPS: {fps}")
+    total_time = (end-start) 
+    print(f"Retraining total_time: {total_time}")
 
     # plot_3d_graph(hd_model.mean_confidences, hd_model.correct_percentages, save_path='confidence_accuracy_3d.png')
     
@@ -953,8 +953,8 @@ if __name__ == "__main__":
     start = time.time()
     final_acc = hd_model.test_hd()
     end = time.time()
-    fps = (end-start) / args.test_number_samples
-    print(f"Testing FPS: {fps}")
+    total_time = (end-start)
+    print(f"Testing total_time: {total_time}")
 
     plot((init_acc, final_acc), acc_results, misclassified_cnts, output_path)
 
