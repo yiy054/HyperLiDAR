@@ -84,7 +84,7 @@ class SemanticKITTISemSeg(PCDataset):
                 self.im_idx.extend(
                     glob(
                         os.path.join(
-                            '/root/main/dataset/semantickitti',
+                            self.rootdir,
                             "sequences",
                             str(i_folder).zfill(2),
                             "velodyne",
@@ -100,7 +100,7 @@ class SemanticKITTISemSeg(PCDataset):
                     line = line[:-1]
                     self.im_idx.append(
                         os.path.join(
-                            '/root/main/dataset/semantickitti',
+                            self.rootdir,
                             line
                         )
                     )
