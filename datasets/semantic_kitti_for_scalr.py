@@ -114,8 +114,8 @@ class SemanticKITTISemSeg(PCDataset):
                 raise ValueError(f"Split {ratio} not coded")
             self.im_idx = sorted(self.im_idx)[::skip_ratio]
             self.im_idx = [self.im_idx[self.scramble[i]] for i in self.scramble]
-            self.minimum = min(len(self.im_idx), 1000)  # Remove to add all the samples
-            self.im_idx = self.im_idx[:self.minimum]
+            # self.minimum = min(len(self.im_idx), 1000)  # Remove to add all the samples
+            # self.im_idx = self.im_idx[:self.minimum]
         if self.phase == "specific_train":
             self.im_idx = sorted(self.im_idx)
         else:
