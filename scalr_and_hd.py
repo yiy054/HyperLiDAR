@@ -611,7 +611,7 @@ if __name__ == "__main__":
         }
         
         dataset_train = DATASET(
-            phase="specific_train",
+            phase="train",
             **kwargs,
         )
 
