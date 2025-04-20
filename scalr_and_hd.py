@@ -130,7 +130,7 @@ class Feature_Extractor:
                 # Logits
                 with torch.no_grad():
                     out = self.model(*net_inputs)
-                    encode, tokens, out, _ = out[0], out[1], out[2], out[3] 
+                    encode, tokens, out, _, early_exit = out[0], out[1], out[2], out[3], out[4]
                     pred_label = out.max(1)[1]
 
                     # Only return samples that are not noise
@@ -140,13 +140,13 @@ class Feature_Extractor:
         else:
             with torch.no_grad():
                 out = self.model(*net_inputs)
-                encode, tokens, out, _ = out[0], out[1], out[2], out[3]
+                encode, tokens, out, _, early_exit = out[0], out[1], out[2], out[3], out[4]
                 pred_label = out.max(1)[1]
 
                 # Only return samples that are not noise
                 where = labels != 255
 
-        return tokens[0,:,where], labels[where], pred_label[0, where]
+        return tokens[0,:,where], labels[where], pred_label[0, where], early_exit
 
     def test(self, loader, total_voxels):        
         # Metric
@@ -156,7 +156,7 @@ class Feature_Extractor:
         
         start_idx = 0
         for it, batch in tqdm(enumerate(loader), desc="SoA testing"):
-            features, labels, soa_result = self.forward_model(it, batch)
+            features, labels, soa_result, early_exit = self.forward_model(it, batch)
             shape_sample = labels.shape[0]
             labels = labels.to(dtype = torch.int64, device = self.device, non_blocking=True)
             soa_result = soa_result.to(device=self.device, non_blocking=True)
@@ -170,7 +170,7 @@ class Feature_Extractor:
         final_pred = final_pred[:start_idx]
 
         print("================================")
-
+        print("Exit_layer: ", early_exit)
         print('Pred FE', final_pred, "\tShape: ", final_pred.shape)
         print('Label', final_labels, "\tShape: ", final_labels.shape)
         accuracy = miou(final_pred, final_labels)
@@ -245,7 +245,7 @@ class HD_Model:
     
     def sample_to_encode(self, it, batch, stop_layer=48):
         # features, labels, soa_labels, exit_layer = self.feature_extractor.forward_model(it, batch, stop_layer) # Everything for what hasn't been dropped
-        features, labels, soa_labels = self.feature_extractor.forward_model(it, batch)
+        features, labels, soa_labels, early_exit = self.feature_extractor.forward_model(it, batch)
         features = torch.transpose(features, 0, 1).to(dtype=torch.float32, device = self.device, non_blocking=True)
         labels = labels.to(dtype=torch.int64, device = self.device, non_blocking=True)
 
@@ -254,7 +254,7 @@ class HD_Model:
         # HD training
         samples_hv = self.encode(features)
 
-        return samples_hv, labels, soa_labels
+        return samples_hv, labels, soa_labels, early_exit
     
     def train(self, weights=None):
 
@@ -265,7 +265,7 @@ class HD_Model:
         with torch.no_grad():
             for it, batch in tqdm(enumerate(self.train_loader), desc="Training"):
     
-                samples_hv, labels, _ = self.sample_to_encode(it, batch)
+                samples_hv, labels, _, early_exit = self.sample_to_encode(it, batch)
                 
                 for b in range(0, samples_hv.shape[0], self.point_per_iter):
                     end = min(b + self.point_per_iter, int(samples_hv.shape[0]))  # Ensure we don't exceed num_voxels[i]
@@ -308,7 +308,7 @@ class HD_Model:
                 count = 0
                 for it, batch in tqdm(enumerate(self.train_loader), desc=f"Retraining epoch {e}"):
                     
-                    samples_hv, labels, _ = self.sample_to_encode(it, batch)
+                    samples_hv, labels, _, early_exit = self.sample_to_encode(it, batch)
                     # print("exit_layer local: ", exit_layer)
 
                     for b in range(0, samples_hv.shape[0], self.point_per_iter):
@@ -365,6 +365,7 @@ class HD_Model:
 
                 # Print total misclassified samples in the current retraining epoch
                 print("###########################")
+                print("Exit layer: ", early_exit)
                 print(f"Total misclassified for retraining epoch {e}: ", count)
                 print("###########################")
 

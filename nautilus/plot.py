@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
 # Define models and data
-models = ['HylerLidar', 'HyperLidar-early_exit', 'CENet', 'Cylinder3D']
+models = ['HyperLiDAR', 'HyperLiDAR w/o early exit', 'CENet', 'Cylinder3D']
 training_fps = [1.17, 1.01, 36.42, 3.04]
 inference_fps = [1.17, 1.18, 49.56, 1.52]
 miou = [57.27, 54.88, 63.50, 56.63]
@@ -35,9 +35,8 @@ for i, model in enumerate(models):
                   head_width=0.5, head_length=0.7, fc='gray', ec='gray', linestyle='--')
 
 # Labels and formatting
-plt.xlabel("Inference Runtime (FPS)", fontsize=12)
-plt.ylabel("mIoU on SemanticKITTI test set (%)", fontsize=12)
-plt.title("Model Trade-offs: Accuracy vs Speed", fontsize=14)
+plt.xlabel("Inference Runtime (FPS)", fontsize=18)
+plt.ylabel("mIoU on SemanticKITTI test set (%)", fontsize=18)
 plt.grid(True, linestyle='--', alpha=0.5)
 plt.xlim(0, 60)
 plt.ylim(50, 70)
@@ -56,9 +55,8 @@ for i, model in enumerate(models):
                   head_width=0.5, head_length=0.7, fc='gray', ec='gray', linestyle='--')
 
 # Labels and formatting
-plt.xlabel("Training Runtime (FPS)", fontsize=12)
-plt.ylabel("mIoU on SemanticKITTI test set (%)", fontsize=12)
-plt.title("Model Trade-offs: Accuracy vs Speed", fontsize=14)
+plt.xlabel("Training Runtime (FPS)", fontsize=18)
+plt.ylabel("mIoU on SemanticKITTI test set (%)", fontsize=18)
 plt.grid(True, linestyle='--', alpha=0.5)
 plt.xlim(0, 60)
 plt.ylim(50, 70)
