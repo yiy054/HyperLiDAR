@@ -253,14 +253,19 @@ class WaffleIron(nn.Module):
 
     def tokenize(self, iter_crop, tokens, step_type):
         
-        try:
-            spatial_mix = self.spatial_mix_sep[iter_crop]
-            channel_mix = self.channel_mix_sep[iter_crop]
-        except:
-            spatial_mix = self.spatial_mix
-            channel_mix = self.channel_mix
+        # try:
+        #     spatial_mix = self.spatial_mix_sep[iter_crop]
+        #     channel_mix = self.channel_mix_sep[iter_crop]
+        # except:
+        #     spatial_mix = self.spatial_mix
+        #     channel_mix = self.channel_mix
 
-        for d, (smix, cmix) in enumerate(zip(spatial_mix, channel_mix)):
+        # for d, (smix, cmix) in enumerate(zip(spatial_mix, channel_mix)):
+        if iter_crop == 0:
+            start_layer = 0
+        else:
+            start_layer = self.early_exit[iter_crop - 1]
+        for d in range(start_layer, self.early_exit[iter_crop]):
 
             ### CKA attempt
             """if d in self.early_exit and step_type == 'exp': # step_type != None:
@@ -283,8 +288,10 @@ class WaffleIron(nn.Module):
                 prev_gram = gram_current"""
             
             #print(self.early_exit[iter_crop] + d)
-            tokens = smix(tokens, self.sp_mat[(self.early_exit[iter_crop] + d) % len(self.sp_mat)])
-            tokens = cmix(tokens)
+            # tokens = smix(tokens, self.sp_mat[(self.early_exit[iter_crop] + d) % len(self.sp_mat)])
+            # tokens = cmix(tokens)
+            tokens = self.spatial_mix[d](tokens, self.sp_mat[d % len(self.sp_mat)])
+            tokens = self.channel_mix[d](tokens)
             #print(tokens.shape)
         #tokens = F.normalize(tokens)
-        return tokens, self.early_exit[iter_crop] + d
+        return tokens, self.early_exit[iter_crop]-1
