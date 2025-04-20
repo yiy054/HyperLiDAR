@@ -348,11 +348,20 @@ class HD_Model:
         return samples_hv, labels, soa_labels, logits
     
     def check_early_exit(self, samples_hv):
-        logits = self.classify(F.normalize(samples_hv))
+        # logits = self.classify(F.normalize(samples_hv))
+        # max_dist = torch.max(logits, axis=1).values
+        # # val = torch.quantile(max_dist, self.quantile)
+        # # return val, logits
+        # return max_dist, logits
+        subset_ratio = 0.1  # You can make this a class parameter
+        subset_size = int(samples_hv.size(0) * subset_ratio)
+        indices = torch.randperm(samples_hv.size(0))[:subset_size]
+        samples_hv_subset = samples_hv[indices]
+
+        logits = self.classify(F.normalize(samples_hv_subset))
         max_dist = torch.max(logits, axis=1).values
-        # val = torch.quantile(max_dist, self.quantile)
-        # return val, logits
         return max_dist, logits
+
     
     def train(self, weights=None):
 
