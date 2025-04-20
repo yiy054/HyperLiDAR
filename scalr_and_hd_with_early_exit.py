@@ -648,7 +648,7 @@ def parse_arguments():
     parser.add_argument('--dim', type=int, help='fality of Hypervectors', default=10000)
     parser.add_argument('--batch_points', type=int, help='Number of points to process per scan', default=20000)
     parser.add_argument("--imbalance", action="store_true", default=False, help='Use imbalance weights')
-    parser.add_argument("--quantile", type=int, default=0.8, help='Setup the quantile for the threshold')
+    parser.add_argument("--quantile", type=float, default=0.8, help='Setup the quantile for the threshold')
     #parser.add_argument('-val', '--val', action="store_true", default=False, help='Train with validation for each scan')
     args = parser.parse_args()
     return args
