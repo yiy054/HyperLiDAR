@@ -305,6 +305,7 @@ class HD_Model:
                 # print("Before Threshold: ", self.threshold)
                 # print("Steps: ", steps)
                 if val > self.threshold[exit_layer+1] and step_type == 'test':
+                    logits = self.classify(F.normalize(samples_hv))
                     break
 
                 # Update threshold
