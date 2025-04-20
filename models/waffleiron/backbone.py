@@ -265,10 +265,16 @@ class WaffleIron(nn.Module):
             start_layer = 0
         else:
             start_layer = self.early_exit[iter_crop - 1]
-        print(f"Start layer: {start_layer}")
-        print(f"End layer: {self.early_exit[iter_crop]}")
         
-        for d in range(start_layer, self.early_exit[iter_crop]):
+        if iter_crop == len(self.early_exit):
+            end_layer = self.depth
+        else:
+            end_layer = self.early_exit[iter_crop]
+
+        # print(f"Start layer: {start_layer}")
+        # print(f"End layer: {self.early_exit[iter_crop]}")
+
+        for d in range(start_layer, end_layer):
 
             ### CKA attempt
             """if d in self.early_exit and step_type == 'exp': # step_type != None:
