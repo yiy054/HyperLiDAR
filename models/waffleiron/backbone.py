@@ -303,4 +303,4 @@ class WaffleIron(nn.Module):
             tokens = self.channel_mix[d](tokens)
             #print(tokens.shape)
         #tokens = F.normalize(tokens)
-        return tokens, self.early_exit[iter_crop]-1
+        return tokens, end_layer-1
