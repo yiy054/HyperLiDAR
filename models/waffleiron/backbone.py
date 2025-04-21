@@ -259,7 +259,7 @@ class WaffleIron(nn.Module):
         except:
             spatial_mix = self.spatial_mix
             channel_mix = self.channel_mix
-
+        print('iter_crop', iter_crop)
         for d, (smix, cmix) in enumerate(zip(spatial_mix, channel_mix)):
 
             ### CKA attempt
