@@ -261,6 +261,7 @@ class WaffleIron(nn.Module):
         #     channel_mix = self.channel_mix
 
         # for d, (smix, cmix) in enumerate(zip(spatial_mix, channel_mix)):
+        print(f"Iter crop: {iter_crop}")
         if iter_crop == 0:
             start_layer = 0
         else:

@@ -291,6 +291,7 @@ class HD_Model:
     
         ### Check if we need to do another iteration:
         steps = 1
+        print("Exit layer: ", exit_layer)
         if step_type == 'retrain' or step_type == 'test':
             #print(self.threshold)
             #x = input()
