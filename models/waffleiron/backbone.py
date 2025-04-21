@@ -262,8 +262,8 @@ class WaffleIron(nn.Module):
         #     channel_mix = self.channel_mix
 
         # for d, (smix, cmix) in enumerate(zip(spatial_mix, channel_mix)):
-        print(f"Iter crop: {iter_crop}")
-        print("early exit: ", self.early_exit)
+        # print(f"Iter crop: {iter_crop}")
+        # print("early exit: ", self.early_exit)
         if iter_crop == 0:
             start_layer = 0
         else:
@@ -274,8 +274,8 @@ class WaffleIron(nn.Module):
         else:
             end_layer = self.early_exit[iter_crop]
 
-        print(f"Start layer: {start_layer}")
-        print(f"End layer: {end_layer}")
+        # print(f"Start layer: {start_layer}")
+        # print(f"End layer: {end_layer}")
 
         for d in range(start_layer, end_layer):
 
