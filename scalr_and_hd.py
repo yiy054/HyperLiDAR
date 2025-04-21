@@ -202,7 +202,7 @@ class HD_Model:
         self.classify_weights = copy.deepcopy(self.classify.weight)
 
         self.device = device
-        self.feature_extractor = Feature_Extractor(nb_class = num_classes, device=self.device, early_exit=[kwargs['args'].layers], args=kwargs['args'])
+        self.feature_extractor = Feature_Extractor(nb_class = num_classes, device=self.device, early_exit=kwargs['args'].layers, args=kwargs['args'])
         self.feature_extractor.load_pretrained(path_pretrained)
         self.stop = kwargs['args'].layers
         self.point_per_iter = kwargs['args'].number_samples
