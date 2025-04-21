@@ -55,7 +55,6 @@ class Feature_Extractor:
             layer_norm=layer_norm,
             early_exit = early_exit
         )
-        print("Feature_extractor initialized", early_exit)
         classif = torch.nn.Conv1d(
             feat_channels, nb_class, 1 # So it fits 16 = nb_class but classifier is not used
         )
@@ -84,7 +83,7 @@ class Feature_Extractor:
         self.num_classes = nb_class
         self.early_exit = early_exit
         self.kwargs = kwargs
-        self.model.waffleiron.separate_model()
+        # self.model.waffleiron.separate_model()
     
     def load_pretrained(self, path):
         # Load pretrained model

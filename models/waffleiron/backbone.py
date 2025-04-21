@@ -223,19 +223,19 @@ class WaffleIron(nn.Module):
             self.channel_mix[d].compress()
             self.spatial_mix[d].compress()
 
-    def separate_model(self):
-        self.channel_mix_sep = []
-        self.spatial_mix_sep = []
-        prev = 0
-        for d in range(self.depth):
-            if d in self.early_exit:
-                print(f"Seperate model {prev}:{d}")
-                self.channel_mix_sep.append(self.channel_mix[prev:d])
-                self.spatial_mix_sep.append(self.spatial_mix[prev:d])
-                prev = d
-        self.channel_mix_sep.append(self.channel_mix[prev:])
-        self.spatial_mix_sep.append(self.spatial_mix[prev:])
-        self.early_exit = [0] + self.early_exit
+    # def separate_model(self):
+    #     self.channel_mix_sep = []
+    #     self.spatial_mix_sep = []
+    #     prev = 0
+    #     for d in range(self.depth):
+    #         if d in self.early_exit:
+    #             print(f"Seperate model {prev}:{d}")
+    #             self.channel_mix_sep.append(self.channel_mix[prev:d])
+    #             self.spatial_mix_sep.append(self.spatial_mix[prev:d])
+    #             prev = d
+    #     self.channel_mix_sep.append(self.channel_mix[prev:])
+    #     self.spatial_mix_sep.append(self.spatial_mix[prev:])
+    #     self.early_exit = [0] + self.early_exit
     
     def set_exit_threshold(self, layer, threshold):
         self.threshold[int(layer)] = threshold
