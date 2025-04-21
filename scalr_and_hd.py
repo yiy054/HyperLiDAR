@@ -80,6 +80,7 @@ class Feature_Extractor:
         self.num_classes = nb_class
         self.early_exit = early_exit
         self.kwargs = kwargs
+        self.model.waffleiron.separate_model()
     
     def load_pretrained(self, path):
         # Load pretrained model
