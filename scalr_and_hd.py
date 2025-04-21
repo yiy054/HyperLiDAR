@@ -130,7 +130,7 @@ class Feature_Extractor:
                 # Logits
                 with torch.no_grad():
                     out = self.model(*net_inputs)
-                    encode, tokens, out, _ = out[0], out[1], out[2], out[3] 
+                    encode, tokens, out, _, early_exit = out[0], out[1], out[2], out[3], out[4]
                     pred_label = out.max(1)[1]
 
                     # Only return samples that are not noise
@@ -140,13 +140,13 @@ class Feature_Extractor:
         else:
             with torch.no_grad():
                 out = self.model(*net_inputs)
-                encode, tokens, out, _ = out[0], out[1], out[2], out[3]
+                encode, tokens, out, _, early_exit = out[0], out[1], out[2], out[3], out[4]
                 pred_label = out.max(1)[1]
 
                 # Only return samples that are not noise
                 where = labels != 255
 
-        return tokens[0,:,where], labels[where], pred_label[0, where]
+        return tokens[0,:,where], labels[where], pred_label[0, where], early_exit
 
     def test(self, loader, total_voxels):        
         # Metric
@@ -156,7 +156,7 @@ class Feature_Extractor:
         
         start_idx = 0
         for it, batch in tqdm(enumerate(loader), desc="SoA testing"):
-            features, labels, soa_result = self.forward_model(it, batch)
+            features, labels, soa_result, early_exit = self.forward_model(it, batch)
             shape_sample = labels.shape[0]
             labels = labels.to(dtype = torch.int64, device = self.device, non_blocking=True)
             soa_result = soa_result.to(device=self.device, non_blocking=True)
@@ -437,6 +437,7 @@ class HD_Model:
         print("================================")
 
         #print('pred_ts', pred_ts)
+        print('exit_layer', exit_layer)
         print('pred_hd', final_pred, "\tShape: ", final_pred.shape)
         print('label', final_labels, "\tShape: ", final_labels.shape)
         accuracy = miou(final_pred, final_labels)
