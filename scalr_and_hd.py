@@ -41,7 +41,7 @@ class Encoder(nn.Module):
 class Feature_Extractor:
     def __init__(self, input_channels=5, feat_channels=768, depth=48, 
                  grid_shape=[[256, 256], [256, 32], [256, 32]], nb_class=16, layer_norm=True, 
-                 device=torch.device("cpu"), early_exit = 48, **kwargs):
+                 device=torch.device("cpu"), early_exit = [48], **kwargs):
         self.model = Segmenter(
             input_channels=input_channels,
             feat_channels=feat_channels,
@@ -50,6 +50,7 @@ class Feature_Extractor:
             nb_class=nb_class, # class for prediction
             #drop_path_prob=config["waffleiron"]["drop_path"],
             layer_norm=layer_norm,
+            early_exit=early_exit,
         )
 
         classif = torch.nn.Conv1d(
@@ -201,7 +202,7 @@ class HD_Model:
         self.classify_weights = copy.deepcopy(self.classify.weight)
 
         self.device = device
-        self.feature_extractor = Feature_Extractor(nb_class = num_classes, device=self.device, early_exit=kwargs['args'].layers, args=kwargs['args'])
+        self.feature_extractor = Feature_Extractor(nb_class = num_classes, device=self.device, early_exit=[kwargs['args'].layers], args=kwargs['args'])
         self.feature_extractor.load_pretrained(path_pretrained)
         self.stop = kwargs['args'].layers
         self.point_per_iter = kwargs['args'].number_samples
