@@ -226,6 +226,7 @@ class WaffleIron(nn.Module):
         self.channel_mix_sep = []
         self.spatial_mix_sep = []
         prev = 0
+        print(self.early_exit)
         for d in range(self.depth):
             if d in self.early_exit:
                 print(f"Seperate model {prev}:{d}")
@@ -259,7 +260,7 @@ class WaffleIron(nn.Module):
         except:
             spatial_mix = self.spatial_mix
             channel_mix = self.channel_mix
-        print('iter_crop', iter_crop)
+        # print('iter_crop', iter_crop)
         for d, (smix, cmix) in enumerate(zip(spatial_mix, channel_mix)):
 
             ### CKA attempt
@@ -287,5 +288,5 @@ class WaffleIron(nn.Module):
             tokens = cmix(tokens)
             #print(tokens.shape)
         #tokens = F.normalize(tokens)
-            print(d)
+            # print(d)
         return tokens, self.early_exit[iter_crop] + d
