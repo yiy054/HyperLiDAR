@@ -200,6 +200,7 @@ class WaffleIron(nn.Module):
                 for d in range(depth)
             ]
         )
+        print(f" Early exit layes: {early_exit}")
         if early_exit != None:
             self.early_exit = early_exit
         else:

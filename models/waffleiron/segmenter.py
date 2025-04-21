@@ -40,6 +40,7 @@ class Segmenter(nn.Module):
         self.classif = nn.Conv1d(feat_channels, nb_class, 1)
 
         self.early_exit = early_exit
+        print("Segmenter Early exit layers: ", self.early_exit)
 
     def compress(self):
         self.embed.compress()
