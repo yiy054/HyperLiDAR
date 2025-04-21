@@ -55,7 +55,7 @@ class Feature_Extractor:
             layer_norm=layer_norm,
             early_exit = early_exit
         )
-
+        print("Feature_extractor initialized", early_exit)
         classif = torch.nn.Conv1d(
             feat_channels, nb_class, 1 # So it fits 16 = nb_class but classifier is not used
         )
