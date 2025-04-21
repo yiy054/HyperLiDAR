@@ -271,8 +271,8 @@ class WaffleIron(nn.Module):
         else:
             end_layer = self.early_exit[iter_crop]
 
-        # print(f"Start layer: {start_layer}")
-        # print(f"End layer: {self.early_exit[iter_crop]}")
+        print(f"Start layer: {start_layer}")
+        print(f"End layer: {end_layer}")
 
         for d in range(start_layer, end_layer):
 

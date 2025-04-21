@@ -290,7 +290,7 @@ class HD_Model:
         logits = None
     
         ### Check if we need to do another iteration:
-        steps = 0
+        steps = 1
         if step_type == 'retrain' or step_type == 'test':
             #print(self.threshold)
             #x = input()
